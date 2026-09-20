@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp(argv[i], "--debug-code") == 0) {
          debug = true;
       }
-      else if (strcmp(argv[i], "--debug-lexer") == 0) {
+      else if (strcmp(argv[i], "--debug-tokens") == 0) {
          debugLexer = true;
       }
       else {

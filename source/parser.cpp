@@ -104,10 +104,11 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
    }
    else if (tokens[i].type == TOKEN_STRING) {
       // no extra concat needed
-      if (tokens[i+1].type != TOKEN_FMT_START && tokens[i+1].type != TOKEN_EVAL_START && tokens[i+1].type != TOKEN_STRING) {
+      if (tokens[i+1].type != TOKEN_FMT_START && tokens[i+1].type != TOKEN_EVAL_START) {
          return Value{.type = VALUE_CSTRING, .string = tokens[i].lexeme};
       }
 
+      bool lastString = false;
       std::string constructed = getLexeme(executor.cache, tokens[i].lexeme);
       i += 1;
 
@@ -119,13 +120,16 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
                constructed += toStringParseTime(executor, value);
                i += 1;
             }
+            lastString = false;
          }
          else if (tokens[i].type == TOKEN_EVAL_START) {
             Value value = evaluateMath(executor, tokens, i, constants);
             constructed += toStringParseTime(executor, value);
+            lastString = false;
          }
-         else if (tokens[i].type == TOKEN_STRING) {
+         else if (!lastString && tokens[i].type == TOKEN_STRING) {
             constructed += getLexeme(executor.cache, tokens[i].lexeme);
+            lastString = true;
          }
          else {
             break;
