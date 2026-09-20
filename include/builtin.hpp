@@ -247,10 +247,10 @@ void builtinTableContains(const Command &command, Executor &executor);
 void builtinVariadicSize(const Command &command, Executor &executor);
 void builtinVariadicAt(const Command &command, Executor &executor);
 void builtinRegSize(const Command &command, Executor &executor);
-void builtinRegIdx(const Command &command, Executor &executor);
+void builtinRegAt(const Command &command, Executor &executor);
 void builtinRegSet(const Command &command, Executor &executor);
 void builtinReturnRegSize(const Command &command, Executor &executor);
-void builtinReturnRegIdx(const Command &command, Executor &executor);
+void builtinReturnRegAt(const Command &command, Executor &executor);
 void builtinReturnRegSet(const Command &command, Executor &executor);
 void builtinReturnCount(const Command &command, Executor &executor);
 void builtinFuncArity(const Command &command, Executor &executor);
@@ -298,6 +298,9 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"string-mark", builtinStringMark, 2},
    {"string-get-mark", builtinStringGetMark, 2},
    {"string-free-marked", builtinStringFreeMarked, 1},
+   {"string-get-marked-count", builtinStringGetMarkedCount, 1},
+   {"string-get-marked", builtinStringGetMarked, 1},
+   {"string-any-marked", builtinStringAnyMarked, 1},
    {"string-split", builtinStringSplit, 3},
    {"string-concat", builtinStringConcat, 2, VARIADIC},
    {"string-substr", builtinStringSubstr, 4},
@@ -344,6 +347,9 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"array-mark", builtinArrayMark, 2},
    {"array-get-mark", builtinArrayGetMark, 2},
    {"array-free-marked", builtinArrayFreeMarked, 1},
+   {"array-get-marked-count", builtinArrayGetMarkedCount, 1},
+   {"array-get-marked", builtinArrayGetMarked, 1},
+   {"array-any-marked", builtinArrayAnyMarked, 1},
    {"array-join", builtinArrayJoin, 3},
    {"array-concat", builtinArrayConcat, 3},
    {"array-slice", builtinArraySlice, 4},
@@ -374,6 +380,9 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"map-mark", builtinMapMark, 2},
    {"map-get-mark", builtinMapGetMark, 2},
    {"map-free-marked", builtinMapFreeMarked, 1},
+   {"map-get-marked-count", builtinMapGetMarkedCount, 1},
+   {"map-get-marked", builtinMapGetMarked, 1},
+   {"map-any-marked", builtinMapAnyMarked, 1},
    {"map-shallow-copy", builtinMapShallowCopy, 2},
    {"map-deep-copy", builtinMapDeepCopy, 2},
 
@@ -512,10 +521,10 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"variadic-size", builtinVariadicSize, 1},
    {"variadic-at", builtinVariadicAt, 2},
    {"reg-size", builtinRegSize, 1},
-   {"reg-idx", builtinRegIdx, 2},
+   {"reg-at", builtinRegAt, 2},
    {"reg-set", builtinRegSet, 2},
    {"return-reg-size", builtinReturnRegSize, 1},
-   {"return-reg-idx", builtinReturnRegIdx, 2},
+   {"return-reg-at", builtinReturnRegAt, 2},
    {"return-reg-set", builtinReturnRegSet, 2},
    {"return-count", builtinReturnCount, 1},
    {"func-arity", builtinFuncArity, 2},

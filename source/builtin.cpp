@@ -504,13 +504,13 @@ void builtinRegSize(const Command &command, Executor &executor) {
    storeNumber(executor, command, executor.registers.size(), false, "reg-size");
 }
 
-void builtinRegIdx(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "reg-idx");
+void builtinRegAt(const Command &command, Executor &executor) {
+   size_t id = getNum(executor, command, 0, "reg-at");
    if (id < 0 || id >= executor.registers.size()) {
-      error(executor.diagnostics, command.file, command.line, "reg-idx: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "reg-at: Index %zu is out of bounds", id);
       return;
    }
-   storeInRegister(executor, command, executor.registers[id], "reg-idx");
+   storeInRegister(executor, command, executor.registers[id], "reg-at");
 }
 
 void builtinRegSet(const Command &command, Executor &executor) {
@@ -528,13 +528,13 @@ void builtinReturnRegSize(const Command &command, Executor &executor) {
    storeNumber(executor, command, executor.returnRegisters.size(), false, "return-reg-size");
 }
 
-void builtinReturnRegIdx(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "return-reg-idx");
+void builtinReturnRegAt(const Command &command, Executor &executor) {
+   size_t id = getNum(executor, command, 0, "return-reg-at");
    if (id < 0 || id >= executor.returnRegisters.size()) {
-      error(executor.diagnostics, command.file, command.line, "return-reg-idx: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %zu is out of bounds", id);
       return;
    }
-   storeInRegister(executor, command, executor.returnRegisters[id], "return-reg-idx");
+   storeInRegister(executor, command, executor.returnRegisters[id], "return-reg-at");
 }
 
 void builtinReturnRegSet(const Command &command, Executor &executor) {
