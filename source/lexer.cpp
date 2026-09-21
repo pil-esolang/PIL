@@ -63,6 +63,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
 
       switch (ch) {
       case '\n': tokens.emplace_back(TOKEN_NEWLINE, emptyLexeme, file.lexeme, line); line += 1; continue;
+      case '$': tokens.emplace_back(TOKEN_REGISTER, emptyLexeme, file.lexeme, line); continue;
       case '(': tokens.emplace_back(TOKEN_L_PAREN, emptyLexeme, file.lexeme, line); continue;
       case ')': tokens.emplace_back(TOKEN_R_PAREN, emptyLexeme, file.lexeme, line); continue;
       case ':': tokens.emplace_back(TOKEN_LABEL, emptyLexeme, file.lexeme, line); continue;
@@ -179,18 +180,8 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          line += 1;
       }
       else if ((ch == 'r' || ch == 'R') && i + 1 < size && file.code[i + 1] == '$') {
-         i += 2;
-         size_t end = i;
-         for (; end < size && isDigit(file.code[end]); ++end);
-         tokens.emplace_back(TOKEN_RETURN_REGISTER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
-         i = end - 1;
-      }
-      else if (ch == '$') {
+         tokens.emplace_back(TOKEN_RETURN_REGISTER, emptyLexeme, file.lexeme, line);
          i += 1;
-         size_t end = i;
-         for (; end < size && isDigit(file.code[end]); ++end);
-         tokens.emplace_back(TOKEN_REGISTER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
-         i = end - 1;
       }
       else if (ch == '\'') {
          if (i + 1 >= size || file.code[i + 1] == '\n') {

@@ -72,26 +72,6 @@ Value parseToken(Executor &executor, Token token, const std::unordered_map<size_
       value.type = VALUE_CHARACTER;
       value.character = getLexeme(executor.cache, token.lexeme).front();
       break;
-   case TOKEN_RETURN_REGISTER:
-   case TOKEN_REGISTER: {
-      std::vector<Value> &container = (token.type == TOKEN_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
-      size_t maxDefaultValue = (token.type == TOKEN_RETURN_REGISTER ? DEFAULT_RETURN_REGISTER_COUNT : DEFAULT_REGISTER_COUNT);
-      size_t maxValue = (container.empty() ? maxDefaultValue : container.size());
-
-      value.type = (token.type == TOKEN_RETURN_REGISTER ? VALUE_RETURN_REGISTER : VALUE_REGISTER);
-      try {
-         value.reg = std::stoull(getLexeme(executor.cache, token.lexeme));
-      }
-      catch (...) {
-         value.reg = 0;
-         error(executor.diagnostics, token.file, token.line, "Invalid register: %s$%s", token.type == TOKEN_RETURN_REGISTER ? "R" : "", getLexeme(executor.cache, token.lexeme).c_str());
-      }
-
-      if (value.reg >= maxValue) {
-         error(executor.diagnostics, token.file, token.line, "Register %s$%zu is out of bounds. Define '@%sreg-size %zu' directive to mitigate", token.type == TOKEN_RETURN_REGISTER ? "R" : "", value.reg, token.type == TOKEN_RETURN_REGISTER ? "return-" : "", value.reg + 1);
-      }
-      break;
-   }
    default:
       error(executor.diagnostics, token.file, token.line, "Unexpected %s while parsing", getTokenName(token.type));
    }
@@ -138,6 +118,27 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
       }
       i -= 1;
       return Value{.type = VALUE_CSTRING, .string = pushLexeme(executor.cache, constructed)};
+   }
+   else if (tokens[i].type == TOKEN_RETURN_REGISTER || tokens[i].type == TOKEN_REGISTER) {
+      Token treg = tokens[i];
+      Token tval = tokens[i + 1];
+      i += 1;
+
+      Value value = internalParse(executor, tokens, i, functionParamMap, constants);
+      if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
+         error(executor.diagnostics, treg.file, treg.line, "Expected an Integer/Floating after register, got %s instead", getTokenName(tval.type));
+         return NULL_VALUE;
+      }
+
+      std::vector<Value> &container = (treg.type == TOKEN_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
+      size_t maxDefaultValue = (treg.type == TOKEN_RETURN_REGISTER ? DEFAULT_RETURN_REGISTER_COUNT : DEFAULT_REGISTER_COUNT);
+      size_t maxValue = (container.empty() ? maxDefaultValue : container.size());
+      size_t reg = (value.type == VALUE_INTEGER ? value.integer : value.floating);
+      if (reg >= maxValue) {
+         error(executor.diagnostics, treg.file, treg.line, "Register %s$%zu is out of bounds. Define '@%sreg-size %zu' directive to mitigate", treg.type == TOKEN_REGISTER ? "" : "R", reg, treg.type == TOKEN_REGISTER ? "" : "return-", reg + 1);
+         return NULL_VALUE;
+      }
+      return Value{.type = (treg.type == TOKEN_REGISTER ? VALUE_REGISTER : VALUE_RETURN_REGISTER), .reg = reg};
    }
    else {
       return parseToken(executor, tokens[i], functionParamMap, constants);
