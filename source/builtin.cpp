@@ -48,7 +48,7 @@ void builtinSetecho(const Command &command, Executor &executor) {
    setEcho(getBool(executor, command, 0));
 }
 
-// comparison
+// control flow
 void builtinLe(const Command &command, Executor &executor) {
    comparisonBuiltin(executor, command, "le", COMPARISON_LESS, false, false);
 }
@@ -93,7 +93,6 @@ void builtinNot(const Command &command, Executor &executor) {
    storeBoolean(executor, command, !getBool(executor, command, 0), "not");
 }
 
-// control flow
 void builtinGoto(const Command &command, Executor &executor) {
    jumpToLabel(executor, resolveVariable(executor, arg(executor, command, 0)), "goto", "1st", command.file, command.line, true);
 }

@@ -17,14 +17,14 @@ void builtinArrayFill(const Command &command, Executor &executor) {
 }
 
 void builtinArrayIota(const Command &command, Executor &executor) {
-   size_t count = getNum(executor, command, 1, "array-fill");
-   size_t start = getNum(executor, command, 2, "array-fill");
+   size_t count = getNum(executor, command, 1, "array-iota");
+   long start = getNum(executor, command, 2, "array-iota");
    std::vector<Value> values (count);
    for (size_t i = 0; i < count; ++i) {
       values[i].type = VALUE_INTEGER;
       values[i].integer = start + i;
    }
-   storeArray(executor, command, values, arg(executor, command, 0), "array-fill");
+   storeArray(executor, command, values, arg(executor, command, 0), "array-iota");
 }
 
 void builtinArrayClear(const Command &command, Executor &executor) {

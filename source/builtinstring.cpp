@@ -68,20 +68,20 @@ void builtinStringMemFree(const Command &command, Executor &executor) {
 }
 
 void builtinStringEmpty(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-empty", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-empty", string)) return;
    storeBoolean(executor, command, string->empty(), "string-empty");
 }
 
 void builtinStringSize(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-size", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-size", string)) return;
    storeNumber(executor, command, string->size(), false, "string-size");
 }
 
 void builtinStringCapacity(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-capacity", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-capacity", string)) return;
    storeNumber(executor, command, string->capacity(), false, "string-capacity");
 }
 
@@ -109,8 +109,8 @@ void builtinStringSet(const Command &command, Executor &executor) {
 }
 
 void builtinStringAt(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-at", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-at", string)) return;
    size_t id = getNum(executor, command, 1, "string-at");
    if (id < 0 || id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-at: Index %zu is out of bounds", id);
@@ -122,8 +122,8 @@ void builtinStringAt(const Command &command, Executor &executor) {
 }
 
 void builtinStringBack(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-back", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-back", string)) return;
    if (string->empty()) {
       error(executor.diagnostics, command.file, command.line, "string-back: Cannot get the back character of string since the string is empty");
       return;
@@ -134,8 +134,8 @@ void builtinStringBack(const Command &command, Executor &executor) {
 }
 
 void builtinStringFront(const Command &command, Executor &executor) {
-   std::string *string;
-   if (!stringOrError(command, executor, "string-front", string)) return;
+   const std::string *string;
+   if (!constStringOrError(command, executor, "string-front", string)) return;
    if (string->empty()) {
       error(executor.diagnostics, command.file, command.line, "string-front: Cannot get the front character of string since the string is empty");
       return;
@@ -272,15 +272,9 @@ void builtinStringSplit(const Command &command, Executor &executor) {
          error(executor.diagnostics, command.file, command.line, "string-split: Delimiter cannot be empty");
          return;
       }
-
-      size_t delimCount = 0;
       size_t sdelimSize = sdelim->size();
-      for (size_t offset = string->find(*sdelim); offset != std::string::npos; offset = string->find(*sdelim, offset + sdelimSize)) {
-         delimCount += 1;
-      }
-      output.reserve(delimCount + 1);
-
       size_t last = 0;
+
       for (size_t pos = string->find(*sdelim); pos != std::string::npos; pos = string->find(*sdelim, last)) {
          Value value {VALUE_STRING};
          value.string = allocateString(executor, std::string(string->begin() + last, string->begin() + pos));

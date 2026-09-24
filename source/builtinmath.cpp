@@ -23,7 +23,7 @@ void builtinDecr(const Command &command, Executor &executor) {
    storeNumber(executor, command, number - 1, floating, "decr");
 }
 
-void builtinAdd(const Command &command, Executor &executor) {
+void builtinSum(const Command &command, Executor &executor) {
    bool floating = false;
    double number = 0.0;
    for (size_t i = 0; i < command.argCount - 1; ++i) {
@@ -32,32 +32,32 @@ void builtinAdd(const Command &command, Executor &executor) {
    storeNumber(executor, command, number, floating, "add");
 }
 
+void builtinAdd(const Command &command, Executor &executor) {
+   bool floating = false;
+   double a = getNum(executor, command, 0, "add", &floating);
+   double b = getNum(executor, command, 1, "add", &floating);
+   storeNumber(executor, command, a + b, floating, "add");
+}
+
 void builtinSub(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = getNum(executor, command, 0, "sub", &floating);
-   for (size_t i = 1; i < command.argCount - 1; ++i) {
-      number -= getNum(executor, command, i, "sub", &floating);
-   }
-   storeNumber(executor, command, number, floating, "sub");
+   double a = getNum(executor, command, 0, "sub", &floating);
+   double b = getNum(executor, command, 1, "sub", &floating);
+   storeNumber(executor, command, a - b, floating, "sub");
 }
 
 void builtinMul(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = 1.0;
-   for (size_t i = 0; i < command.argCount - 1; ++i) {
-      number *= getNum(executor, command, i, "mul", &floating);
-   }
-   storeNumber(executor, command, number, floating, "mul");
+   double a = getNum(executor, command, 0, "mul", &floating);
+   double b = getNum(executor, command, 1, "mul", &floating);
+   storeNumber(executor, command, a * b, floating, "mul");
 }
 
 void builtinDiv(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = getNum(executor, command, 0, "div", &floating);
-   for (size_t i = 1; i < command.argCount - 1; ++i) {
-      double num = getNum(executor, command, i, "div", &floating);
-      number = (num == 0.0 ? 0.0 : number / num); // defined behavior
-   }
-   storeNumber(executor, command, number, floating, "div");
+   double a = getNum(executor, command, 0, "div", &floating);
+   double b = getNum(executor, command, 1, "div", &floating);
+   storeNumber(executor, command, (b == 0.0 ? 0.0 : a / b), floating, "div");
 }
 
 void builtinMod(const Command &command, Executor &executor) {
@@ -155,20 +155,16 @@ void builtinAbs(const Command &command, Executor &executor) {
 
 void builtinMin(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = std::numeric_limits<double>::max();
-   for (size_t i = 0; i < command.argCount - 1; ++i) {
-      number = std::min(number, getNum(executor, command, i, "min", &floating));
-   }
-   storeNumber(executor, command, number, floating, "min");
+   double a = getNum(executor, command, 0, "min", &floating);
+   double b = getNum(executor, command, 1, "min", &floating);
+   storeNumber(executor, command, std::min(a, b), floating, "min");
 }
 
 void builtinMax(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = std::numeric_limits<double>::min();
-   for (size_t i = 0; i < command.argCount - 1; ++i) {
-      number = std::max(number, getNum(executor, command, i, "max", &floating));
-   }
-   storeNumber(executor, command, number, floating, "max");
+   double a = getNum(executor, command, 0, "max", &floating);
+   double b = getNum(executor, command, 1, "max", &floating);
+   storeNumber(executor, command, std::max(a, b), floating, "max");
 }
 
 void builtinClamp(const Command &command, Executor &executor) {

@@ -115,6 +115,7 @@ void builtinMapDeepCopy(const Command &command, Executor &executor);
 // math
 void builtinIncr(const Command &command, Executor &executor);
 void builtinDecr(const Command &command, Executor &executor);
+void builtinSum(const Command &command, Executor &executor);
 void builtinAdd(const Command &command, Executor &executor);
 void builtinSub(const Command &command, Executor &executor);
 void builtinMul(const Command &command, Executor &executor);
@@ -185,7 +186,7 @@ void builtinReadln(const Command &command, Executor &executor);
 void builtinReadch(const Command &command, Executor &executor);
 void builtinSetecho(const Command &command, Executor &executor);
 
-// comparison
+// control flow
 void builtinLe(const Command &command, Executor &executor);
 void builtinGr(const Command &command, Executor &executor);
 void builtinLeeq(const Command &command, Executor &executor);
@@ -195,8 +196,6 @@ void builtinNeq(const Command &command, Executor &executor);
 void builtinAnd(const Command &command, Executor &executor);
 void builtinOr(const Command &command, Executor &executor);
 void builtinNot(const Command &command, Executor &executor);
-
-// control flow
 void builtinGoto(const Command &command, Executor &executor);
 void builtinJmp(const Command &command, Executor &executor);
 void builtinJmpn(const Command &command, Executor &executor);
@@ -389,10 +388,11 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    // math
    {"incr", builtinIncr, 1},
    {"decr", builtinDecr, 1},
-   {"add", builtinAdd, 3, VARIADIC},
-   {"sub", builtinSub, 3, VARIADIC},
-   {"mul", builtinMul, 3, VARIADIC},
-   {"div", builtinDiv, 3, VARIADIC},
+   {"sum", builtinSum, 3, VARIADIC},
+   {"add", builtinAdd, 3},
+   {"sub", builtinSub, 3},
+   {"mul", builtinMul, 3},
+   {"div", builtinDiv, 3},
    {"mod", builtinMod, 3},
    {"floor-mod", builtinFloorMod, 3},
    {"pow", builtinPow, 3},
@@ -413,8 +413,8 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"cosh", builtinCosh, 2},
    {"tanh", builtinTanh, 2},
    {"abs", builtinAbs, 2},
-   {"min", builtinMin, 3, VARIADIC},
-   {"max", builtinMax, 3, VARIADIC},
+   {"min", builtinMin, 3},
+   {"max", builtinMax, 3},
    {"clamp", builtinClamp, 4},
    {"sign", builtinSign, 2},
    {"trunc", builtinTrunc, 2},
@@ -459,7 +459,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"readch", builtinReadch, 1},
    {"setecho", builtinSetecho, 1},
 
-   // comparison
+   // control flow
    {"le", builtinLe, 3},
    {"gr", builtinGr, 3},
    {"leeq", builtinLeeq, 3},
@@ -469,8 +469,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"and", builtinAnd, 3, VARIADIC},
    {"or", builtinOr, 3, VARIADIC},
    {"not", builtinNot, 2},
-
-   // control flow
    {"goto", builtinGoto, 1},
    {"jmp", builtinJmp, 2},
    {"jmpn", builtinJmpn, 2},
