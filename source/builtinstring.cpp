@@ -479,24 +479,14 @@ void builtinStringStartsWith(const Command &command, Executor &executor) {
    const std::string *string, *ssubstr = nullptr;
    const char *csubstr = nullptr;
    if (!constStringOrError(command, executor, "string-starts-with", string) || !constStringOrCharOrError(command, executor, "string-starts-with", ssubstr, csubstr, 1)) return;
-   if (ssubstr) {
-      storeBoolean(executor, command, string->find(*ssubstr) == 0, "string-starts-with");
-   }
-   else if (csubstr) {
-      storeBoolean(executor, command, !string->empty() && string->front() == *csubstr, "string-starts-with");
-   }
+   storeBoolean(executor, command, (ssubstr ? string->starts_with(*ssubstr) : string->starts_with(*csubstr)), "string-starts-with");
 }
 
 void builtinStringEndsWith(const Command &command, Executor &executor) {
    const std::string *string, *ssubstr = nullptr;
    const char *csubstr = nullptr;
    if (!constStringOrError(command, executor, "string-ends-with", string) || !constStringOrCharOrError(command, executor, "string-ends-with", ssubstr, csubstr, 1)) return;
-   if (ssubstr) {
-      storeBoolean(executor, command, ssubstr->size() <= string->size() && string->rfind(*ssubstr) == string->size() - ssubstr->size(), "string-ends-with");
-   }
-   else if (csubstr) {
-      storeBoolean(executor, command, !string->empty() && string->back() == *csubstr, "string-ends-with");
-   }
+   storeBoolean(executor, command, (ssubstr ? string->ends_with(*ssubstr) : string->ends_with(*csubstr)), "string-ends-with");
 }
 
 void builtinStringTrim(const Command &command, Executor &executor) {
