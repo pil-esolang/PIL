@@ -19,7 +19,7 @@ size_t cacheLexeme(LexemeCache &cache, std::string_view sv) {
 }
 
 std::string &getLexeme(LexemeCache &cache, size_t id) {
-   if (id < 0 || id >= cache.lexemes.size()) {
+   if (id >= cache.lexemes.size()) {
       printf("PIL::getLexeme: Invalid lexeme ID %zu.\n", id);
       exit(EXIT_FAILURE);
    }

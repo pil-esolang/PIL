@@ -2,8 +2,7 @@
 #include <cmath>
 #include <numeric>
 
-static bool isFloating;
-pilfloat_t parseOr(Executor&, std::vector<Token>&, size_t&, const std::unordered_map<size_t, Value>&);
+pilfloat_t parseOr(Executor&, std::vector<Token>&, size_t&, const std::unordered_map<size_t, Value>&, bool &isFloating);
 
 struct MEEFunc {
    union { // just works
@@ -56,10 +55,10 @@ static const std::unordered_map<std::string, MEEFunc> MEEFuncMap {
    {"lcm", {.f2=[](pilfloat_t a, pilfloat_t b) -> pilfloat_t { return std::lcm((pilint_t)a, (pilint_t)b); }, .args=2}},
 };
 
-pilfloat_t parseExpression(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
+pilfloat_t parseExpression(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
    if (tokens[i].type == TOKEN_L_PAREN) {
       i += 1;
-      pilfloat_t v = parseOr(executor, tokens, i, constants);
+      pilfloat_t v = parseOr(executor, tokens, i, constants, isFloating);
       if (tokens[i].type != TOKEN_R_PAREN) {
          error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Right Parentheses, got %s instead", getTokenName(tokens[i].type));
       }
@@ -76,7 +75,7 @@ pilfloat_t parseExpression(Executor &executor, std::vector<Token> &tokens, size_
 
       std::vector<pilfloat_t> args;
       for (i += 2; i < tokens.size() && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_R_PAREN;) {
-         args.push_back(parseOr(executor, tokens, i, constants));
+         args.push_back(parseOr(executor, tokens, i, constants, isFloating));
       }
 
       if (tokens[i].type != TOKEN_R_PAREN) {
@@ -112,34 +111,34 @@ pilfloat_t parseExpression(Executor &executor, std::vector<Token> &tokens, size_
    return (value.type == VALUE_FLOATING ? value.floating : value.integer);
 }
 
-pilfloat_t parseUnary(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
+pilfloat_t parseUnary(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
    if (tokens[i].type == TOKEN_MINUS || tokens[i].type == TOKEN_PLUS || tokens[i].type == TOKEN_BNOT || tokens[i].type == TOKEN_LNOT) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t a = parseUnary(executor, tokens, i, constants);
+      pilfloat_t a = parseUnary(executor, tokens, i, constants, isFloating);
       if (type == TOKEN_MINUS) return -a;
       else if (type == TOKEN_BNOT) return ~(piluint_t)a;
       else if (type == TOKEN_LNOT) return a == 0.0;
       else return a;
    }
-   return parseExpression(executor, tokens, i, constants);
+   return parseExpression(executor, tokens, i, constants, isFloating);
 }
 
-pilfloat_t parseExponentiative(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseUnary(executor, tokens, i, constants);
+pilfloat_t parseExponentiative(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseUnary(executor, tokens, i, constants, isFloating);
    if (tokens[i].type == TOKEN_STAR_STAR) {
       i += 1;
-      return pow(left, parseExponentiative(executor, tokens, i, constants));
+      return pow(left, parseExponentiative(executor, tokens, i, constants, isFloating));
    }
    return left;
 }
 
-pilfloat_t parseMultiplicative(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseExponentiative(executor, tokens, i, constants);
+pilfloat_t parseMultiplicative(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseExponentiative(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_STAR || tokens[i].type == TOKEN_SLASH || tokens[i].type == TOKEN_PERCENT) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t right = parseExponentiative(executor, tokens, i, constants);
+      pilfloat_t right = parseExponentiative(executor, tokens, i, constants, isFloating);
       if (right == 0.0 && type != TOKEN_STAR) {
          error(executor.diagnostics, tokens[i].file, tokens[i].line, "Division by zero in constant evaluator");
          left = 0.0;
@@ -149,64 +148,64 @@ pilfloat_t parseMultiplicative(Executor &executor, std::vector<Token> &tokens, s
    return left;
 }
 
-pilfloat_t parseAdditive(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseMultiplicative(executor, tokens, i, constants);
+pilfloat_t parseAdditive(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseMultiplicative(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_PLUS || tokens[i].type == TOKEN_MINUS) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t right = parseMultiplicative(executor, tokens, i, constants);
+      pilfloat_t right = parseMultiplicative(executor, tokens, i, constants, isFloating);
       left = (type == TOKEN_PLUS ? left + right : left - right);
    }
    return left;
 }
 
-pilfloat_t parseShifts(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseAdditive(executor, tokens, i, constants);
+pilfloat_t parseShifts(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseAdditive(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_BSHL || tokens[i].type == TOKEN_BSHR) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t right = parseAdditive(executor, tokens, i, constants);
+      pilfloat_t right = parseAdditive(executor, tokens, i, constants, isFloating);
       left = (type == TOKEN_BSHL ? (piluint_t)left << (piluint_t)right : (piluint_t)left >> (piluint_t)right);
    }
    return left;
 }
 
-pilfloat_t parseBand(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseShifts(executor, tokens, i, constants);
+pilfloat_t parseBand(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseShifts(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_BAND) {
       i += 1;
-      pilfloat_t right = parseShifts(executor, tokens, i, constants);
+      pilfloat_t right = parseShifts(executor, tokens, i, constants, isFloating);
       left = (piluint_t)left & (piluint_t)right;
    }
    return left;
 }
 
-pilfloat_t parseBxor(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseBand(executor, tokens, i, constants);
+pilfloat_t parseBxor(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseBand(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_BXOR) {
       i += 1;
-      pilfloat_t right = parseBand(executor, tokens, i, constants);
+      pilfloat_t right = parseBand(executor, tokens, i, constants, isFloating);
       left = (piluint_t)left ^ (piluint_t)right;
    }
    return left;
 }
 
-pilfloat_t parseBor(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseBxor(executor, tokens, i, constants);
+pilfloat_t parseBor(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseBxor(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_BOR) {
       i += 1;
-      pilfloat_t right = parseBxor(executor, tokens, i, constants);
+      pilfloat_t right = parseBxor(executor, tokens, i, constants, isFloating);
       left = (piluint_t)left | (piluint_t)right;
    }
    return left;
 }
 
-pilfloat_t parseRelationalOps(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseBor(executor, tokens, i, constants);
+pilfloat_t parseRelationalOps(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseBor(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_LESSER || tokens[i].type == TOKEN_GREATER || tokens[i].type == TOKEN_LESSER_EQUAL || tokens[i].type == TOKEN_GREATER_EQUAL) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t right = parseBor(executor, tokens, i, constants);
+      pilfloat_t right = parseBor(executor, tokens, i, constants, isFloating);
       if (type == TOKEN_LESSER) left = (left < right);
       else if (type == TOKEN_GREATER) left = (left > right);
       else if (type == TOKEN_LESSER_EQUAL) left = (left <= right);
@@ -215,41 +214,41 @@ pilfloat_t parseRelationalOps(Executor &executor, std::vector<Token> &tokens, si
    return left;
 }
 
-pilfloat_t parseEqualityOps(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseRelationalOps(executor, tokens, i, constants);
+pilfloat_t parseEqualityOps(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseRelationalOps(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_EQUAL || tokens[i].type == TOKEN_INEQUAL) {
       TokenType type = tokens[i].type;
       i += 1;
-      pilfloat_t right = parseRelationalOps(executor, tokens, i, constants);
+      pilfloat_t right = parseRelationalOps(executor, tokens, i, constants, isFloating);
       left = (left == right) == (type == TOKEN_EQUAL);
    }
    return left;
 }
 
-pilfloat_t parseAnd(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseEqualityOps(executor, tokens, i, constants);
+pilfloat_t parseAnd(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseEqualityOps(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_LAND) {
       i += 1;
-      pilfloat_t right = parseEqualityOps(executor, tokens, i, constants);
+      pilfloat_t right = parseEqualityOps(executor, tokens, i, constants, isFloating);
       left = (left != 0.0 && right != 0.0);
    }
    return left;
 }
 
-pilfloat_t parseOr(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   pilfloat_t left = parseAnd(executor, tokens, i, constants);
+pilfloat_t parseOr(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants, bool &isFloating) {
+   pilfloat_t left = parseAnd(executor, tokens, i, constants, isFloating);
    while (tokens[i].type == TOKEN_LOR) {
       i += 1;
-      pilfloat_t right = parseAnd(executor, tokens, i, constants);
+      pilfloat_t right = parseAnd(executor, tokens, i, constants, isFloating);
       left = (left != 0.0 || right != 0.0);
    }
    return left;
 }
 
 Value evaluateMath(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants) {
-   isFloating = false;
+   bool isFloating = false;
    i += 1;
-   pilfloat_t result = parseOr(executor, tokens, i, constants);
+   pilfloat_t result = parseOr(executor, tokens, i, constants, isFloating);
    if (tokens[i].type != TOKEN_R_BRACKET && tokens[i].type != TOKEN_EVAL_END) {
       error(executor.diagnostics, tokens[i].file, tokens[i].line, "Unterminated constant evaluator. Expected Right Bracket, got %s instead", getTokenName(tokens[i].type));
    }

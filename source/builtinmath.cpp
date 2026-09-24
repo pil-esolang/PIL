@@ -13,13 +13,13 @@ inline void binaryBuiltin(Executor &executor, const Command &command, pilfloat_t
 // math
 void builtinIncr(const Command &command, Executor &executor) {
    bool floating = false;
-   pilfloat_t number = getNum(executor, command, 0, "incr");
+   pilfloat_t number = getNum(executor, command, 0, "incr", &floating);
    storeNumber(executor, command, number + 1, floating, "incr");
 }
 
 void builtinDecr(const Command &command, Executor &executor) {
    bool floating = false;
-   pilfloat_t number = getNum(executor, command, 0, "decr");
+   pilfloat_t number = getNum(executor, command, 0, "decr", &floating);
    storeNumber(executor, command, number - 1, floating, "decr");
 }
 
@@ -27,9 +27,9 @@ void builtinSum(const Command &command, Executor &executor) {
    bool floating = false;
    pilfloat_t number = 0.0;
    for (size_t i = 0; i < command.argCount - 1; ++i) {
-      number += getNum(executor, command, i, "add", &floating);
+      number += getNum(executor, command, i, "sum", &floating);
    }
-   storeNumber(executor, command, number, floating, "add");
+   storeNumber(executor, command, number, floating, "sum");
 }
 
 void builtinAdd(const Command &command, Executor &executor) {
@@ -172,6 +172,10 @@ void builtinClamp(const Command &command, Executor &executor) {
    pilfloat_t x = getNum(executor, command, 0, "clamp", &floating);
    pilfloat_t lo = getNum(executor, command, 1, "clamp", &floating);
    pilfloat_t hi = getNum(executor, command, 2, "clamp", &floating);
+   if (lo > hi) {
+      error(executor.diagnostics, command.file, command.line, "clamp: Min %ld is greater than Max %ld. Flip the arguments", lo, hi);
+      return;
+   }
    storeNumber(executor, command, std::clamp(x, lo, hi), floating, "clamp");
 }
 
@@ -244,7 +248,7 @@ void builtinRandfRange(const Command &command, Executor &executor) {
    pilfloat_t min = getNum(executor, command, 0, "randf-range");
    pilfloat_t max = getNum(executor, command, 1, "randf-range");
    if (min > max) {
-      error(executor.diagnostics, command.file, command.line, "randf-range: Min %F is bigger than Max %F. Flip the arguments", min, max);
+      error(executor.diagnostics, command.file, command.line, "randf-range: Min %F is greater than Max %F. Flip the arguments", min, max);
       return;
    }
    pilfloat_t r = std::uniform_real_distribution<pilfloat_t>{min, max}(RNG());
@@ -255,7 +259,7 @@ void builtinRandiRange(const Command &command, Executor &executor) {
    pilint_t min = getNum(executor, command, 0, "randi-range");
    pilint_t max = getNum(executor, command, 1, "randi-range");
    if (min > max) {
-      error(executor.diagnostics, command.file, command.line, "randi-range: Min %ld is bigger than Max %ld. Flip the arguments", min, max);
+      error(executor.diagnostics, command.file, command.line, "randi-range: Min %ld is greater than Max %ld. Flip the arguments", min, max);
       return;
    }
    pilfloat_t r = std::uniform_int_distribution<pilint_t>{min, max}(RNG());

@@ -14,7 +14,7 @@ size_t ValueHash::operator () (Value v) const {
 }
 
 bool ValueEqual::operator () (Value a, Value b) const {
-   if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_INTEGER)) {
+   if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_FLOATING)) {
       pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
       pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return x == y;
