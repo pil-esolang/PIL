@@ -1,5 +1,10 @@
 #pragma once
-#include <cstddef>
+#include <cstdint>
+
+typedef void (*NativeFunction)(const struct Command&, struct Executor&);
+typedef int64_t pilint_t;
+typedef uint64_t piluint_t;
+typedef double pilfloat_t;
 
 enum ValueType: char {
    VALUE_INTEGER, VALUE_FLOATING, VALUE_CHARACTER, VALUE_CSTRING, VALUE_STRING, VALUE_FUNCTION, VALUE_LABEL,
@@ -22,8 +27,8 @@ constexpr const char *getValueName(ValueType value) {
 struct Value {
    ValueType type;
    union {
-      long integer;
-      double floating;
+      pilint_t integer;
+      pilfloat_t floating;
       char character;
       size_t string; // reused for strings and cstrings
       size_t array;
@@ -36,9 +41,6 @@ struct Value {
    };
 };
 
-constexpr Value NULL_VALUE = {VALUE_COUNT};
-typedef void (*NativeFunction)(const struct Command&, struct Executor&);
-
 struct Function {
    bool native = false;
    bool variadic = false;
@@ -49,3 +51,5 @@ struct Function {
    size_t nativeFn;
    size_t paramCount;
 };
+
+constexpr Value NULL_VALUE = {VALUE_COUNT};

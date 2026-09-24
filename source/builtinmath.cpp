@@ -2,30 +2,30 @@
 #include "builtinhelpers.hpp"
 
 // helpers
-inline void unaryBuiltin(Executor &executor, const Command &command, double(*fn)(double), const char *function) {
+inline void unaryBuiltin(Executor &executor, const Command &command, pilfloat_t(*fn)(pilfloat_t), const char *function) {
    storeNumber(executor, command, fn(getNum(executor, command, 0, function)), true, function);
 }
 
-inline void binaryBuiltin(Executor &executor, const Command &command, double(*fn)(double, double), const char *function) {
+inline void binaryBuiltin(Executor &executor, const Command &command, pilfloat_t(*fn)(pilfloat_t, pilfloat_t), const char *function) {
    storeNumber(executor, command, fn(getNum(executor, command, 0, function), getNum(executor, command, 1, function)), true, function);
 }
 
 // math
 void builtinIncr(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = getNum(executor, command, 0, "incr");
+   pilfloat_t number = getNum(executor, command, 0, "incr");
    storeNumber(executor, command, number + 1, floating, "incr");
 }
 
 void builtinDecr(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = getNum(executor, command, 0, "decr");
+   pilfloat_t number = getNum(executor, command, 0, "decr");
    storeNumber(executor, command, number - 1, floating, "decr");
 }
 
 void builtinSum(const Command &command, Executor &executor) {
    bool floating = false;
-   double number = 0.0;
+   pilfloat_t number = 0.0;
    for (size_t i = 0; i < command.argCount - 1; ++i) {
       number += getNum(executor, command, i, "add", &floating);
    }
@@ -34,56 +34,56 @@ void builtinSum(const Command &command, Executor &executor) {
 
 void builtinAdd(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "add", &floating);
-   double b = getNum(executor, command, 1, "add", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "add", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "add", &floating);
    storeNumber(executor, command, a + b, floating, "add");
 }
 
 void builtinSub(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "sub", &floating);
-   double b = getNum(executor, command, 1, "sub", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "sub", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "sub", &floating);
    storeNumber(executor, command, a - b, floating, "sub");
 }
 
 void builtinMul(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "mul", &floating);
-   double b = getNum(executor, command, 1, "mul", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "mul", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "mul", &floating);
    storeNumber(executor, command, a * b, floating, "mul");
 }
 
 void builtinDiv(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "div", &floating);
-   double b = getNum(executor, command, 1, "div", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "div", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "div", &floating);
    storeNumber(executor, command, (b == 0.0 ? 0.0 : a / b), floating, "div");
 }
 
 void builtinMod(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "mod", &floating);
-   double b = getNum(executor, command, 1, "mod", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "mod", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "mod", &floating);
    storeNumber(executor, command, (b == 0.0 ? 0.0 : fmod(a, b)), floating, "mod");
 }
 
 void builtinFloorMod(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "floor-mod", &floating);
-   double b = getNum(executor, command, 1, "floor-mod", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "floor-mod", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "floor-mod", &floating);
    storeNumber(executor, command, (b == 0.0 ? 0.0 : fmod(fmod(a, b) + b, b)), floating, "floor-mod");
 }
 
 void builtinPow(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "pow", &floating);
-   double b = getNum(executor, command, 1, "pow", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "pow", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "pow", &floating);
    storeNumber(executor, command, pow(a, b), floating, "pow");
 }
 
 void builtinNeg(const Command &command, Executor &executor) {
    bool floating = false;
-   double n = getNum(executor,command, 0, "neg", &floating);
+   pilfloat_t n = getNum(executor,command, 0, "neg", &floating);
    storeNumber(executor, command, -n, floating, "neg");
 }
 
@@ -149,34 +149,34 @@ void builtinTanh(const Command &command, Executor &executor) {
 
 void builtinAbs(const Command &command, Executor &executor) {
    bool floating = false;
-   double n = getNum(executor,command, 0, "abs", &floating);
+   pilfloat_t n = getNum(executor,command, 0, "abs", &floating);
    storeNumber(executor, command, fabs(n), floating, "abs");
 }
 
 void builtinMin(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "min", &floating);
-   double b = getNum(executor, command, 1, "min", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "min", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "min", &floating);
    storeNumber(executor, command, std::min(a, b), floating, "min");
 }
 
 void builtinMax(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "max", &floating);
-   double b = getNum(executor, command, 1, "max", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "max", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "max", &floating);
    storeNumber(executor, command, std::max(a, b), floating, "max");
 }
 
 void builtinClamp(const Command &command, Executor &executor) {
    bool floating = false;
-   double x = getNum(executor, command, 0, "clamp", &floating);
-   double lo = getNum(executor, command, 1, "clamp", &floating);
-   double hi = getNum(executor, command, 2, "clamp", &floating);
+   pilfloat_t x = getNum(executor, command, 0, "clamp", &floating);
+   pilfloat_t lo = getNum(executor, command, 1, "clamp", &floating);
+   pilfloat_t hi = getNum(executor, command, 2, "clamp", &floating);
    storeNumber(executor, command, std::clamp(x, lo, hi), floating, "clamp");
 }
 
 void builtinSign(const Command &command, Executor &executor) {
-   double a = getNum(executor, command, 0, "sign");
+   pilfloat_t a = getNum(executor, command, 0, "sign");
    storeNumber(executor, command, (a < 0 ? -1 : a > 0 ? 1 : 0), false, "sign");
 }
 
@@ -205,7 +205,7 @@ void builtinLn(const Command &command, Executor &executor) {
 }
 
 void builtinLog(const Command &command, Executor &executor) {
-   binaryBuiltin(executor, command, [](double a, double b){ return log(a) / log(b); }, "log");
+   binaryBuiltin(executor, command, [](pilfloat_t a, pilfloat_t b){ return log(a) / log(b); }, "log");
 }
 
 void builtinLog2(const Command &command, Executor &executor) {
@@ -217,60 +217,60 @@ void builtinLog10(const Command &command, Executor &executor) {
 }
 
 void builtinLerp(const Command &command, Executor &executor) {
-   double a = getNum(executor, command, 0, "lerp");
-   double b = getNum(executor, command, 1, "lerp");
-   double t = getNum(executor, command, 2, "lerp");
+   pilfloat_t a = getNum(executor, command, 0, "lerp");
+   pilfloat_t b = getNum(executor, command, 1, "lerp");
+   pilfloat_t t = getNum(executor, command, 2, "lerp");
    storeNumber(executor, command, a + (b - a) * t, true, "lerp");
 }
 
 void builtinStepTowards(const Command &command, Executor &executor) {
    bool floating = false;
-   double a = getNum(executor, command, 0, "step-towards", &floating);
-   double b = getNum(executor, command, 1, "step-towards", &floating);
+   pilfloat_t a = getNum(executor, command, 0, "step-towards", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "step-towards", &floating);
    storeNumber(executor, command, (a < b ? a + 1 : a > b ? a - 1 : a), floating, "step-towards");
 }
 
 void builtinSeedRandom(const Command &command, Executor &executor) {
-   double seed = getNum(executor, command, 0, "seed-random");
+   pilfloat_t seed = getNum(executor, command, 0, "seed-random");
    RNG().seed(seed);
 }
 
 void builtinRandom(const Command &command, Executor &executor) {
-   double r = std::uniform_real_distribution<double>{}(RNG());
+   pilfloat_t r = std::uniform_real_distribution<pilfloat_t>{}(RNG());
    storeNumber(executor, command, r, true, "random");
 }
 
 void builtinRandfRange(const Command &command, Executor &executor) {
-   double min = getNum(executor, command, 0, "randf-range");
-   double max = getNum(executor, command, 1, "randf-range");
+   pilfloat_t min = getNum(executor, command, 0, "randf-range");
+   pilfloat_t max = getNum(executor, command, 1, "randf-range");
    if (min > max) {
       error(executor.diagnostics, command.file, command.line, "randf-range: Min %F is bigger than Max %F. Flip the arguments", min, max);
       return;
    }
-   double r = std::uniform_real_distribution<double>{min, max}(RNG());
+   pilfloat_t r = std::uniform_real_distribution<pilfloat_t>{min, max}(RNG());
    storeNumber(executor, command, r, true, "randf-range");
 }
 
 void builtinRandiRange(const Command &command, Executor &executor) {
-   long min = getNum(executor, command, 0, "randi-range");
-   long max = getNum(executor, command, 1, "randi-range");
+   pilint_t min = getNum(executor, command, 0, "randi-range");
+   pilint_t max = getNum(executor, command, 1, "randi-range");
    if (min > max) {
       error(executor.diagnostics, command.file, command.line, "randi-range: Min %ld is bigger than Max %ld. Flip the arguments", min, max);
       return;
    }
-   double r = std::uniform_int_distribution<long>{min, max}(RNG());
+   pilfloat_t r = std::uniform_int_distribution<pilint_t>{min, max}(RNG());
    storeNumber(executor, command, r, false, "randi-range");
 }
 
 void builtinGcd(const Command &command, Executor &executor) {
-   long a = getNum(executor, command, 0, "gcd");
-   long b = getNum(executor, command, 1, "gcd");
+   pilint_t a = getNum(executor, command, 0, "gcd");
+   pilint_t b = getNum(executor, command, 1, "gcd");
    storeNumber(executor, command, std::gcd(a, b), false, "gcd");
 }
 
 void builtinLcm(const Command &command, Executor &executor) {
-   long a = getNum(executor, command, 0, "lcm");
-   long b = getNum(executor, command, 1, "lcm");
+   pilint_t a = getNum(executor, command, 0, "lcm");
+   pilint_t b = getNum(executor, command, 1, "lcm");
    storeNumber(executor, command, std::lcm(a, b), false, "lcm");
 }
 
@@ -279,39 +279,39 @@ void builtinHypot(const Command &command, Executor &executor) {
 }
 
 void builtinHypot3(const Command &command, Executor &executor) {
-   double x = getNum(executor, command, 0, "hypot3");
-   double y = getNum(executor, command, 1, "hypot3");
-   double z = getNum(executor, command, 2, "hypot3");
+   pilfloat_t x = getNum(executor, command, 0, "hypot3");
+   pilfloat_t y = getNum(executor, command, 1, "hypot3");
+   pilfloat_t z = getNum(executor, command, 2, "hypot3");
    storeNumber(executor, command, std::hypot(x, y, z), true, "hypot3");
 }
 
 void builtinBitand(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-and");
-   unsigned long b = getNum(executor, command, 1, "bit-and");
+   piluint_t a = getNum(executor, command, 0, "bit-and");
+   piluint_t b = getNum(executor, command, 1, "bit-and");
    storeNumber(executor, command, a & b, false, "bit-and");
 }
 
 void builtinBitor(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-or");
-   unsigned long b = getNum(executor, command, 1, "bit-or");
+   piluint_t a = getNum(executor, command, 0, "bit-or");
+   piluint_t b = getNum(executor, command, 1, "bit-or");
    storeNumber(executor, command, a | b, false, "bit-or");
 }
 
 void builtinBitxor(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-xor");
-   unsigned long b = getNum(executor, command, 1, "bit-xor");
+   piluint_t a = getNum(executor, command, 0, "bit-xor");
+   piluint_t b = getNum(executor, command, 1, "bit-xor");
    storeNumber(executor, command, a ^ b, false, "bit-xor");
 }
 
 void builtinBitnot(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-not");
+   piluint_t a = getNum(executor, command, 0, "bit-not");
    storeNumber(executor, command, ~a, false, "bit-not");
 }
 
 void builtinBitshl(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-shl");
-   unsigned long b = getNum(executor, command, 1, "bit-shl");
-   if (b >= sizeof(unsigned long) * 8) {
+   piluint_t a = getNum(executor, command, 0, "bit-shl");
+   piluint_t b = getNum(executor, command, 1, "bit-shl");
+   if (b >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-shl: Shift position %lu is out of range", b);
       return;
    }
@@ -319,9 +319,9 @@ void builtinBitshl(const Command &command, Executor &executor) {
 }
 
 void builtinBitshr(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-shr");
-   unsigned long b = getNum(executor, command, 1, "bit-shr");
-   if (b >= sizeof(unsigned long) * 8) {
+   piluint_t a = getNum(executor, command, 0, "bit-shr");
+   piluint_t b = getNum(executor, command, 1, "bit-shr");
+   if (b >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-shr: Shift position %lu is out of range", b);
       return;
    }
@@ -329,14 +329,14 @@ void builtinBitshr(const Command &command, Executor &executor) {
 }
 
 void builtinBitcount(const Command &command, Executor &executor) {
-   unsigned long a = getNum(executor, command, 0, "bit-count");
+   piluint_t a = getNum(executor, command, 0, "bit-count");
    storeNumber(executor, command, std::popcount(a), false, "bit-count");
 }
 
 void builtinBittest(const Command &command, Executor &executor) {
-   unsigned long val = getNum(executor, command, 0, "bit-test");
-   unsigned long pos = getNum(executor, command, 1, "bit-test");
-   if (pos >= sizeof(unsigned long) * 8) {
+   piluint_t val = getNum(executor, command, 0, "bit-test");
+   piluint_t pos = getNum(executor, command, 1, "bit-test");
+   if (pos >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-test: Bit position %lu is out of range", pos);
       return;
    }
@@ -344,9 +344,9 @@ void builtinBittest(const Command &command, Executor &executor) {
 }
 
 void builtinBitset(const Command &command, Executor &executor) {
-   unsigned long val = getNum(executor, command, 0, "bit-set");
-   unsigned long pos = getNum(executor, command, 1, "bit-set");
-   if (pos >= sizeof(unsigned long) * 8) {
+   piluint_t val = getNum(executor, command, 0, "bit-set");
+   piluint_t pos = getNum(executor, command, 1, "bit-set");
+   if (pos >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-set: Bit position %lu is out of range", pos);
       return;
    }
@@ -354,9 +354,9 @@ void builtinBitset(const Command &command, Executor &executor) {
 }
 
 void builtinBitclear(const Command &command, Executor &executor) {
-   unsigned long val = getNum(executor, command, 0, "bit-clear");
-   unsigned long pos = getNum(executor, command, 1, "bit-clear");
-   if (pos >= sizeof(unsigned long) * 8) {
+   piluint_t val = getNum(executor, command, 0, "bit-clear");
+   piluint_t pos = getNum(executor, command, 1, "bit-clear");
+   if (pos >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-clear: Bit position %lu is out of range", pos);
       return;
    }
@@ -364,9 +364,9 @@ void builtinBitclear(const Command &command, Executor &executor) {
 }
 
 void builtinBittoggle(const Command &command, Executor &executor) {
-   unsigned long val = getNum(executor, command, 0, "bit-toggle");
-   unsigned long pos = getNum(executor, command, 1, "bit-toggle");
-   if (pos >= sizeof(unsigned long) * 8) {
+   piluint_t val = getNum(executor, command, 0, "bit-toggle");
+   piluint_t pos = getNum(executor, command, 1, "bit-toggle");
+   if (pos >= sizeof(piluint_t) * 8) {
       error(executor.diagnostics, command.file, command.line, "bit-toggle: Bit position %lu is out of range", pos);
       return;
    }

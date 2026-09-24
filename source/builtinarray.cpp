@@ -11,16 +11,16 @@ void builtinArrayNew(const Command &command, Executor &executor) {
 }
 
 void builtinArrayFill(const Command &command, Executor &executor) {
-   size_t count = getNum(executor, command, 1, "array-fill");
+   piluint_t count = getNum(executor, command, 1, "array-fill");
    std::vector<Value> values (count, resolveVariable(executor, arg(executor, command, 2)));
    storeArray(executor, command, values, arg(executor, command, 0), "array-fill");
 }
 
 void builtinArrayIota(const Command &command, Executor &executor) {
-   size_t count = getNum(executor, command, 1, "array-iota");
-   long start = getNum(executor, command, 2, "array-iota");
+   piluint_t count = getNum(executor, command, 1, "array-iota");
+   piluint_t start = getNum(executor, command, 2, "array-iota");
    std::vector<Value> values (count);
-   for (size_t i = 0; i < count; ++i) {
+   for (piluint_t i = 0; i < count; ++i) {
       values[i].type = VALUE_INTEGER;
       values[i].integer = start + i;
    }
@@ -73,7 +73,7 @@ void builtinArrayResize(const Command &command, Executor &executor) {
 void builtinArraySet(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-set", array)) return;
-   size_t id = getNum(executor, command, 1, "array-set");
+   piluint_t id = getNum(executor, command, 1, "array-set");
    if (id < 0 || id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-set: Index %zu is out of bounds", id);
       return;
@@ -84,7 +84,7 @@ void builtinArraySet(const Command &command, Executor &executor) {
 void builtinArrayAt(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-at", array)) return;
-   size_t id = getNum(executor, command, 1, "array-at");
+   piluint_t id = getNum(executor, command, 1, "array-at");
    if (id < 0 || id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-at: Index %zu is out of bounds", id);
       return;
@@ -121,7 +121,7 @@ void builtinArrayPush(const Command &command, Executor &executor) {
 void builtinArrayInsert(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-insert", array)) return;
-   size_t id = getNum(executor, command, 1, "array-insert");
+   piluint_t id = getNum(executor, command, 1, "array-insert");
    if (id < 0 || id > array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-insert: Index %zu is out of bounds", id);
       return;
@@ -142,7 +142,7 @@ void builtinArrayPop(const Command &command, Executor &executor) {
 void builtinArrayErase(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-erase", array)) return;
-   size_t id = getNum(executor, command, 1, "array-erase");
+   piluint_t id = getNum(executor, command, 1, "array-erase");
    if (id < 0 || id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-erase: Index %zu is out of bounds", id);
       return;
@@ -213,7 +213,7 @@ void builtinArrayFreeMarked(const Command &command, Executor &executor) {
 }
 
 void builtinArrayGetMarkedCount(const Command &command, Executor &executor) {
-   size_t count = 0;
+   piluint_t count = 0;
    int mark = getNum(executor, command, 0, "array-get-marked-count");
    for (auto &[_, array]: executor.arrays) count += (array.mark == mark);
    storeNumber(executor, command, count, false, "array-get-marked-count");
@@ -266,8 +266,8 @@ void builtinArrayConcat(const Command &command, Executor &executor) {
 void builtinArraySlice(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-slice", array)) return;
-   size_t start = getNum(executor, command, 1, "array-slice");
-   size_t end = getNum(executor, command, 2, "array-slice");
+   piluint_t start = getNum(executor, command, 1, "array-slice");
+   piluint_t end = getNum(executor, command, 2, "array-slice");
    if (start < 0 || start >= array->size() || end < 0 || end > array->size() || start >= end) {
       error(executor.diagnostics, command.file, command.line, "array-slice: Invalid slice range %zu-%zu", start, end);
       return;
@@ -296,7 +296,7 @@ void builtinArrayCount(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-count", array)) return;
    Value target = resolveVariable(executor, arg(executor, command, 1));
-   size_t count = 0;
+   uint64_t count = 0;
    for (Value &v : *array) count += valuesEqual(executor, command, v, target, "array-count");
    storeNumber(executor, command, count, false, "array-count");
 }

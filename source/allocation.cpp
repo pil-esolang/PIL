@@ -2,8 +2,8 @@
 
 size_t ValueHash::operator () (Value v) const {
    switch (v.type) {
-   case VALUE_INTEGER: return std::hash<double>{}((double)v.integer);
-   case VALUE_FLOATING: return std::hash<double>{}(v.floating);
+   case VALUE_INTEGER: return std::hash<pilfloat_t>{}((pilfloat_t)v.integer);
+   case VALUE_FLOATING: return std::hash<pilfloat_t>{}(v.floating);
    case VALUE_CHARACTER: return std::hash<char>{}(v.character);
    case VALUE_STRING: return std::hash<std::string>{}(getString(*executor, v.string, 0, 0));
    case VALUE_CSTRING: return std::hash<std::string>{}(getLexeme(executor->cache, v.string));
@@ -15,8 +15,8 @@ size_t ValueHash::operator () (Value v) const {
 
 bool ValueEqual::operator () (Value a, Value b) const {
    if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_INTEGER)) {
-      double x = (a.type == VALUE_INTEGER) ? (double)a.integer : a.floating;
-      double y = (b.type == VALUE_INTEGER) ? (double)b.integer : b.floating;
+      pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
+      pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return x == y;
    }
    else if (a.type == VALUE_CHARACTER && b.type == VALUE_CHARACTER) {

@@ -176,7 +176,7 @@ void builtinMapFreeMarked(const Command &command, Executor &executor) {
 }
 
 void builtinMapGetMarkedCount(const Command &command, Executor &executor) {
-   size_t count = 0;
+   piluint_t count = 0;
    int mark = getNum(executor, command, 0, "map-get-marked-count");
    for (auto &[_, map]: executor.maps) count += (map.mark == mark);
    storeNumber(executor, command, count, false, "map-get-marked-count");

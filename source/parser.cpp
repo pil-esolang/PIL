@@ -47,7 +47,7 @@ Value parseToken(Executor &executor, Token token, const std::unordered_map<size_
    case TOKEN_INTEGER:
       value.type = VALUE_INTEGER;
       try {
-         value.integer = std::stol(getLexeme(executor.cache, token.lexeme));
+         value.integer = std::stoll(getLexeme(executor.cache, token.lexeme));
       }
       catch (...) {
          value.integer = 0;

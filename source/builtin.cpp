@@ -74,19 +74,15 @@ void builtinNeq(const Command &command, Executor &executor) {
 }
 
 void builtinOr(const Command &command, Executor &executor) {
-   bool cond = getBool(executor, command, 0);
-   for (size_t i = 1; i < command.argCount - 1; ++i) {
-      cond = cond || getBool(executor, command, i);
-   }
-   storeBoolean(executor, command, cond, "or");
+   bool cond1 = getBool(executor, command, 0);
+   bool cond2 = getBool(executor, command, 1);
+   storeBoolean(executor, command, cond1 || cond2, "or");
 }
 
 void builtinAnd(const Command &command, Executor &executor) {
-   bool cond = getBool(executor, command, 0);
-   for (size_t i = 1; i < command.argCount - 1; ++i) {
-      cond = cond && getBool(executor, command, i);
-   }
-   storeBoolean(executor, command, cond, "and");
+   bool cond1 = getBool(executor, command, 0);
+   bool cond2 = getBool(executor, command, 1);
+   storeBoolean(executor, command, cond1 && cond2, "and");
 }
 
 void builtinNot(const Command &command, Executor &executor) {
@@ -242,7 +238,7 @@ void builtinError(const Command &command, Executor &executor) {
 
 void builtinExit(const Command &command, Executor &executor) {
    logMemoryLeaks(executor);
-   double code = getNum(executor, command, 0, "exit");
+   pilfloat_t code = getNum(executor, command, 0, "exit");
    exit(code);
 }
 
@@ -276,6 +272,7 @@ void builtinTypeof(const Command &command, Executor &executor) {
    case VALUE_CHARACTER: string = "char"; break;
    case VALUE_STRING: case VALUE_CSTRING: string = "string"; break;
    case VALUE_ARRAY: string = "array"; break;
+   case VALUE_MAP: string = "map"; break;
    case VALUE_FUNCTION: string = "function"; break;
    case VALUE_LABEL: string = "label"; break;
    case VALUE_COUNT: string = "null"; break;
@@ -357,7 +354,7 @@ void builtinToint(const Command &command, Executor &executor) {
       const std::string &str = (value.type == VALUE_STRING ? getString(executor, value.string, command.file, command.line) : getLexeme(executor.cache, value.string));
       try {
          size_t pos = 0;
-         long result = std::stol(str, &pos);
+         pilint_t result = std::stoll(str, &pos);
          if (pos != str.size() || str.empty() || std::isspace(str.front())) integer.type = VALUE_COUNT;
          else integer.integer = result;
       }
@@ -380,7 +377,7 @@ void builtinTofloat(const Command &command, Executor &executor) {
       const std::string &str = (value.type == VALUE_STRING ? getString(executor, value.string, command.file, command.line) : getLexeme(executor.cache, value.string));
       try {
          size_t pos = 0;
-         double result = std::stod(str, &pos);
+         pilfloat_t result = std::stod(str, &pos);
          if (pos != str.size() || str.empty() || std::isspace(str.front())) floating.type = VALUE_COUNT;
          else floating.floating = result;
       }
@@ -407,12 +404,12 @@ void builtinTochar(const Command &command, Executor &executor) {
 // misc.
 void builtinTime(const Command &command, Executor &executor) {
    static const auto start = std::chrono::steady_clock::now();
-   double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+   pilfloat_t ms = std::chrono::duration<pilfloat_t, std::milli>(std::chrono::steady_clock::now() - start).count();
    storeNumber(executor, command, ms, true, "time");
 }
 
 void builtinUnixTime(const Command &command, Executor &executor) {
-   double epoch = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+   pilfloat_t epoch = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
    storeNumber(executor, command, epoch, false, "unix-time");
 }
 
@@ -423,7 +420,7 @@ void builtinDate(const Command &command, Executor &executor) {
       return;
    }
    std::string &str = (string.type == VALUE_CSTRING ? getLexeme(executor.cache, string.string) : getString(executor, string.string, command.file, command.line));
-   long long t = std::time(nullptr);
+   time_t t = std::time(nullptr);
    tm lt = *std::localtime(&t);
    std::ostringstream stream;
    stream << std::put_time(&lt, str.c_str());
@@ -431,8 +428,8 @@ void builtinDate(const Command &command, Executor &executor) {
 }
 
 void builtinSleep(const Command &command, Executor &executor) {
-   double s = getNum(executor, command, 0, "sleep");
-   std::this_thread::sleep_for(std::chrono::duration<double>(s));
+   pilfloat_t s = getNum(executor, command, 0, "sleep");
+   std::this_thread::sleep_for(std::chrono::duration<pilfloat_t>(s));
 }
 
 void builtinSwap(const Command &command, Executor &executor) {
@@ -490,7 +487,7 @@ void builtinVariadicSize(const Command &command, Executor &executor) {
 }
 
 void builtinVariadicAt(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "variadic-at");
+   piluint_t id = getNum(executor, command, 0, "variadic-at");
    Trace &trace = executor.stackTrace.top();
    if (id < 0 || id >= trace.variadicCount) {
       error(executor.diagnostics, command.file, command.line, "variadic-at: Index %zu is out of bounds", id);
@@ -504,7 +501,7 @@ void builtinRegSize(const Command &command, Executor &executor) {
 }
 
 void builtinRegAt(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "reg-at");
+   piluint_t id = getNum(executor, command, 0, "reg-at");
    if (id < 0 || id >= executor.registers.size()) {
       error(executor.diagnostics, command.file, command.line, "reg-at: Index %zu is out of bounds", id);
       return;
@@ -513,13 +510,12 @@ void builtinRegAt(const Command &command, Executor &executor) {
 }
 
 void builtinRegSet(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "reg-set");
+   piluint_t id = getNum(executor, command, 0, "reg-set");
    if (id < 0 || id >= executor.registers.size()) {
       error(executor.diagnostics, command.file, command.line, "reg-set: Index %zu is out of bounds", id);
       return;
    }
-   Value reg {VALUE_REGISTER};
-   reg.reg = id;
+   Value reg {.type = VALUE_REGISTER, .reg = id};
    storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "reg-set");
 }
 
@@ -528,7 +524,7 @@ void builtinReturnRegSize(const Command &command, Executor &executor) {
 }
 
 void builtinReturnRegAt(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "return-reg-at");
+   piluint_t id = getNum(executor, command, 0, "return-reg-at");
    if (id < 0 || id >= executor.returnRegisters.size()) {
       error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %zu is out of bounds", id);
       return;
@@ -537,13 +533,12 @@ void builtinReturnRegAt(const Command &command, Executor &executor) {
 }
 
 void builtinReturnRegSet(const Command &command, Executor &executor) {
-   size_t id = getNum(executor, command, 0, "return-reg-set");
+   piluint_t id = getNum(executor, command, 0, "return-reg-set");
    if (id < 0 || id >= executor.returnRegisters.size()) {
       error(executor.diagnostics, command.file, command.line, "return-reg-set: Index %zu is out of bounds", id);
       return;
    }
-   Value reg {VALUE_RETURN_REGISTER};
-   reg.reg = id;
+   Value reg {.type = VALUE_RETURN_REGISTER, .reg = id};
    storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "return-reg-set");
 }
 
@@ -576,7 +571,7 @@ void builtinFuncArgMatch(const Command &command, Executor &executor) {
       return;
    }
    Function &func = executor.functions[f.function];
-   size_t args = getNum(executor, command, 1, "func-arg-match");
+   piluint_t args = getNum(executor, command, 1, "func-arg-match");
    size_t params = func.paramCount;
    storeBoolean(executor, command, (!func.variadic && args == params) || (func.variadic && args >= params), "func-arg-match");
 }

@@ -45,10 +45,10 @@ void builtinStringFormat(const Command &command, Executor &executor) {
 
 void builtinStringRepeat(const Command &command, Executor &executor) {
    std::string result;
-   size_t n = getNum(executor, command, 1, "string-repeat");
+   piluint_t n = getNum(executor, command, 1, "string-repeat");
    std::string fill = toString(executor, arg(executor, command, 2), "string-repeat", command.file, command.line);
    result.reserve(n * fill.size());
-   for (size_t i = 0; i < n; ++i) {
+   for (piluint_t i = 0; i < n; ++i) {
       result += fill;
    }
    storeString(executor, command, result, arg(executor, command, 0), "string-repeat");
@@ -100,7 +100,7 @@ void builtinStringResize(const Command &command, Executor &executor) {
 void builtinStringSet(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-set", string)) return;
-   size_t id = getNum(executor, command, 1, "string-set");
+   piluint_t id = getNum(executor, command, 1, "string-set");
    if (id < 0 || id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-set: Index %zu is out of bounds", id);
       return;
@@ -111,7 +111,7 @@ void builtinStringSet(const Command &command, Executor &executor) {
 void builtinStringAt(const Command &command, Executor &executor) {
    const std::string *string;
    if (!constStringOrError(command, executor, "string-at", string)) return;
-   size_t id = getNum(executor, command, 1, "string-at");
+   piluint_t id = getNum(executor, command, 1, "string-at");
    if (id < 0 || id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-at: Index %zu is out of bounds", id);
       return;
@@ -154,7 +154,7 @@ void builtinStringPush(const Command &command, Executor &executor) {
 void builtinStringInsert(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-insert", string)) return;
-   size_t id = getNum(executor, command, 1, "string-insert");
+   piluint_t id = getNum(executor, command, 1, "string-insert");
    if (id < 0 || id > string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-insert: Index %zu is out of bounds", id);
       return;
@@ -175,7 +175,7 @@ void builtinStringPop(const Command &command, Executor &executor) {
 void builtinStringErase(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-erase", string)) return;
-   size_t id = getNum(executor, command, 1, "string-erase");
+   piluint_t id = getNum(executor, command, 1, "string-erase");
    if (id < 0 || id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-erase: Index %zu is out of bounds", id);
       return;
@@ -232,7 +232,7 @@ void builtinStringFreeMarked(const Command &command, Executor &executor) {
 }
 
 void builtinStringGetMarkedCount(const Command &command, Executor &executor) {
-   size_t count = 0;
+   piluint_t count = 0;
    int mark = getNum(executor, command, 0, "string-get-marked-count");
    for (auto &[_, string]: executor.strings) count += (string.mark == mark);
    storeNumber(executor, command, count, false, "string-get-marked-count");

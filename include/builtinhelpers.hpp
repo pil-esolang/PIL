@@ -55,14 +55,14 @@ inline void storeInRegister(Executor &executor, const Command &command, Value va
 }
 
 // getters
-inline double getNum(Executor &executor, const Command &command, size_t i, const char *function, bool *floating = nullptr) {
+inline pilfloat_t getNum(Executor &executor, const Command &command, size_t i, const char *function, bool *floating = nullptr) {
    Value value = resolveVariable(executor, arg(executor, command, i));
    if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected numeral, got %s instead", function, getValueName(value.type));
       return 0.0;
    }
    if (floating && value.type == VALUE_FLOATING) *floating = true;
-   return (value.type == VALUE_INTEGER ? (double)value.integer : value.floating);
+   return (value.type == VALUE_INTEGER ? (pilfloat_t)value.integer : value.floating);
 }
 
 inline bool getBool(Executor &executor, const Command &command, size_t i) {
@@ -181,7 +181,7 @@ inline bool mapOrError(const Command &command, Executor &executor, const char *f
 }
 
 // setters
-inline void storeNumber(Executor &executor, const Command &command, double number, bool floating, const char *function) {
+inline void storeNumber(Executor &executor, const Command &command, pilfloat_t number, bool floating, const char *function) {
    Value value {floating ? VALUE_FLOATING : VALUE_INTEGER};
    if (floating) value.floating = number;
    else value.integer = number;
@@ -244,8 +244,8 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
 
 inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t file, size_t line, bool softie, const char *function) {
    if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_FLOATING)) {
-      double x = (a.type == VALUE_INTEGER) ? (double)a.integer : a.floating;
-      double y = (b.type == VALUE_INTEGER) ? (double)b.integer : b.floating;
+      pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
+      pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return (x < y ? COMPARISON_LESS : x > y ? COMPARISON_GREATER : COMPARISON_EQUAL);
    }
    else if (a.type == VALUE_CHARACTER && b.type == VALUE_CHARACTER) {
@@ -281,8 +281,8 @@ inline void comparisonBuiltin(Executor &executor, const Command &command, const 
 
 inline bool valuesEqual(Executor &executor, const Command &command, Value a, Value b, const char *function) {
    if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_INTEGER)) {
-      double x = (a.type == VALUE_INTEGER) ? (double)a.integer : a.floating;
-      double y = (b.type == VALUE_INTEGER) ? (double)b.integer : b.floating;
+      pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
+      pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return x == y;
    }
    else if (a.type == VALUE_CHARACTER && b.type == VALUE_CHARACTER) {
@@ -391,7 +391,7 @@ inline std::string format(const Command &command, Executor &executor, const char
 
 inline void printValue(Executor &executor, Value a, size_t file, size_t line, std::set<std::pair<size_t, ValueType>> &active) {
    switch (a.type) {
-   case VALUE_INTEGER: printf("%ld", a.integer); break;
+   case VALUE_INTEGER: printf("%zu", a.integer); break;
    case VALUE_FLOATING: printf("%.3F", a.floating); break;
    case VALUE_CHARACTER: printf("%c", a.character); break;
    case VALUE_CSTRING: printf("%s", getLexeme(executor.cache, a.string).c_str()); break;
