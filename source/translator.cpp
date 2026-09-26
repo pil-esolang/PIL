@@ -4,7 +4,7 @@
 
 // find all INCLUDE "FILE" statements and push their tokens if the files haven't been included yet. will erase all includes
 // after and doesn't have more than a single file open at a time. also handles some other misc. directives.
-void translatePIL(Executor &executor, PILFile &file, std::vector<Token> &tokens) {
+void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens) {
    std::unordered_set<std::string> includedFiles;
    size_t size = tokens.size();
  
@@ -75,7 +75,7 @@ void translatePIL(Executor &executor, PILFile &file, std::vector<Token> &tokens)
    // erase all includes and EOFs
    tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const Token &t) { return t.parsed || t.type == TOKEN_EOF; }), tokens.end());
    size_t EOFline = (tokens.empty() ? 1 : tokens.back().line);
-   tokens.emplace_back(TOKEN_EOF, cacheLexeme(executor.cache, "EOF"), file.lexeme, EOFline);
+   tokens.emplace_back(TOKEN_EOF, cacheLexeme(executor.cache, "EOF"), fileLexeme, EOFline);
 }
 
 // the rest of the file is responsible for parsing @loop and other control flow directives

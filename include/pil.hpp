@@ -95,7 +95,7 @@ struct Executor {
 
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &file, size_t fileLexeme, size_t line);
 void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std::vector<Token> &tokens);
-void translatePIL(Executor &executor, PILFile &file, std::vector<Token> &tokens);
+void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens);
 void expandSnippets(Executor &executor, std::vector<Token> &tokens);
 
 Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants);

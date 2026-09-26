@@ -3,22 +3,17 @@
 #include <filesystem>
 
 void printHelp();
+void compile(Executor executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode);
 
 int main(int argc, char *argv[]) {
    bool time = false;
-   bool debug = false;
+   bool debugCode = false;
    bool debugLexer = false;
    
    for (int i = 1; i < argc; ++i) {
-      if (strcmp(argv[i], "--time") == 0) {
-         time = true;
-      }
-      else if (strcmp(argv[i], "--debug-code") == 0) {
-         debug = true;
-      }
-      else if (strcmp(argv[i], "--debug-tokens") == 0) {
-         debugLexer = true;
-      }
+      if (strcmp(argv[i], "--time") == 0) time = true;
+      else if (strcmp(argv[i], "--debug-code") == 0) debugCode = true;
+      else if (strcmp(argv[i], "--debug-tokens") == 0) debugLexer = true;
       else {
          argv = &argv[i];
          argc -= i;
@@ -30,41 +25,8 @@ int main(int argc, char *argv[]) {
       std::filesystem::path path (argv[1]);
       if (path.has_extension() && path.extension() == ".pil") {
          Executor executor;
-         std::vector<Token> tokens;
-         PILFile file;
-
-         measure();
-         readPIL(executor.diagnostics, executor.cache, path.string(), file, 0, 0);
-         log(executor, SEVERITY_ERROR);
-         float readTime = measureEnd();
-
-         measure();
-         lexPILFile(executor.diagnostics, executor.cache, file, tokens);
-         log(executor, SEVERITY_ERROR);
-         file.code.clear(); // free up memory for the includes, which will read more files
-         file.code.shrink_to_fit();
-         float lexTime = measureEnd();
-
-         measure();
-         translatePIL(executor, file, tokens);
-         log(executor, SEVERITY_ERROR);
-         readTime += measureEnd();
-
-         measure();
-         expandSnippets(executor, tokens);
-         log(executor, SEVERITY_ERROR);
-         float translatorTime = measureEnd();
-
-         debugTokens(debugLexer, executor.cache, tokens);
-
-         measure();
-         parsePIL(executor, tokens);
-         log(executor, SEVERITY_ERROR);
-         tokens.clear(); // tokens are no longer in use
-         tokens.shrink_to_fit();
-         float parseTime = measureEnd();
-
-         debugBytecode(debug, executor);
+         float readTime, lexTime, translatorTime, parseTime;
+         compile(executor, path, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
 
          measure();
          callMain(executor, SEVERITY_ERROR);
@@ -104,41 +66,8 @@ int main(int argc, char *argv[]) {
          exit(EXIT_FAILURE);
       }
       Executor executor;
-      std::vector<Token> tokens;
-      PILFile file;
-
-      measure();
-      readPIL(executor.diagnostics, executor.cache, in.string(), file, 0, 0);
-      log(executor, SEVERITY_ERROR);
-      float readTime = measureEnd();
-
-      measure();
-      lexPILFile(executor.diagnostics, executor.cache, file, tokens);
-      log(executor, SEVERITY_ERROR);
-      file.code.clear(); // free up memory for the includes, which will read more files
-      file.code.shrink_to_fit();
-      float lexTime = measureEnd();
-
-      measure();
-      translatePIL(executor, file, tokens);
-      log(executor, SEVERITY_ERROR);
-      readTime += measureEnd();
-
-      measure();
-      expandSnippets(executor, tokens);
-      log(executor, SEVERITY_ERROR);
-      float translatorTime = measureEnd();
-
-      debugTokens(debugLexer, executor.cache, tokens);
-
-      measure();
-      parsePIL(executor, tokens);
-      log(executor, SEVERITY_ERROR);
-      tokens.clear(); // tokens are no longer in use
-      tokens.shrink_to_fit();
-      float parseTime = measureEnd();
-
-      debugBytecode(debug, executor);
+      float readTime, lexTime, translatorTime, parseTime;
+      compile(executor, in, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
 
       printf("Writing to '%s'...\n", out.string().c_str());
       measure();
@@ -152,6 +81,42 @@ int main(int argc, char *argv[]) {
    else {
       printHelp();
    }
+}
+
+void compile(Executor executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode) {
+   std::vector<Token> tokens;
+   PILFile fileData;
+
+   measure();
+   readPIL(executor.diagnostics, executor.cache, file.string(), fileData, 0, 0);
+   log(executor, SEVERITY_ERROR);
+   readTime = measureEnd();
+
+   measure();
+   lexPILFile(executor.diagnostics, executor.cache, fileData, tokens);
+   log(executor, SEVERITY_ERROR);
+   fileData.code.clear(); // free up memory for the includes, which will read more files
+   fileData.code.shrink_to_fit();
+   lexTime = measureEnd();
+
+   measure();
+   translatePIL(executor, fileData.lexeme, tokens);
+   log(executor, SEVERITY_ERROR);
+   readTime += measureEnd();
+
+   measure();
+   expandSnippets(executor, tokens);
+   log(executor, SEVERITY_ERROR);
+   translatorTime = measureEnd();
+
+   debugTokens(debugLexer, executor.cache, tokens);
+
+   measure();
+   parsePIL(executor, tokens);
+   log(executor, SEVERITY_ERROR);
+   tokens.clear(); // tokens are no longer in use
+   tokens.shrink_to_fit();
+   parseTime = measureEnd();
 }
 
 void printHelp() {
