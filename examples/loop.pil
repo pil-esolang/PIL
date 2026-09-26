@@ -1,4 +1,5 @@
-; legacy code written using the simplest instructions
+; legacy code written using the simplest instructions. outdated due to the
+; @loop directive
 main()
    set 1, $1        ; starting index
    set 100, $2      ; how many times to loop

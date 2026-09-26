@@ -1,4 +1,4 @@
-const memsize 20000
+const memsize [20 * 1024]
 
 main() let code, memory, pc, i, ch, tmp, depth, size
    print "Input code: "
@@ -9,84 +9,69 @@ main() let code, memory, pc, i, ch, tmp, depth, size
    set 0, i
    set 0, pc
 
-   greq i, size, tmp
-   jmp tmp, BRAINFUCK-END
-BRAINFUCK-START:
-   string-at code, i, ch
-   jmptable ch, '>', BRAINFUCK-RIGHT, '<', BRAINFUCK-LEFT, '-', BRAINFUCK-MINUS, '+', BRAINFUCK-PLUS, '.', BRAINFUCK-WRITE, ',', BRAINFUCK-READ, '[', BRAINFUCK-LOOP-START, ']', BRAINFUCK-LOOP-END, BRAINFUCK-HANDLE-LOOP
+   @loop i < size
+      string-at code, i, ch
+      jmptable ch, '>', BRAINFUCK-RIGHT, '<', BRAINFUCK-LEFT, '-', BRAINFUCK-MINUS, '+', BRAINFUCK-PLUS, '.', BRAINFUCK-WRITE, ',', BRAINFUCK-READ, '[', BRAINFUCK-LOOP-START, ']', BRAINFUCK-LOOP-END, BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-RIGHT:
-   incr pc
-   floor-mod pc, memsize, pc
-   goto BRAINFUCK-HANDLE-LOOP
+      incr pc
+      floor-mod pc, memsize, pc
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-LEFT:
-   decr pc
-   floor-mod pc, memsize, pc
-   goto BRAINFUCK-HANDLE-LOOP
+      decr pc
+      floor-mod pc, memsize, pc
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-MINUS:
-   array-at memory, pc, tmp
-   decr tmp
-   array-set memory, pc, tmp
-   goto BRAINFUCK-HANDLE-LOOP
+      array-at memory, pc, tmp
+      decr tmp
+      array-set memory, pc, tmp
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-PLUS:
-   array-at memory, pc, tmp
-   incr tmp
-   array-set memory, pc, tmp
-   goto BRAINFUCK-HANDLE-LOOP
+      array-at memory, pc, tmp
+      incr tmp
+      array-set memory, pc, tmp
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-WRITE:
-   array-at memory, pc, tmp
-   to-char tmp, tmp
-   print tmp
-   goto BRAINFUCK-HANDLE-LOOP
+      array-at memory, pc, tmp
+      to-char tmp, tmp
+      print tmp
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-READ:
-   readch tmp
-   to-int tmp, tmp
-   array-set memory, pc, tmp
-   goto BRAINFUCK-HANDLE-LOOP
+      readch tmp
+      to-int tmp, tmp
+      array-set memory, pc, tmp
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-LOOP-START:
-   array-at memory, pc, tmp
-   jmp tmp, BRAINFUCK-HANDLE-LOOP
+      array-at memory, pc, tmp
+      jmp tmp, BRAINFUCK-HANDLE-LOOP
+      set 1, depth
+      incr i
 
-   set 1, depth
-   incr i
-   greq i, size, tmp
-   jmp tmp, BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-LOOP-START-BEGIN:
-   string-at code, i, ch
-   eq ch, '[', tmp
-   add depth, tmp, depth
-   eq ch, ']', tmp
-   sub depth, tmp, depth
-   incr i
-   le i, size, tmp
-   gr depth, 0, $0
-   and tmp, $0, tmp
-   jmp tmp, BRAINFUCK-LOOP-START-BEGIN
-   goto BRAINFUCK-HANDLE-LOOP
+      @loop depth > 0 && i < size
+         string-at code, i, ch
+         eq ch, '[', tmp
+         add depth, tmp, depth
+         eq ch, ']', tmp
+         sub depth, tmp, depth
+         incr i
+      @end
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-LOOP-END:
-   array-at memory, pc, tmp
-   jmpn tmp, BRAINFUCK-HANDLE-LOOP
+      array-at memory, pc, tmp
+      jmpn tmp, BRAINFUCK-HANDLE-LOOP
+      set 1, depth
+      decr i
 
-   set 1, depth
-   decr i
-   le i, 0, tmp
-   jmp tmp, BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-LOOP-END-BEGIN:
-   string-at code, i, ch
-   eq ch, '[', tmp
-   sub depth, tmp, depth
-   eq ch, ']', tmp
-   add depth, tmp, depth
-   decr i
-   greq i, 0, tmp
-   gr depth, 0, $0
-   and tmp, $0, tmp
-   jmp tmp, BRAINFUCK-LOOP-END-BEGIN
-   goto BRAINFUCK-HANDLE-LOOP
+      @loop depth > 0 && i < size
+         string-at code, i, ch
+         eq ch, '[', tmp
+         sub depth, tmp, depth
+         eq ch, ']', tmp
+         add depth, tmp, depth
+         decr i
+      @end
+      goto BRAINFUCK-HANDLE-LOOP
 BRAINFUCK-HANDLE-LOOP:
-   incr i
-   le i, size, tmp
-   jmp tmp, BRAINFUCK-START
-   goto BRAINFUCK-END
-BRAINFUCK-END:
+      incr i
+   @end
    string-free code
    array-free memory

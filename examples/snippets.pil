@@ -1,3 +1,5 @@
+; outdated due to the @loop directive
+
 ; contains snippets of common code structures such as
 ; different kinds of loops. examples do not use registers
 ; and can be called without disturbing any state
