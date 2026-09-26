@@ -48,6 +48,11 @@ int main(int argc, char *argv[]) {
          measure();
          translatePIL(executor, file, tokens);
          log(executor, SEVERITY_ERROR);
+         readTime += measureEnd();
+
+         measure();
+         expandSnippets(executor, tokens);
+         log(executor, SEVERITY_ERROR);
          float translatorTime = measureEnd();
 
          debugTokens(debugLexer, executor.cache, tokens);
@@ -116,6 +121,11 @@ int main(int argc, char *argv[]) {
 
       measure();
       translatePIL(executor, file, tokens);
+      log(executor, SEVERITY_ERROR);
+      readTime += measureEnd();
+
+      measure();
+      expandSnippets(executor, tokens);
       log(executor, SEVERITY_ERROR);
       float translatorTime = measureEnd();
 

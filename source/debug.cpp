@@ -34,8 +34,9 @@ void debugBytecode(bool debug, Executor &executor) {
 void debugExecutionTime(bool debug, float file, float lexer, float translator, float parser, float runtime) {
    if (!debug) return;
    printf("\nExecution time:\n");
-   printf("File Read: %.3fms.\n", file + translator);
+   printf("File Read: %.3fms.\n", file);
    printf("Lexer: %.3fms.\n", lexer);
+   printf("Translator: %.3fms.\n", translator);
    printf("Parser: %.3fms.\n", parser);
    printf("Runtime: %.3fms.\n", runtime);
 }
@@ -43,8 +44,9 @@ void debugExecutionTime(bool debug, float file, float lexer, float translator, f
 void debugCompilationTime(bool debug, float file, float lexer, float translator, float parser, float writing) {
    if (!debug) return;
    printf("\nCompilation time:\n");
-   printf("File Read: %.3fms.\n", file + translator);
+   printf("File Read: %.3fms.\n", file);
    printf("Lexer: %.3fms.\n", lexer);
+   printf("Translator: %.3fms.\n", translator);
    printf("Parser: %.3fms.\n", parser);
    printf("Writing: %.3fms.\n", writing);
 }

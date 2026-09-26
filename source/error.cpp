@@ -16,9 +16,11 @@ bool shouldError(Diagnostics &diagnostics, ErrorSeverity errorSeverity) {
 }
 
 void warn(Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...) {
-   va_list args;
+   va_list args, copy;
    va_start(args, msg);
-   int len = vsnprintf(nullptr, 0, msg, args) + 1; // null-terminator
+   va_copy(copy, args);
+   int len = vsnprintf(nullptr, 0, msg, copy) + 1; // null-terminator
+   va_end(copy);
    char *message = (char*)malloc(len);
    vsnprintf(message, len, msg, args);
    va_end(args);
@@ -28,9 +30,11 @@ void warn(Diagnostics &diagnostics, size_t file, size_t line, const char *msg, .
 }
 
 void error(Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...) {
-   va_list args;
+   va_list args, copy;
    va_start(args, msg);
-   int len = vsnprintf(nullptr, 0, msg, args) + 1; // null-terminator
+   va_copy(copy, args);
+   int len = vsnprintf(nullptr, 0, msg, copy) + 1; // null-terminator
+   va_end(copy);
    char *message = (char*)malloc(len);
    vsnprintf(message, len, msg, args);
    va_end(args);
