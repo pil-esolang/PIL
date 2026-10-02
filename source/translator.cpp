@@ -107,12 +107,12 @@ size_t allocateTempRegister(Executor &executor, size_t registerCount, size_t &te
 }
 
 void emitNewline(Executor &executor, std::vector<Token> &out, size_t file, size_t line) {
-   out.emplace_back(TOKEN_NEWLINE, cacheLexeme(executor.cache, ""), file, line);
+   out.emplace_back(TOKEN_NEWLINE, 0, file, line);
 }
 
 void emitOperand(Executor &executor, std::vector<Token> &tokens, std::vector<Token> &out, const Operand &operand, size_t file, size_t line) {
    if (operand.isRegister) {
-      out.emplace_back(TOKEN_REGISTER, cacheLexeme(executor.cache, ""), file, line);
+      out.emplace_back(TOKEN_REGISTER, 0, file, line);
       out.emplace_back(TOKEN_INTEGER, cacheLexeme(executor.cache, std::to_string(operand.reg)), file, line);
    }
    else {
@@ -257,12 +257,12 @@ size_t expandLoop(Executor &executor, std::vector<Token> &tokens, size_t loopIdx
 
    loopCounter += 1;
    std::string label = "@loop" + std::to_string(loopCounter);
-   size_t startLabel = cacheLexeme(executor.cache, label + "-start");
-   size_t endLabel = cacheLexeme(executor.cache, label + "-end");
+   size_t startLabel = pushLexeme(executor.cache, label + "-start");
+   size_t endLabel = pushLexeme(executor.cache, label + "-end");
 
    std::vector<Token> out;
    out.emplace_back(TOKEN_IDENTIFIER, startLabel, file, line);
-   out.emplace_back(TOKEN_LABEL, cacheLexeme(executor.cache, ""), file, line);
+   out.emplace_back(TOKEN_LABEL, 0, file, line);
    emitNewline(executor, out, file, line);
 
    size_t tempsUsed = 0;
@@ -317,7 +317,7 @@ size_t expandEnd(Executor &executor, std::vector<Token> &tokens, size_t endIdx, 
    out.emplace_back(TOKEN_IDENTIFIER, frame.startLabel, file, line);
    emitNewline(executor, out, file, line);
    out.emplace_back(TOKEN_IDENTIFIER, frame.endLabel, file, line);
-   out.emplace_back(TOKEN_LABEL, cacheLexeme(executor.cache, ""), file, line);
+   out.emplace_back(TOKEN_LABEL, 0, file, line);
    emitNewline(executor, out, file, line);
 
    tokens[endIdx].parsed = true;

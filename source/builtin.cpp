@@ -103,14 +103,16 @@ void builtinJmpn(const Command &command, Executor &executor) {
 
 void builtinJmptable(const Command &command, Executor &executor) {
    Value value = resolveVariable(executor, arg(executor, command, 0));
-   for (size_t i = 1; i < command.argCount; i += 2) {
+   bool hasDefault = (command.argCount % 2 == 0);
+
+   for (size_t i = 1; i < command.argCount - hasDefault; i += 2) {
       Value result = resolveVariable(executor, arg(executor, command, i));
       if (valuesEqual(executor, command, value, result, "jmptable")) {
          jumpToLabel(executor, resolveVariable(executor, arg(executor, command, i + 1)), "jmptable", "destination", command.file, command.line, true);
          return;
       }
    }
-   if (command.argCount % 2 != 1) {
+   if (hasDefault) {
       jumpToLabel(executor, resolveVariable(executor, back(executor, command)), "jmptable", "destination", command.file, command.line, true);
    }
 }
@@ -255,7 +257,7 @@ void builtinStackline(const Command &command, Executor &executor) {
 }
 
 void builtinStackfile(const Command &command, Executor &executor) {
-   storeString(executor, command, getLexeme(executor.cache, executor.code[executor.stackTrace.top().position].file), back(executor, command), "stack-line");
+   storeString(executor, command, getLexeme(executor.cache, executor.code[executor.stackTrace.top().position].file), back(executor, command), "stack-file");
 }
 
 void builtinStacktrace(const Command &command, Executor &executor) {
@@ -454,14 +456,16 @@ void builtinSet(const Command &command, Executor &executor) {
 void builtinValTable(const Command &command, Executor &executor) {
    Value value = resolveVariable(executor, arg(executor, command, 0));
    Value dest = arg(executor, command, 1);
-   for (size_t i = 2; i < command.argCount; i += 2) {
+   bool hasDefault = (command.argCount % 2 == 1);
+
+   for (size_t i = 2; i < command.argCount - hasDefault; i += 2) {
       Value result = resolveVariable(executor, arg(executor, command, i));
       if (valuesEqual(executor, command, value, result, "valtable")) {
          storeInRegister(executor, command, dest, resolveVariable(executor, arg(executor, command, i+1)), "valtable");
          return;
       }
    }
-   Value defaultValue = (command.argCount % 2 != 0 ? resolveVariable(executor, back(executor, command)) : NULL_VALUE);
+   Value defaultValue = (hasDefault ? resolveVariable(executor, back(executor, command)) : NULL_VALUE);
    storeInRegister(executor, command, dest, defaultValue, "valtable");
 }
 

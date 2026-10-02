@@ -53,37 +53,36 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
 
    size_t size = file.code.size();
    size_t line = 1;
-   size_t emptyLexeme = cacheLexeme(cache, "");
    tokens.reserve(size / 4);
 
    for (size_t i = 0; i < size; ++i) {
       char ch = file.code[i];
 
       switch (ch) {
-      case '\n': tokens.emplace_back(TOKEN_NEWLINE, emptyLexeme, file.lexeme, line); line += 1; continue;
-      case '$': tokens.emplace_back(TOKEN_REGISTER, emptyLexeme, file.lexeme, line); continue;
-      case '(': tokens.emplace_back(TOKEN_L_PAREN, emptyLexeme, file.lexeme, line); continue;
-      case ')': tokens.emplace_back(TOKEN_R_PAREN, emptyLexeme, file.lexeme, line); continue;
-      case ':': tokens.emplace_back(TOKEN_LABEL, emptyLexeme, file.lexeme, line); continue;
-      case '+': tokens.emplace_back(TOKEN_PLUS, emptyLexeme, file.lexeme, line); continue;
-      case '-': tokens.emplace_back(TOKEN_MINUS, emptyLexeme, file.lexeme, line); continue;
-      case '/': tokens.emplace_back(TOKEN_SLASH, emptyLexeme, file.lexeme, line); continue;
-      case '%': tokens.emplace_back(TOKEN_PERCENT, emptyLexeme, file.lexeme, line); continue;
-      case '^': tokens.emplace_back(TOKEN_BXOR, emptyLexeme, file.lexeme, line); continue;
-      case '~': tokens.emplace_back(TOKEN_BNOT, emptyLexeme, file.lexeme, line); continue;
-      case '[': tokens.emplace_back(TOKEN_L_BRACKET, emptyLexeme, file.lexeme, line); continue;
+      case '\n': tokens.emplace_back(TOKEN_NEWLINE, 0, file.lexeme, line); line += 1; continue;
+      case '$': tokens.emplace_back(TOKEN_REGISTER, 0, file.lexeme, line); continue;
+      case '(': tokens.emplace_back(TOKEN_L_PAREN, 0, file.lexeme, line); continue;
+      case ')': tokens.emplace_back(TOKEN_R_PAREN, 0, file.lexeme, line); continue;
+      case ':': tokens.emplace_back(TOKEN_LABEL, 0, file.lexeme, line); continue;
+      case '+': tokens.emplace_back(TOKEN_PLUS, 0, file.lexeme, line); continue;
+      case '-': tokens.emplace_back(TOKEN_MINUS, 0, file.lexeme, line); continue;
+      case '/': tokens.emplace_back(TOKEN_SLASH, 0, file.lexeme, line); continue;
+      case '%': tokens.emplace_back(TOKEN_PERCENT, 0, file.lexeme, line); continue;
+      case '^': tokens.emplace_back(TOKEN_BXOR, 0, file.lexeme, line); continue;
+      case '~': tokens.emplace_back(TOKEN_BNOT, 0, file.lexeme, line); continue;
+      case '[': tokens.emplace_back(TOKEN_L_BRACKET, 0, file.lexeme, line); continue;
       case ']':
          if (isStringFmt) {
             error(diagnostics, file.lexeme, line, "Expected closing Right Brace, got Right Bracket instead");
          }
          else if (isStringEval) {
             isStringEval = false;
-            tokens.emplace_back(TOKEN_EVAL_END, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_EVAL_END, 0, file.lexeme, line);
             i += 1;
             goto EVAL_STRING;
          }
          else {
-            tokens.emplace_back(TOKEN_R_BRACKET, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_R_BRACKET, 0, file.lexeme, line);
          }
          continue;
       case '}':
@@ -92,7 +91,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          }
          else if (isStringFmt) {
             isStringFmt = false;
-            tokens.emplace_back(TOKEN_FMT_END, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_FMT_END, 0, file.lexeme, line);
             i += 1;
             goto EVAL_STRING;
          }
@@ -102,83 +101,83 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          continue;
       case '*':
          if (i + 1 < size && file.code[i + 1] == '*') {
-            tokens.emplace_back(TOKEN_STAR_STAR, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_STAR_STAR, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_STAR, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_STAR, 0, file.lexeme, line);
          }
          continue;
       case '&':
          if (i + 1 < size && file.code[i + 1] == '&') {
-            tokens.emplace_back(TOKEN_LAND, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_LAND, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_BAND, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_BAND, 0, file.lexeme, line);
          }
          continue;
       case '|':
          if (i + 1 < size && file.code[i + 1] == '|') {
-            tokens.emplace_back(TOKEN_LOR, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_LOR, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_BOR, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_BOR, 0, file.lexeme, line);
          }
          continue;
       case '!':
          if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_INEQUAL, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_INEQUAL, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_LNOT, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_LNOT, 0, file.lexeme, line);
          }
          continue;
       case '<':
          if (i + 1 < size && file.code[i + 1] == '<') {
-            tokens.emplace_back(TOKEN_BSHL, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_BSHL, 0, file.lexeme, line);
             i += 1;
          }
          else if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_LESSER_EQUAL, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_LESSER_EQUAL, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_LESSER, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_LESSER, 0, file.lexeme, line);
          }
          continue;
       case '>':
          if (i + 1 < size && file.code[i + 1] == '>') {
-            tokens.emplace_back(TOKEN_BSHR, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_BSHR, 0, file.lexeme, line);
             i += 1;
          }
          else if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_GREATER_EQUAL, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_GREATER_EQUAL, 0, file.lexeme, line);
             i += 1;
          }
          else {
-            tokens.emplace_back(TOKEN_GREATER, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(TOKEN_GREATER, 0, file.lexeme, line);
          }
          continue;
       }
 
       if (i + 1 < size && ch == '=' && file.code[i+1] == '=') {
-         tokens.emplace_back(TOKEN_EQUAL, emptyLexeme, file.lexeme, line);
+         tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
          i += 1;
       }
       else if (i + 2 < size && ch == '.' && file.code[i+1] == '.' && file.code[i+2] == '.') {
-         tokens.emplace_back(TOKEN_VARIADIC, emptyLexeme, file.lexeme, line);
+         tokens.emplace_back(TOKEN_VARIADIC, 0, file.lexeme, line);
          i += 2;
       }
       else if (ch == ';') {
          while (i < size && file.code[i] != '\n') i += 1;
-         tokens.emplace_back(TOKEN_NEWLINE, emptyLexeme, file.lexeme, line);
+         tokens.emplace_back(TOKEN_NEWLINE, 0, file.lexeme, line);
          line += 1;
       }
       else if ((ch == 'r' || ch == 'R') && i + 1 < size && file.code[i + 1] == '$') {
-         tokens.emplace_back(TOKEN_RETURN_REGISTER, emptyLexeme, file.lexeme, line);
+         tokens.emplace_back(TOKEN_RETURN_REGISTER, 0, file.lexeme, line);
          i += 1;
       }
       else if (ch == '\'') {
@@ -228,7 +227,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
 
          tokens.emplace_back(TOKEN_STRING, pushLexeme(cache, string), file.lexeme, originalLine);
          if (fmted) {
-            tokens.emplace_back(isStringFmt ? TOKEN_FMT_START : TOKEN_EVAL_START, emptyLexeme, file.lexeme, line);
+            tokens.emplace_back(isStringFmt ? TOKEN_FMT_START : TOKEN_EVAL_START, 0, file.lexeme, line);
          }
       }
       else if (isDigit(ch)) {

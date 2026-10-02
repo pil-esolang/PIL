@@ -3,7 +3,7 @@
 #include <filesystem>
 
 void printHelp();
-void compile(Executor executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode);
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode);
 
 int main(int argc, char *argv[]) {
    bool time = false;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
    }
 }
 
-void compile(Executor executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode) {
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode) {
    std::vector<Token> tokens;
    PILFile fileData;
 
@@ -117,6 +117,8 @@ void compile(Executor executor, const std::filesystem::path &file, float &readTi
    tokens.clear(); // tokens are no longer in use
    tokens.shrink_to_fit();
    parseTime = measureEnd();
+
+   debugBytecode(debugCode, executor);
 }
 
 void printHelp() {

@@ -15,7 +15,7 @@ struct LexemeCache {
       bool operator () (std::string_view a, std::string_view b) const { return a == b; }
    };
 
-   std::vector<std::string> lexemes;
+   std::vector<std::string> lexemes {""}; // 0 - nil
    std::unordered_map<std::string, size_t, TransparentHash, TransparentEq> lexemeCache;
 };
 

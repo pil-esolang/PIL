@@ -79,7 +79,7 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
    case VALUE_LABEL: return true;
    case VALUE_COUNT: return false;
    default: // should not happen
-      printf("PIL::isThruthy: Value %s cannot be checked for thruthiness.\n", getValueName(v.type));
+      printf("PIL::isTruthy: Value %s cannot be checked for truthiness.\n", getValueName(v.type));
       exit(EXIT_FAILURE);
    }
 }
