@@ -3,7 +3,7 @@
 
 void builtinFileOpen(const Command &command, Executor &executor) {
    const std::string *path;
-   if (!constStringOrError(command, executor, "file-open", path, 0)) return;
+   if (!hasPermission(command, executor, "file-open", FILE_LOCK) || !constStringOrError(command, executor, "file-open", path, 0)) return;
    char mode = getChar(command, executor, "file-open", 1);
    std::fstream file;
 
@@ -20,6 +20,7 @@ void builtinFileOpen(const Command &command, Executor &executor) {
 }
 
 void builtinFileClose(const Command &command, Executor &executor) {
+   if (!hasPermission(command, executor, "file-close", FILE_LOCK)) return;
    Value a = arg(executor, command, 0);
    Value &handle = resolveVariableByRef(executor, a);
    if (handle.type != VALUE_FILE) {

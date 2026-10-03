@@ -55,3 +55,18 @@ struct Function {
 };
 
 constexpr Value NULL_VALUE = {VALUE_COUNT};
+
+enum BuiltinFlags {
+   VARIADIC = 1 << 0,
+   RESERVED = 1 << 1,
+   FILE_LOCK = 1 << 2,
+   EXEC_LOCK = 1 << 3,
+   ENV_LOCK = 1 << 4,
+};
+
+struct BuiltinDef {
+   const char *name;
+   NativeFunction fn;
+   size_t params;
+   int flags;
+};

@@ -1,6 +1,7 @@
 #include "builtin.hpp"
 #include "builtinhelpers.hpp"
 #include "pil.hpp"
+#include <cassert>
 
 // we only define built-in functions that actually get used. thanks, cache. there are reserved built-ins that
 // always get pushed
@@ -15,6 +16,7 @@ void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unord
    value.function = functionId;
 
    if (def.flags & RESERVED) {
+      assert(!(def.flags & (FILE_LOCK | ENV_LOCK | EXEC_LOCK)) && "A reserved function cannot be locked.");
       size_t cached = cacheLexeme(executor.cache, def.name);
       function.lexeme = cached;
       function.paramCount = def.params;

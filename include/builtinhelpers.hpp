@@ -571,6 +571,24 @@ inline void deepFree(const Command &command, Executor &executor, Value &value, s
    }
 }
 
+inline bool hasPermission(const Command &command, Executor &executor, const char *function, int lock) {
+   if ((lock & FILE_LOCK) && !executor.allowFileio) {
+      error(executor.diagnostics, command.file, command.line, "You don't have permission to run '%s' (no file I/O access)", function);
+      return false;
+   }
+
+   if ((lock & ENV_LOCK) && !executor.allowEnv) {
+      error(executor.diagnostics, command.file, command.line, "You don't have permission to run '%s' (no environment access)", function);
+      return false;
+   }
+
+   if ((lock & EXEC_LOCK) && !executor.allowExec) {
+      error(executor.diagnostics, command.file, command.line, "You don't have permission to run '%s' (no OS access)", function);
+      return false;
+   }
+   return true;
+}
+
 inline std::mt19937 &RNG() {
    static std::mt19937 rng {std::random_device{}()};
    return rng;
