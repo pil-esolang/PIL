@@ -109,7 +109,6 @@ struct Executor {
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &file, size_t fileLexeme, size_t line);
 void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std::vector<Token> &tokens);
 void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens);
-void expandSnippets(Executor &executor, std::vector<Token> &tokens);
 
 Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants);
 void parsePIL(Executor &executor, std::vector<Token> &tokens);
@@ -140,6 +139,6 @@ float measureEnd();
 
 void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &tokens);
 void debugBytecode(bool debug, Executor &executor);
-void debugExecutionTime(bool debug, float file, float lexer, float translator, float parser, float runtime);
-void debugCompilationTime(bool debug, float file, float lexer, float translator, float parser, float writing);
+void debugExecutionTime(bool debug, float file, float lexer, float parser, float runtime);
+void debugCompilationTime(bool debug, float file, float lexer, float parser, float writing);
 void debugCacheExecutionTime(bool debug, float file, float runtime);

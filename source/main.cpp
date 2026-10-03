@@ -3,7 +3,7 @@
 #include <filesystem>
 
 void printHelp();
-void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode);
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime, bool debugLexer, bool debugCode);
 
 int main(int argc, char *argv[]) {
    Executor executor;
@@ -28,8 +28,8 @@ int main(int argc, char *argv[]) {
    if (argc == 2 && strcmp(argv[0], "run") == 0) {
       std::filesystem::path path (argv[1]);
       if (path.has_extension() && path.extension() == ".pil") {
-         float readTime, lexTime, translatorTime, parseTime;
-         compile(executor, path, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
+         float readTime, lexTime, parseTime;
+         compile(executor, path, readTime, lexTime, parseTime, debugLexer, debugCode);
 
          measure();
          callMain(executor, SEVERITY_ERROR);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
          logStackTrace(executor, SEVERITY_ERROR);
          logMemoryLeaks(executor);
-         debugExecutionTime(time, readTime, lexTime, translatorTime, parseTime, runtime);
+         debugExecutionTime(time, readTime, lexTime, parseTime, runtime);
       }
       else if (path.has_extension() && path.extension() == ".pilo") {
          measure();
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
          printHelp();
          exit(EXIT_FAILURE);
       }
-      float readTime, lexTime, translatorTime, parseTime;
-      compile(executor, in, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
+      float readTime, lexTime, parseTime;
+      compile(executor, in, readTime, lexTime, parseTime, debugLexer, debugCode);
 
       printf("Writing to '%s'...\n", out.string().c_str());
       measure();
@@ -77,14 +77,14 @@ int main(int argc, char *argv[]) {
 
       log(executor, SEVERITY_ERROR);
       printf("Wrote %zuB to '%s'.\n", std::filesystem::file_size(out), out.string().c_str());
-      debugCompilationTime(time, readTime, lexTime, translatorTime, parseTime, writeTime);
+      debugCompilationTime(time, readTime, lexTime, parseTime, writeTime);
    }
    else {
       printHelp();
    }
 }
 
-void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode) {
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime, bool debugLexer, bool debugCode) {
    std::vector<Token> tokens;
    PILFile fileData;
 
@@ -104,11 +104,6 @@ void compile(Executor &executor, const std::filesystem::path &file, float &readT
    translatePIL(executor, fileData.lexeme, tokens);
    log(executor, SEVERITY_ERROR);
    readTime += measureEnd();
-
-   measure();
-   expandSnippets(executor, tokens);
-   log(executor, SEVERITY_ERROR);
-   translatorTime = measureEnd();
 
    debugTokens(debugLexer, executor.cache, tokens);
 
