@@ -34,7 +34,7 @@ void builtinRead(const Command &command, Executor &executor) {
 
 void builtinReadln(const Command &command, Executor &executor) {
    std::string input;
-   std::getline(std::cin, input);
+   std::getline(std::cin >> std::ws, input);
    storeString(executor, command, input, back(executor, command), "readline");
 }
 

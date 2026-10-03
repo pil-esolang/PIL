@@ -490,7 +490,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"file-read", builtinFileRead, 2, FILE_LOCK},
    {"file-readln", builtinFileReadLn, 2, FILE_LOCK},
    {"file-readch", builtinFileReadCh, 2, FILE_LOCK},
-   {"file-read-bytes", builtinFileReadBytes, 2, FILE_LOCK},
+   {"file-read-bytes", builtinFileReadBytes, 3, FILE_LOCK},
    {"file-eof", builtinFileEof, 2, FILE_LOCK},
    {"file-write", builtinFileWrite, 2, FILE_LOCK},
    {"file-writeln", builtinFileWriteLn, 2, FILE_LOCK},
@@ -523,7 +523,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"os-set-cwd", builtinOsSetCwd, 1, FILE_LOCK},
    {"os-env-get", builtinOsEnvGet, 2, ENV_LOCK},
    {"os-env-set", builtinOsEnvSet, 2, ENV_LOCK},
-   {"os-args", builtinOsArgs, 1},
    {"os-exec", builtinOsExec, 2, EXEC_LOCK},
    {"os-exit-code", builtinOsExitCode, 1},
 

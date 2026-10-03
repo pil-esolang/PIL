@@ -1,0 +1,59 @@
+cat() let f, c, i
+   print "Input file to read: "
+   read i
+   file-open i, 'r', f
+   file-read f, c
+   println c
+   file-close f
+   string-free c, i
+
+ls() let d, e, a, i, n, c
+   print "Input directory to list: "
+   read d
+   dir-list-recursive d, a
+
+   array-size a, n
+   set 0, i
+ls-loop-begin:
+   greq i, n, c
+   jmp c, ls-loop-end
+
+   array-at a, i, e
+   println e
+   incr i
+   goto ls-loop-begin
+ls-loop-end:
+   string-free d
+   array-deep-free a
+
+mv() let i, o
+   print "Input file to move: "
+   read i
+   print "Input destination: "
+   read o
+   path-move i, o
+   string-free i, o
+
+cp() let i, o
+   print "Input file to copy: "
+   read i
+   print "Input destination: "
+   read o
+   path-copy i, o
+   string-free i, o
+
+rm() let f
+   print "Input file to remove: "
+   read f
+   path-remove-all f
+   string-free f
+
+err()
+   error "Invalid command"
+
+main() let s, f
+   print "Input command: "
+   read s
+   valtable s, f, "cat", cat, "ls", ls, "mv", mv, "cp", cp, "rm", rm, err
+   string-free s
+   func-call f

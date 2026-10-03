@@ -11,7 +11,7 @@ constexpr size_t DEFAULT_REGISTER_COUNT = 16;
 constexpr size_t DEFAULT_RETURN_REGISTER_COUNT = 4;
 constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
 
-constexpr size_t FILE_VERSION = 4;
+constexpr size_t FILE_VERSION = 5;
 
 // PIL parser
 struct PILFile {
@@ -97,6 +97,7 @@ struct Executor {
    size_t main;
    size_t pointer;
    size_t returnCount;
+   int lastExecExitCode;
    bool exitCalled;
    bool allowFileio = false;
    bool allowEnv = false;
