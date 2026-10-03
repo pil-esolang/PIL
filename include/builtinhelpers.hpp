@@ -75,6 +75,7 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
    case VALUE_STRING: return !getString(executor, v.string, command.file, command.line).empty();
    case VALUE_ARRAY: return !getArray(executor, v.array, command.file, command.line).empty();
    case VALUE_MAP: return !getMap(executor, v.map, command.file, command.line).empty();
+   case VALUE_FILE: return true;
    case VALUE_FUNCTION: return true;
    case VALUE_LABEL: return true;
    case VALUE_COUNT: return false;
@@ -180,6 +181,20 @@ inline bool mapOrError(const Command &command, Executor &executor, const char *f
    return false;
 }
 
+inline bool fileHandleOrError(const Command &command, Executor &executor, const char *function, std::fstream *&out, size_t i = 0) {
+   Value handle = resolveVariable(executor, arg(executor, command, i));
+   if (handle.type != VALUE_FILE) {
+      error(executor.diagnostics, command.file, command.line, "%s: Expected File, got %s instead", function, getValueName(handle.type));
+      return false;
+   }
+   if (auto it = executor.files.find(handle.handle); it != executor.files.end()) {
+      out = &it->second.file;
+      return true;
+   }
+   error(executor.diagnostics, command.file, command.line, "Invalid File ID %zu. Use after free", handle.handle);
+   return false;
+}
+
 // setters
 inline void storeNumber(Executor &executor, const Command &command, pilfloat_t number, bool floating, const char *function) {
    Value value {floating ? VALUE_FLOATING : VALUE_INTEGER};
@@ -229,7 +244,7 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
          const std::string &s2 = (v2.type == VALUE_STRING ? getString(executor, v2.string, file, line) : getLexeme(executor.cache, v2.string));
          if (s1 != s2) return false;
       }
-      else if (v1.type == VALUE_MAP || v2.type == VALUE_MAP) {
+      else if (v1.type == VALUE_MAP || v2.type == VALUE_MAP || v1.type == VALUE_FILE || v2.type == VALUE_FILE) {
          error(executor.diagnostics, file, line, "%s: Cannot compare %s to %s", function, getValueName(v1.type), getValueName(v2.type));
          return false;
       }
@@ -306,7 +321,7 @@ inline bool valuesEqual(Executor &executor, const Command &command, Value a, Val
    else if (a.type == VALUE_LABEL && b.type == VALUE_LABEL) {
       return a.label == b.label;
    }
-   else if (a.type == VALUE_MAP || b.type == VALUE_MAP) {
+   else if (a.type == VALUE_MAP || b.type == VALUE_MAP || a.type == VALUE_FILE || b.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "%s: Cannot compare %s to %s", function, getValueName(a.type), getValueName(b.type));
       return false;
    }
@@ -364,6 +379,9 @@ inline std::string toStringImpl(Executor &executor, Value value, const char *fun
    case VALUE_MAP:
       error(executor.diagnostics, file, line, "%s: Cannot convert Map to String", function);
       return "(null)";
+   case VALUE_FILE:
+      error(executor.diagnostics, file, line, "%s: Cannot convert File to String", function);
+      return "(null)";
    default: return "(null)";
    }
 }
@@ -400,7 +418,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
    case VALUE_LABEL: printf("%s:", getLexeme(executor.cache, executor.functions[a.label].lexeme).c_str()); break;
    case VALUE_ARRAY: {
       if (!active.insert({a.array, a.type}).second) {
-         printf("...");
+         puts("...");
          break;
       }
       putchar('[');
@@ -416,7 +434,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
    }
    case VALUE_MAP: {
       if (!active.insert({a.map, a.type}).second) {
-         printf("...");
+         puts("...");
          break;
       }
       putchar('[');
@@ -432,7 +450,8 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
       active.erase({a.map, a.type});
       break;
    }
-   default: printf("(null)");
+   case VALUE_FILE: printf("(file handle %zu)", a.handle); break;
+   default: puts("(null)");
    }
 }
 

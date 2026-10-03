@@ -48,13 +48,6 @@ std::string &getString(Executor &executor, size_t ID, size_t file, size_t line) 
    return temp;
 }
 
-size_t allocateString(Executor &executor, const std::string &string) {
-   static size_t stringID = 0;
-   stringID += 1;
-   executor.strings[stringID].string = string;
-   return stringID;
-}
-
 std::vector<Value> &getArray(Executor &executor, size_t ID, size_t file, size_t line) {
    if (auto it = executor.arrays.find(ID); it != executor.arrays.end()) {
       return it->second.array;
@@ -62,13 +55,6 @@ std::vector<Value> &getArray(Executor &executor, size_t ID, size_t file, size_t 
    error(executor.diagnostics, file, line, "Invalid array ID %zu. Use after free", ID);
    static std::vector<Value> temp;
    return temp;
-}
-
-size_t allocateArray(Executor &executor, const std::vector<Value> &array) {
-   static size_t arrayID = 0;
-   arrayID += 1;
-   executor.arrays[arrayID].array = array;
-   return arrayID;
 }
 
 std::unordered_map<Value, Value, ValueHash, ValueEqual> &getMap(Executor &executor, size_t ID, size_t file, size_t line) {
@@ -80,9 +66,39 @@ std::unordered_map<Value, Value, ValueHash, ValueEqual> &getMap(Executor &execut
    return map;
 }
 
+std::fstream &getFile(Executor &executor, size_t ID, size_t file, size_t line) {
+   if (auto it = executor.files.find(ID); it != executor.files.end()) {
+      return it->second.file;
+   }
+   error(executor.diagnostics, file, line, "Invalid file ID %zu. Use after free", ID);
+   static std::fstream f;
+   return f;
+}
+
+size_t allocateString(Executor &executor, const std::string &string) {
+   static size_t stringID = 0;
+   stringID += 1;
+   executor.strings[stringID].string = string;
+   return stringID;
+}
+
+size_t allocateArray(Executor &executor, const std::vector<Value> &array) {
+   static size_t arrayID = 0;
+   arrayID += 1;
+   executor.arrays[arrayID].array = array;
+   return arrayID;
+}
+
 size_t allocateMap(Executor &executor, const std::unordered_map<Value, Value, ValueHash, ValueEqual> &map) {
    static size_t mapID = 0;
    mapID += 1;
    executor.maps[mapID].map = map;
    return mapID;
+}
+
+size_t allocateFile(Executor &executor, std::fstream &&file) {
+   static size_t fileID = 0;
+   fileID += 1;
+   executor.files[fileID].file = std::move(file);
+   return fileID;
 }

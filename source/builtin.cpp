@@ -275,6 +275,7 @@ void builtinTypeof(const Command &command, Executor &executor) {
    case VALUE_STRING: case VALUE_CSTRING: string = "string"; break;
    case VALUE_ARRAY: string = "array"; break;
    case VALUE_MAP: string = "map"; break;
+   case VALUE_FILE: string = "file"; break;
    case VALUE_FUNCTION: string = "function"; break;
    case VALUE_LABEL: string = "label"; break;
    case VALUE_COUNT: string = "null"; break;
@@ -310,9 +311,29 @@ void builtinIsstring(const Command &command, Executor &executor) {
    storeBoolean(executor, command, value.type == VALUE_STRING || value.type == VALUE_CSTRING, "is-string");
 }
 
+void builtinIsdynamicstring(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   storeBoolean(executor, command, value.type == VALUE_STRING, "is-dynamic-string");
+}
+
+void builtinIsconstantstring(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   storeBoolean(executor, command, value.type == VALUE_CSTRING, "is-constant-string");
+}
+
 void builtinIsarray(const Command &command, Executor &executor) {
    Value value = resolveVariable(executor, arg(executor, command, 0));
    storeBoolean(executor, command, value.type == VALUE_ARRAY, "is-array");
+}
+
+void builtinIsmap(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   storeBoolean(executor, command, value.type == VALUE_MAP, "is-map");
+}
+
+void builtinIsfilehandle(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   storeBoolean(executor, command, value.type == VALUE_FILE, "is-file-handle");
 }
 
 void builtinIsreg(const Command &command, Executor &executor) {

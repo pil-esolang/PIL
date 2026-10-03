@@ -3,6 +3,7 @@
 #include "error.hpp"
 #include "tokens.hpp"
 #include "values.hpp"
+#include <fstream>
 #include <stack>
 #include <string>
 
@@ -10,7 +11,7 @@ constexpr size_t DEFAULT_REGISTER_COUNT = 16;
 constexpr size_t DEFAULT_RETURN_REGISTER_COUNT = 4;
 constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
 
-constexpr size_t FILE_VERSION = 3;
+constexpr size_t FILE_VERSION = 4;
 
 // PIL parser
 struct PILFile {
@@ -70,6 +71,11 @@ struct PILMap {
    int mark = 0;
 };
 
+struct PILRuntimeFile {
+   std::fstream file;
+   int mark = 0;
+};
+
 struct Executor {
    Diagnostics diagnostics;
    LexemeCache cache;
@@ -82,6 +88,7 @@ struct Executor {
    std::unordered_map<size_t, PILString> strings;
    std::unordered_map<size_t, PILArray> arrays;
    std::unordered_map<size_t, PILMap> maps;
+   std::unordered_map<size_t, PILRuntimeFile> files;
 
    std::vector<Function> functions;
    std::vector<Value> arguments;
@@ -91,6 +98,12 @@ struct Executor {
    size_t pointer;
    size_t returnCount;
    bool exitCalled;
+   bool allowFileio = false;
+   bool allowEnv = false;
+   bool allowExec = false;
+   bool fileioErrored = false;
+   bool envErrored = false;
+   bool execErrored = false;
 };
 
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &file, size_t fileLexeme, size_t line);
@@ -112,11 +125,14 @@ Value evaluateMath(Executor &executor, std::vector<Token> &tokens, size_t &i, co
 
 // allocation
 std::string &getString(Executor &executor, size_t ID, size_t file, size_t line);
-size_t allocateString(Executor &executor, const std::string &string);
 std::vector<Value> &getArray(Executor &executor, size_t ID, size_t file, size_t line);
-size_t allocateArray(Executor &executor, const std::vector<Value> &array);
 InternalPILMap &getMap(Executor &executor, size_t ID, size_t file, size_t line);
+std::fstream &getFile(Executor &executor, size_t ID, size_t file, size_t line);
+
+size_t allocateString(Executor &executor, const std::string &string);
+size_t allocateArray(Executor &executor, const std::vector<Value> &array);
 size_t allocateMap(Executor &executor, const InternalPILMap &map);
+size_t allocateFile(Executor &executor, std::fstream &&file);
 
 // debug
 void measure();

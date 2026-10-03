@@ -106,7 +106,8 @@ void logMemoryLeaks(Executor &executor) {
    size_t strings = executor.strings.size();
    size_t arrays = executor.arrays.size();
    size_t maps = executor.maps.size();
-   if (strings == 0 && arrays == 0 && maps == 0) {
+   size_t handles = executor.files.size();
+   if (strings == 0 && arrays == 0 && maps == 0 && handles == 0) {
       return;
    }
 
@@ -118,9 +119,7 @@ void logMemoryLeaks(Executor &executor) {
       for (const auto &[id, string]: executor.strings) {
          printf("%zu: '%s', mark %d.\n", id, string.string.c_str(), string.mark);
          i += 1;
-         if (i >= size) {
-            break;
-         }
+         if (i >= size) break;
       }
 
       if (size < strings) {
@@ -135,9 +134,7 @@ void logMemoryLeaks(Executor &executor) {
       for (const auto &[id, array]: executor.arrays) {
          printf("%zu: Array with size %zu, mark %d.\n", id, array.array.size(), array.mark);
          i += 1;
-         if (i >= size) {
-            break;
-         }
+         if (i >= size) break;
       }
 
       if (size < arrays) {
@@ -152,13 +149,26 @@ void logMemoryLeaks(Executor &executor) {
       for (const auto &[id, map]: executor.maps) {
          printf("%zu: Map with size %zu, mark %d.\n", id, map.map.size(), map.mark);
          i += 1;
-         if (i >= size) {
-            break;
-         }
+         if (i >= size) break;
       }
 
       if (size < maps) {
          printf(AND_N_OTHERS, maps - size);
+      }
+   }
+   if (handles != 0) {
+      size_t size = std::min(handles, MAX_LEAK_TRACE);
+      size_t i = 0;
+
+      printf(LEAKED_OBJECTS, handles, "files");
+      for (const auto &[id, handle]: executor.files) {
+         printf("%zu: File handle %zu, mark %d.\n", id, id, handle.mark);
+         i += 1;
+         if (i >= size) break;
+      }
+
+      if (size < handles) {
+         printf(AND_N_OTHERS, handles - size);
       }
    }
 }

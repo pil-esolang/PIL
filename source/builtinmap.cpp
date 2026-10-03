@@ -10,7 +10,7 @@ void builtinMapNew(const Command &command, Executor &executor) {
    for (size_t i = 1; i < command.argCount; i += 2) {
       Value key = resolveVariable(executor, arg(executor, command, i));
       Value value = resolveVariable(executor, arg(executor, command, i + 1));
-      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP) {
+      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
          error(executor.diagnostics, command.file, command.line, "map-new: %s cannot be used as a key in a Map", getValueName(key.type));
          return;
       }
@@ -23,7 +23,7 @@ void builtinMapErase(const Command &command, Executor &executor) {
    InternalPILMap *map;
    if (!mapOrError(command, executor, "map-erase", map)) return;
    Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP) {
+   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "map-erase: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -35,7 +35,7 @@ void builtinMapSet(const Command &command, Executor &executor) {
    if (!mapOrError(command, executor, "map-set", map)) return;
    Value key = resolveVariable(executor, arg(executor, command, 1));
    Value val = resolveVariable(executor, arg(executor, command, 2));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP) {
+   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "map-set: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -46,7 +46,7 @@ void builtinMapAt(const Command &command, Executor &executor) {
    InternalPILMap *map;
    if (!mapOrError(command, executor, "map-at", map)) return;
    Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP) {
+   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "map-at: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -61,7 +61,7 @@ void builtinMapContains(const Command &command, Executor &executor) {
    InternalPILMap *map;
    if (!mapOrError(command, executor, "map-contains", map)) return;
    Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP) {
+   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "map-contains: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }

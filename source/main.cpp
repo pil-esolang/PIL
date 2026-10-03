@@ -6,6 +6,7 @@ void printHelp();
 void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &translatorTime, float &parseTime, bool debugLexer, bool debugCode);
 
 int main(int argc, char *argv[]) {
+   Executor executor;
    bool time = false;
    bool debugCode = false;
    bool debugLexer = false;
@@ -14,6 +15,9 @@ int main(int argc, char *argv[]) {
       if (strcmp(argv[i], "--time") == 0) time = true;
       else if (strcmp(argv[i], "--debug-code") == 0) debugCode = true;
       else if (strcmp(argv[i], "--debug-tokens") == 0) debugLexer = true;
+      else if (strcmp(argv[i], "--allow-fileio") == 0) executor.allowFileio = true;
+      else if (strcmp(argv[i], "--allow-env") == 0) executor.allowEnv = true;
+      else if (strcmp(argv[i], "--allow-exec") == 0) executor.allowExec = true;
       else {
          argv = &argv[i];
          argc -= i;
@@ -24,7 +28,6 @@ int main(int argc, char *argv[]) {
    if (argc == 2 && strcmp(argv[0], "run") == 0) {
       std::filesystem::path path (argv[1]);
       if (path.has_extension() && path.extension() == ".pil") {
-         Executor executor;
          float readTime, lexTime, translatorTime, parseTime;
          compile(executor, path, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
 
@@ -37,7 +40,6 @@ int main(int argc, char *argv[]) {
          debugExecutionTime(time, readTime, lexTime, translatorTime, parseTime, runtime);
       }
       else if (path.has_extension() && path.extension() == ".pilo") {
-         Executor executor;
          measure();
          readCachedBytecode(executor, path.string());
          log(executor, SEVERITY_ERROR);
@@ -65,7 +67,6 @@ int main(int argc, char *argv[]) {
          printHelp();
          exit(EXIT_FAILURE);
       }
-      Executor executor;
       float readTime, lexTime, translatorTime, parseTime;
       compile(executor, in, readTime, lexTime, translatorTime, parseTime, debugLexer, debugCode);
 
@@ -132,5 +133,8 @@ void printHelp() {
       "\t--debug-code    output bytecode and compile/runtime time\n"
       "\t--debug-tokens  output tokens after translation\n"
       "\t--time          show time of each compiler's operation\n"
+      "\t--allow-fileio  allow file I/O built-ins\n"
+      "\t--allow-env     allow OS environment variable built-ins\n"
+      "\t--allow-exec    allow 'os-exec' built-in\n"
    );
 }

@@ -8,13 +8,13 @@ void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unord
    size_t functionId = executor.functions.size();
    Function function;
    function.native = true;
-   function.variadic = def.variadic;
+   function.variadic = def.flags & VARIADIC;
    function.nativeFn = i;
 
    Value value {VALUE_FUNCTION};
    value.function = functionId;
 
-   if (def.reserved) {
+   if (def.flags & RESERVED) {
       size_t cached = cacheLexeme(executor.cache, def.name);
       function.lexeme = cached;
       function.paramCount = def.params;
@@ -22,6 +22,27 @@ void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unord
       constants[cached] = value;
    }
    else if (auto it = executor.cache.lexemeCache.find(def.name); it != executor.cache.lexemeCache.end()) {
+      if (!executor.allowFileio && (def.flags & FILE_LOCK)) {
+         if (executor.fileioErrored) return;
+         executor.fileioErrored = true;
+         error(executor.diagnostics, 0, 0, "Program contains file I/O built-ins. If you are the author or trust this file then rerun it with the '--allow-fileio' flag. Allowing file access can put your computer at risk. You can review all file I/O calls at the succeeding errors");
+         return;
+      }
+
+      if (!executor.allowEnv && (def.flags & ENV_LOCK)) {
+         if (executor.envErrored) return;
+         executor.envErrored = true;
+         error(executor.diagnostics, 0, 0, "Program contains environment variable built-ins. If you are the author or trust this file then rerun it with the '--allow-env' flag. Allowing environment variable access can put your privacy and secrets at risk. Review all calls at the succeeding errors");
+         return;
+      }
+
+      if (!executor.allowExec && (def.flags & EXEC_LOCK)) {
+         if (executor.execErrored) return;
+         executor.execErrored = true;
+         error(executor.diagnostics, 0, 0, "Program contains 'os-exec'. If you are the author or trust this file then rerun it with the '--allow-exec' flag. Allowing 'os-exec' puts your computer AT A MASSIVE RISK! Review all calls at the succeeding errors");
+         return;
+      }
+
       function.lexeme = it->second;
       function.paramCount = def.params;
       executor.functions.push_back(function);

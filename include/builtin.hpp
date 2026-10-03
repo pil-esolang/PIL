@@ -175,6 +175,49 @@ void builtinBitset(const Command &command, Executor &executor);
 void builtinBitclear(const Command &command, Executor &executor);
 void builtinBittoggle(const Command &command, Executor &executor);
 
+// file i/o, OS
+void builtinFileOpen(const Command &command, Executor &executor);
+void builtinFileClose(const Command &command, Executor &executor);
+void builtinFileRead(const Command &command, Executor &executor);
+void builtinFileReadLn(const Command &command, Executor &executor);
+void builtinFileReadCh(const Command &command, Executor &executor);
+void builtinFileReadBytes(const Command &command, Executor &executor);
+void builtinFileEof(const Command &command, Executor &executor);
+void builtinFileWrite(const Command &command, Executor &executor);
+void builtinFileWriteLn(const Command &command, Executor &executor);
+void builtinFileFlush(const Command &command, Executor &executor);
+void builtinFileTell(const Command &command, Executor &executor);
+void builtinFileSeek(const Command &command, Executor &executor);
+void builtinFileSeekRel(const Command &command, Executor &executor);
+void builtinFileSeekEnd(const Command &command, Executor &executor);
+void builtinPathExists(const Command &command, Executor &executor);
+void builtinPathIsFile(const Command &command, Executor &executor);
+void builtinPathIsDir(const Command &command, Executor &executor);
+void builtinPathSize(const Command &command, Executor &executor);
+void builtinPathModifiedTime(const Command &command, Executor &executor);
+void builtinPathCreateDir(const Command &command, Executor &executor);
+void builtinPathRemove(const Command &command, Executor &executor);
+void builtinPathRemoveAll(const Command &command, Executor &executor);
+void builtinPathCopy(const Command &command, Executor &executor);
+void builtinPathMove(const Command &command, Executor &executor);
+void builtinPathJoin(const Command &command, Executor &executor);
+void builtinPathFilename(const Command &command, Executor &executor);
+void builtinPathStem(const Command &command, Executor &executor);
+void builtinPathExtension(const Command &command, Executor &executor);
+void builtinPathParent(const Command &command, Executor &executor);
+void builtinPathAbsolute(const Command &command, Executor &executor);
+void builtinPathNormalize(const Command &command, Executor &executor);
+void builtinDirList(const Command &command, Executor &executor);
+void builtinDirListRecursive(const Command &command, Executor &executor);
+void builtinOsName(const Command &command, Executor &executor);
+void builtinOsCwd(const Command &command, Executor &executor);
+void builtinOsSetCwd(const Command &command, Executor &executor);
+void builtinOsEnvGet(const Command &command, Executor &executor);
+void builtinOsEnvSet(const Command &command, Executor &executor);
+void builtinOsArgs(const Command &command, Executor &executor);
+void builtinOsExec(const Command &command, Executor &executor);
+void builtinOsExitCode(const Command &command, Executor &executor);
+
 // input/output
 void builtinPrintch(const Command &command, Executor &executor);
 void builtinPrint(const Command &command, Executor &executor);
@@ -223,7 +266,11 @@ void builtinIsfloat(const Command &command, Executor &executor);
 void builtinIsint(const Command &command, Executor &executor);
 void builtinIschar(const Command &command, Executor &executor);
 void builtinIsstring(const Command &command, Executor &executor);
+void builtinIsdynamicstring(const Command &command, Executor &executor);
+void builtinIsconstantstring(const Command &command, Executor &executor);
 void builtinIsarray(const Command &command, Executor &executor);
+void builtinIsmap(const Command &command, Executor &executor);
+void builtinIsfilehandle(const Command &command, Executor &executor);
 void builtinIsreg(const Command &command, Executor &executor);
 void builtinIsfunction(const Command &command, Executor &executor);
 void builtinIslabel(const Command &command, Executor &executor);
@@ -257,21 +304,25 @@ void builtinFuncVariadic(const Command &command, Executor &executor);
 void builtinFuncArgMatch(const Command &command, Executor &executor);
 
 // def table
+enum BuiltinFlags {
+   VARIADIC = 1 << 0,
+   RESERVED = 1 << 1,
+   FILE_LOCK = 1 << 2,
+   EXEC_LOCK = 1 << 3,
+   ENV_LOCK = 1 << 4,
+};
+
 struct BuiltinDef {
    const char *name;
    NativeFunction fn;
    size_t params;
-   bool variadic = false;
-   bool reserved = false;
+   int flags;
 };
 
 template <typename T, size_t N>
 constexpr size_t arraySize(T (&)[N]) {
    return N;
 }
-
-constexpr bool VARIADIC = true;
-constexpr bool RESERVED = true;
 
 constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    // string ops
@@ -448,6 +499,49 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"bit-clear", builtinBitclear, 3},
    {"bit-toggle", builtinBittoggle, 3},
 
+   // file i/o, OS
+   {"file-open", builtinFileOpen, 3, FILE_LOCK},
+   {"file-close", builtinFileClose, 1, FILE_LOCK},
+   {"file-read", builtinFileRead, 2, FILE_LOCK},
+   {"file-readln", builtinFileReadLn, 2, FILE_LOCK},
+   {"file-readch", builtinFileReadCh, 2, FILE_LOCK},
+   {"file-read-bytes", builtinFileReadBytes, 2, FILE_LOCK},
+   {"file-eof", builtinFileEof, 2, FILE_LOCK},
+   {"file-write", builtinFileWrite, 2, FILE_LOCK},
+   {"file-writeln", builtinFileWriteLn, 2, FILE_LOCK},
+   {"file-flush", builtinFileFlush, 1, FILE_LOCK},
+   {"file-tell", builtinFileTell, 2, FILE_LOCK},
+   {"file-seek", builtinFileSeek, 2, FILE_LOCK},
+   {"file-seek-rel", builtinFileSeekRel, 2, FILE_LOCK},
+   {"file-seek-end", builtinFileSeekEnd, 2, FILE_LOCK},
+   {"path-exists", builtinPathExists, 2, FILE_LOCK},
+   {"path-is-file", builtinPathIsFile, 2, FILE_LOCK},
+   {"path-is-dir", builtinPathIsDir, 2, FILE_LOCK},
+   {"path-size", builtinPathSize, 2, FILE_LOCK},
+   {"path-modified-time", builtinPathModifiedTime, 2, FILE_LOCK},
+   {"path-create-dir", builtinPathCreateDir, 1, FILE_LOCK},
+   {"path-remove", builtinPathRemove, 1, FILE_LOCK},
+   {"path-remove-all", builtinPathRemoveAll, 1, FILE_LOCK},
+   {"path-copy", builtinPathCopy, 2, FILE_LOCK},
+   {"path-move", builtinPathMove, 2, FILE_LOCK},
+   {"path-join", builtinPathJoin, 3},
+   {"path-filename", builtinPathFilename, 2},
+   {"path-stem", builtinPathStem, 2},
+   {"path-extension", builtinPathExtension, 2},
+   {"path-parent", builtinPathParent, 2},
+   {"path-absolute", builtinPathAbsolute, 2},
+   {"path-normalize", builtinPathNormalize, 2},
+   {"dir-list", builtinDirList, 2, FILE_LOCK},
+   {"dir-list-recursive", builtinDirListRecursive, 2, FILE_LOCK},
+   {"os-name", builtinOsName, 1},
+   {"os-cwd", builtinOsCwd, 1, FILE_LOCK},
+   {"os-set-cwd", builtinOsSetCwd, 1, FILE_LOCK},
+   {"os-env-get", builtinOsEnvGet, 2, ENV_LOCK},
+   {"os-env-set", builtinOsEnvSet, 2, ENV_LOCK},
+   {"os-args", builtinOsArgs, 1},
+   {"os-exec", builtinOsExec, 2, EXEC_LOCK},
+   {"os-exit-code", builtinOsExitCode, 1},
+
    // input/output
    {"printch", builtinPrintch, 1},
    {"print", builtinPrint, 1, VARIADIC},
@@ -475,7 +569,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"jmptable", builtinJmptable, 3, VARIADIC},
    {"call", builtinCall, 1, VARIADIC},
    {"func-call", builtinFunccall, 1, VARIADIC},
-   {"return", builtinReturn, 0, VARIADIC, RESERVED},
+   {"return", builtinReturn, 0, VARIADIC | RESERVED},
 
    // error handling
    {"catch", builtinCatch, 2, VARIADIC},
@@ -496,7 +590,11 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"is-int", builtinIsint, 2},
    {"is-char", builtinIschar, 2},
    {"is-string", builtinIsstring, 2},
+   {"is-dynamic-string", builtinIsdynamicstring, 2},
+   {"is-constant-string", builtinIsconstantstring, 2},
    {"is-array", builtinIsarray, 2},
+   {"is-map", builtinIsmap, 2},
+   {"is-file-handle", builtinIsfilehandle, 2},
    {"is-reg", builtinIsreg, 2},
    {"is-function", builtinIsfunction, 2},
    {"is-label", builtinIslabel, 2},
