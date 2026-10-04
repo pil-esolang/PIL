@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp(argv[i], "--allow-fileio") == 0) executor.allowFileio = true;
       else if (strcmp(argv[i], "--allow-env") == 0) executor.allowEnv = true;
       else if (strcmp(argv[i], "--allow-exec") == 0) executor.allowExec = true;
+      else if (strcmp(argv[i], "--silence-leaks") == 0) executor.silenceLeaks = true;
       else {
          argv = &argv[i];
          argc -= i;
@@ -125,11 +126,12 @@ void printHelp() {
       "\trun      [FILE/EXECUTABLE] run a file/executable\n"
       "\tcompile  [FILE] [OUTPUT]   compile a file into output\n"
       "Flags:\n"
-      "\t--debug-code    output bytecode and compile/runtime time\n"
-      "\t--debug-tokens  output tokens after translation\n"
-      "\t--time          show time of each compiler's operation\n"
-      "\t--allow-fileio  allow file I/O built-ins\n"
-      "\t--allow-env     allow OS environment variable built-ins\n"
-      "\t--allow-exec    allow 'os-exec' built-in\n"
+      "\t--debug-code      output bytecode and compile/runtime time\n"
+      "\t--debug-tokens    output tokens after translation\n"
+      "\t--time            show time of each compiler's operation\n"
+      "\t--allow-fileio    allow file I/O built-ins\n"
+      "\t--allow-env       allow OS environment variable built-ins\n"
+      "\t--allow-exec      allow 'os-exec' built-in\n"
+      "\t--silence-leaks   silence all memory leaks\n"
    );
 }

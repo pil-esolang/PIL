@@ -99,6 +99,7 @@ struct Executor {
    size_t returnCount;
    int lastExecExitCode;
    bool exitCalled;
+   bool silenceLeaks = false;
    bool allowFileio = false;
    bool allowEnv = false;
    bool allowExec = false;

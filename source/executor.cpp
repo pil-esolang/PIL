@@ -67,7 +67,7 @@ void callMain(Executor &executor, ErrorSeverity stopSeverity) {
       Function &function = executor.functions[command.functionId];
       call(executor, command, function, -1, std::string::npos, command.argCount);
       if (executor.exitCalled || shouldError(executor.diagnostics, stopSeverity)) {
-         break;
+         return;
       }
       executor.pointer += 1;
    }

@@ -11,8 +11,6 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
    size_t includeLexeme = cacheLexeme(executor.cache, "include");
    size_t registerLexeme = cacheLexeme(executor.cache, "reg-size");
    size_t returnRegisterLexeme = cacheLexeme(executor.cache, "return-reg-size");
-   size_t loopLexeme = cacheLexeme(executor.cache, "loop");
-   size_t endLexeme = cacheLexeme(executor.cache, "end");
  
    for (size_t i = 0; i < size; ++i) {
       if (tokens[i].type != TOKEN_DIRECTIVE) continue;
@@ -62,10 +60,6 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
             executor.returnRegisters.resize(value.integer);
          }
          i += 2;
-      }
-      // skip for snippet pass later
-      else if (tokens[i].lexeme == loopLexeme || tokens[i].lexeme == endLexeme) {
-         continue;
       }
       // unknown directive
       else {

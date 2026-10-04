@@ -107,7 +107,7 @@ void logMemoryLeaks(Executor &executor) {
    size_t arrays = executor.arrays.size();
    size_t maps = executor.maps.size();
    size_t handles = executor.files.size();
-   if (strings == 0 && arrays == 0 && maps == 0 && handles == 0) {
+   if (executor.silenceLeaks || (strings == 0 && arrays == 0 && maps == 0 && handles == 0)) {
       return;
    }
 
