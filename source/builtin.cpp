@@ -5,6 +5,10 @@
 #include <thread>
 
 // output
+void builtinFlush(const Command &command, Executor &executor) {
+   std::cout << std::flush;
+}
+
 void builtinPrintch(const Command &command, Executor &executor) {
    putchar(getChar(command, executor, "printch", 0));
 }

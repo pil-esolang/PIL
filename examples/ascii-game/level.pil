@@ -1,0 +1,240 @@
+; map elements
+const inv [-1]
+const emp 0
+const plr 1
+const blk 2
+const con 3
+
+; member access for level struct
+const l-width 0
+const l-height 1
+const l-map 2
+const l-plrpos 3
+const l-coins 4
+const l-collected 5
+
+; create a new level from file and return it. frees path
+create-level(path) let file, level, map, width, height, line, cond, tmp, i, n, coins, plrpos
+   file-open path, 'r', file
+   jmp file, create-level-file-exists
+
+   printfln "File '{}' does not exist.", path
+   string-free path
+   exit 0
+create-level-file-exists:
+   array-new map
+   set 0, height
+   set 0, coins
+
+create-level-start:
+   file-readln file, line
+   is-null line, cond
+   jmp cond, create-level-end   
+
+   incr height
+   is-null width, cond
+   jmpn cond, create-level-width-non-null
+   string-size line, width
+create-level-width-non-null:
+   string-size line, tmp
+   eq width, tmp, cond
+   jmp cond, create-level-width-matches
+
+   printfln "File '{}' is malformed: lines have varying width.", path
+   array-free map
+   string-free path,, line
+   file-close file
+   exit 0
+create-level-width-matches:
+   set 0, i
+   string-size line, n
+create-level-string-start:
+   greq i, n, cond
+   jmp cond, create-level-string-end
+
+   string-at line, i, tmp
+   valtable tmp, tmp, 'p', plr, 'e', emp, 'b', blk, 'c', con, inv
+   array-push map, tmp
+   eq tmp, con, cond
+   add coins, cond, coins
+   eq tmp, plr, cond
+   jmpn cond, create-level-skip-player
+   is-null plrpos, cond
+   jmp cond, create-level-plrpos-null
+   
+   printfln "File '{}' contains multiple players.", path
+   array-free map
+   string-free path, line
+   file-close file
+   exit 0
+create-level-plrpos-null:
+   set i, plrpos
+
+create-level-skip-player:
+   incr i
+   goto create-level-string-start
+create-level-string-end:
+   string-free line
+   goto create-level-start
+create-level-end:
+   file-close file
+
+   is-null plrpos, cond
+   jmpn cond, create-level-plrpos-checked
+
+   printfln "File '{}' doesn't contain a player.", path
+   array-free map
+   string-free path
+   exit 0
+create-level-plrpos-checked:
+   leeq coins, 0, cond
+   jmpn cond, create-level-coins-checked
+
+   printfln "File '{}' doesn't contain any coins.", path
+   array-free map
+   string-free path
+   exit 0
+create-level-coins-checked:
+
+   array-new level
+   array-push level, width
+   array-push level, height
+   array-push level, map
+   array-push level, plrpos
+   array-push level, 0
+   array-push level, coins
+
+   string-free path
+   return level
+
+; free the level
+free-level(level)
+   array-deep-free level
+
+; prints the level to the console
+print-level(level) let coins, collected, map, width, height i, n, cond, tmp
+   array-at level, l-coins, coins
+   array-at level, l-collected, collected
+   array-at level, l-map, map
+   array-at level, l-width, width
+   array-at level, l-height, height
+   set 0, i
+   mul width, height, n
+
+   printfln "Coins collected: {}/{}", coins, collected
+print-level-start:
+   greq i, n, cond
+   jmp cond, print-level-end
+
+   array-at map, i, tmp
+   valtable tmp, tmp, emp, "__", plr, "PL", blk, "BB", con, "_O", "??"
+   print tmp
+
+   incr i
+   mod i, width, cond
+   jmp cond, print-level-skip-newline
+   printch '\n'
+print-level-skip-newline:
+
+   goto print-level-start
+print-level-end:
+
+; clear level
+clear-level(level) let height, i, cond
+   array-at level, l-height, height
+   add height, 1, height ; off by one on purpose, see the loop
+   set 0, i
+clear-level-start:
+   greq i, height, cond
+   jmp cond, clear-level-end
+   print "\r\e[K\e[F"
+   incr i
+   goto clear-level-start
+clear-level-end:
+   print "\r\e[K"
+   flush
+
+; move player
+move-player(level, x, y) let map, row, col, plrpos, width, height, n, target, ty, tx cond, cond2, tmp
+   array-at level, l-map, map
+   array-at level, l-width, width
+   array-at level, l-height, height
+   array-at level, l-plrpos, plrpos
+
+   ; handle y axis
+   set plrpos, target
+   mul width, height, n
+   div plrpos, width, row
+   add row, y, ty
+   le ty, 0, cond
+   jmp cond, move-player-no-op
+   greq ty, height, cond
+   jmp cond, move-player-no-op
+   mul y, width, tmp
+   add target, tmp, target
+
+   ; handle x axis
+   mod plrpos, width, col
+   add col, x, tx
+   le tx, 0, cond
+   jmp cond, move-player-no-op
+   greq tx, width, cond
+   jmp cond, move-player-no-op
+   add target, x, target
+
+   ; move the player
+   array-at map, target, tmp
+   neq tmp, emp, cond
+   neq tmp, con, cond2
+   and cond, cond2, cond
+   jmp cond, move-player-no-op
+
+   jmp cond2, move-player-skip-coin
+   array-at level, l-coins, tmp
+   incr tmp
+   array-set level, l-coins, tmp
+move-player-skip-coin:
+   array-set map, plrpos, emp
+   array-set map, target, plr
+   array-set level, l-plrpos, target
+
+move-player-no-op:
+   return
+
+; play a level
+play-level(level) let ch, coins, collected, cond
+play-level-start:
+   print-level level
+   print "Move > "
+   flush
+   readch ch
+   jmptable ch, 'a', play-level-left, 's', play-level-down, 'd', play-level-right, 'w', play-level-up, 'q', play-level-exit, play-level-input-end
+play-level-left:
+   move-player level [-1], [ 0]
+   goto play-level-input-end
+play-level-down:
+   move-player level [ 0], [ 1]
+   goto play-level-input-end
+play-level-right:
+   move-player level [ 1], [ 0]
+   goto play-level-input-end
+play-level-up:
+   move-player level [ 0], [-1]
+   goto play-level-input-end
+play-level-exit:
+   free-level level
+   printch '\n'
+   exit 0
+play-level-input-end:
+   array-at level, l-coins, coins
+   array-at level, l-collected, collected
+   greq coins, collected, cond
+   jmp cond, play-level-won
+
+   clear-level level
+   goto play-level-start
+
+play-level-won:
+   clear-level level
+   print-level level
+   println "\nLevel won!"

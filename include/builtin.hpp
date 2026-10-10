@@ -219,6 +219,7 @@ void builtinOsExec(const Command &command, Executor &executor);
 void builtinOsExitCode(const Command &command, Executor &executor);
 
 // input/output
+void builtinFlush(const Command &command, Executor &executor);
 void builtinPrintch(const Command &command, Executor &executor);
 void builtinPrint(const Command &command, Executor &executor);
 void builtinPrintln(const Command &command, Executor &executor);
@@ -527,6 +528,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"os-exit-code", builtinOsExitCode, 1},
 
    // input/output
+   {"flush", builtinFlush, 0},
    {"printch", builtinPrintch, 1},
    {"print", builtinPrint, 1, VARIADIC},
    {"println", builtinPrintln, 1, VARIADIC},

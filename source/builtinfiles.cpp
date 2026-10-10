@@ -35,6 +35,11 @@ void builtinFileOpen(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "file-open: Unknown mode '%c'. Valid modes are 'r', 'w', 'a' and 'x'", mode);
       return;
    }
+
+   if (!file.is_open()) {
+      storeInRegister(executor, command, NULL_VALUE, "file-open");
+      return;
+   }
    size_t id = allocateFile(executor, std::move(file));
    storeInRegister(executor, command, Value{.type = VALUE_FILE, .handle = id}, "file-open");
 }

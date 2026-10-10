@@ -1,5 +1,4 @@
 #include "builtin.hpp"
-#include "builtinhelpers.hpp"
 #include "pil.hpp"
 #include <cassert>
 
@@ -105,43 +104,6 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
    if (tokens[i].type == TOKEN_L_BRACKET) {
       return evaluateMath(executor, tokens, i, constants);
    }
-   else if (tokens[i].type == TOKEN_STRING) {
-      // no extra concat needed
-      if (tokens[i+1].type != TOKEN_FMT_START && tokens[i+1].type != TOKEN_EVAL_START) {
-         return Value{.type = VALUE_CSTRING, .string = tokens[i].lexeme};
-      }
-
-      bool lastString = false;
-      std::string constructed = getLexeme(executor.cache, tokens[i].lexeme);
-      i += 1;
-
-      while (tokens[i].type != TOKEN_EOF) {
-         if (tokens[i].type == TOKEN_FMT_START) {
-            i += 1;
-            while (tokens[i].type != TOKEN_FMT_END) {
-               Value value = parseToken(executor, tokens[i], functionParamMap, constants);
-               constructed += toStringParseTime(executor, value);
-               i += 1;
-            }
-            lastString = false;
-         }
-         else if (tokens[i].type == TOKEN_EVAL_START) {
-            Value value = evaluateMath(executor, tokens, i, constants);
-            constructed += toStringParseTime(executor, value);
-            lastString = false;
-         }
-         else if (!lastString && tokens[i].type == TOKEN_STRING) {
-            constructed += getLexeme(executor.cache, tokens[i].lexeme);
-            lastString = true;
-         }
-         else {
-            break;
-         }
-         i += 1;
-      }
-      i -= 1;
-      return Value{.type = VALUE_CSTRING, .string = pushLexeme(executor.cache, constructed)};
-   }
    else if (tokens[i].type == TOKEN_RETURN_REGISTER || tokens[i].type == TOKEN_REGISTER) {
       Token treg = tokens[i];
       Token tval = tokens[i + 1];
@@ -186,13 +148,9 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
    // function name and label prepass
    std::unordered_map<size_t, size_t> functionParamMap;
-   bool constantExpr = false;
 
    for (size_t i = 0; i < size; ++i) {
-      if (tokens[i].type == TOKEN_L_BRACKET || tokens[i].type == TOKEN_EVAL_START) constantExpr = true;
-      if (tokens[i].type == TOKEN_R_BRACKET || tokens[i].type == TOKEN_EVAL_END) constantExpr = false;
-
-      if (!constantExpr && tokens[i].type == TOKEN_IDENTIFIER && (tokens[i + 1].type == TOKEN_L_PAREN || tokens[i + 1].type == TOKEN_LABEL)) {
+      if (tokens[i].type == TOKEN_IDENTIFIER && (tokens[i + 1].type == TOKEN_L_PAREN || tokens[i + 1].type == TOKEN_LABEL)) {
          size_t position = tokens[i].lexeme;
          if (auto it = constants.find(position); it != constants.end()) {
             error(executor.diagnostics, tokens[i].file, tokens[i].line, "%s '%s' redefined", getValueName(it->second.type), getLexeme(executor.cache, position).c_str());

@@ -85,11 +85,11 @@ void logStackTrace(Executor &executor, ErrorSeverity quitSeverity) {
    ErrorSeverity severity = executor.diagnostics.severity;
    log(executor, SEVERITY_IGNORE);
 
-   if (!executor.stackTrace.empty()) {
+   if (executor.stackTrace.size() > 1) {
       printf("%s (newest first):\n", STACKTRACE_INFO);
    }
 
-   while (!executor.stackTrace.empty()) {
+   while (executor.stackTrace.size() > 1) {
       Trace trace = executor.stackTrace.top();
       executor.stackTrace.pop();
    

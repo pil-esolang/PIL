@@ -1,0 +1,46 @@
+@include "level.pil"
+
+; game entry point
+main() let level, path, tmp
+   print "Input level to play (or help): "
+   readln path
+
+   string-trim path
+   neq path, "help", tmp
+   jmp tmp, main-not-help
+   help
+   string-free path
+   return
+
+main-not-help:
+   call level, create-level, path
+   play-level level
+   free-level level
+
+; list all files and some info about the game
+help() let files, i, n, cond, file, tmp, ext
+   println "\nASCII-GAME written in PIL"
+   println "This game is capable of loading and playing a level from a file."
+   println "To play a specific level, simply type its name."
+   println "Here's a list of possible levels: "
+
+   dir-list-recursive ".", files
+   set 0, i
+   array-size files, n
+help-start:
+   greq i, n, cond
+   jmp cond, help-end
+
+   array-at files, i, file
+   path-extension file, ext
+   string-empty ext, cond
+   jmpn cond, help-continue
+   add i, 1, tmp
+   println tmp, ": ", file
+help-continue:
+   string-free ext
+   incr i
+   goto help-start
+help-end:
+   array-deep-free files
+   println "\nHave fun! - Daniel Vishnevsky"
