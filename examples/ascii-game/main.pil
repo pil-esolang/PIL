@@ -18,7 +18,7 @@ main-not-help:
    call level, create-level, path
    string-free path
    play-level level
-   free-level level
+   free level.map, level
 
 ; list all files and some info about the game
 help()

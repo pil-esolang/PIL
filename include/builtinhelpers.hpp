@@ -22,34 +22,34 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
    }
    else if (value.type == VALUE_STRUCT_ACCESS) {
       StructChainLink &link = executor.structChains[value.chain];
-      Value &v = value;
+      Value *v;
       if (link.parentIsChain) {
          Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
-         v = resolveVariableByRef(executor, parent);
+         v = &resolveVariableByRef(executor, parent);
       }
       else {
-         v = resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
+         v = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
       }
 
-      if (v.type != VALUE_ARRAY) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v.type));
-         return v;
+      if (v->type != VALUE_ARRAY) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v->type));
+         return *v;
       }
-      auto it = executor.arrays.find(v.array);
+      auto it = executor.arrays.find(v->array);
       if (it == executor.arrays.end()) {
          error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
-         return v;
+         return *v;
       }
 
       if (it->second.structureId == 0) {
          error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access regular Array instead of structure Array using dot operator");
-         return v;
+         return *v;
       }
 
       auto it2 = executor.structs.find({it->second.structureId, link.field});
       if (it2 == executor.structs.end()) {
          error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
-         return v;
+         return *v;
       }
       return it->second.array[it2->second];
    }
@@ -79,21 +79,21 @@ inline void storeInRegister(Executor &executor, const Command &command, Value re
       registers[reg.reg] = value;
    }
    else if (reg.type == VALUE_STRUCT_ACCESS) {
-      StructChainLink &link = executor.structChains[value.chain];
-      Value &v = value;
+      StructChainLink &link = executor.structChains[reg.chain];
+      Value *v;
       if (link.parentIsChain) {
          Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
-         v = resolveVariableByRef(executor, parent);
+         v = &resolveVariableByRef(executor, parent);
       }
       else {
-         v = resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
+         v = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
       }
 
-      if (v.type != VALUE_ARRAY) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v.type));
+      if (v->type != VALUE_ARRAY) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v->type));
          return;
       }
-      auto it = executor.arrays.find(v.array);
+      auto it = executor.arrays.find(v->array);
       if (it == executor.arrays.end()) {
          error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
          return;
@@ -124,7 +124,7 @@ inline void storeInRegister(Executor &executor, const Command &command, Value va
 inline pilfloat_t getNum(Executor &executor, const Command &command, size_t i, const char *function, bool *floating = nullptr) {
    Value value = resolveVariable(executor, arg(executor, command, i));
    if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
-      error(executor.diagnostics, command.file, command.line, "%s: Expected numeral, got %s instead", function, getValueName(value.type));
+      error(executor.diagnostics, command.file, command.line, "%s: Expected Number, got %s instead", function, getValueName(value.type));
       return 0.0;
    }
    if (floating && value.type == VALUE_FLOATING) *floating = true;
