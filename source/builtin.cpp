@@ -282,6 +282,7 @@ void builtinTypeof(const Command &command, Executor &executor) {
    case VALUE_FILE: string = "file"; break;
    case VALUE_FUNCTION: string = "function"; break;
    case VALUE_LABEL: string = "label"; break;
+   case VALUE_STRUCT: string = "struct"; break;
    case VALUE_COUNT: string = "null"; break;
    default:
       printf("PIL::builtinTypeof: Cannot get the type of value %s.\n", getValueName(type));
@@ -342,7 +343,7 @@ void builtinIsfilehandle(const Command &command, Executor &executor) {
 
 void builtinIsreg(const Command &command, Executor &executor) {
    Value value = arg(executor, command, 0);
-   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER, "is-reg");
+   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER || value.type == VALUE_STRUCT_ACCESS, "is-reg");
 }
 
 void builtinIsfunction(const Command &command, Executor &executor) {
@@ -353,6 +354,11 @@ void builtinIsfunction(const Command &command, Executor &executor) {
 void builtinIslabel(const Command &command, Executor &executor) {
    Value value = resolveVariable(executor, arg(executor, command, 0));
    storeBoolean(executor, command, value.type == VALUE_LABEL, "is-label");
+}
+
+void builtinIsStruct(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   storeBoolean(executor, command, value.type == VALUE_LABEL, "is-struct");
 }
 
 void builtinIsnull(const Command &command, Executor &executor) {
@@ -603,4 +609,226 @@ void builtinFuncArgMatch(const Command &command, Executor &executor) {
    piluint_t args = getNum(executor, command, 1, "func-arg-match");
    size_t params = func.paramCount;
    storeBoolean(executor, command, (!func.variadic && args == params) || (func.variadic && args >= params), "func-arg-match");
+}
+
+// structures
+void builtinMake(const Command &command, Executor &executor) {
+   Value structValue = resolveVariable(executor, arg(executor, command, 0));
+   if (structValue.type != VALUE_STRUCT) {
+      error(executor.diagnostics, command.file, command.line, "make: Expected Structure for the 1st argument, got %s instead", getValueName(structValue.type));
+      return;
+   }
+
+   Function &structure = executor.functions[structValue.structure];
+   if (structure.localCount != command.argCount - 2) {
+      error(executor.diagnostics, command.file, command.line, "make: Structure '%s' expected %zu fields, got %zu instead", getLexeme(executor.cache, structure.lexeme).c_str(), structure.localCount, command.argCount);
+      return;
+   }
+
+   std::vector<Value> values;
+   values.reserve(structure.localCount);
+   for (size_t i = 2; i < command.argCount; ++i) {
+      values.push_back(resolveVariable(executor, arg(executor, command, i)));
+   }
+
+   size_t array = allocateArray(executor, values);
+   executor.arrays[array].structureId = structure.position;
+   storeInRegister(executor, command, arg(executor, command, 1), Value{.type = VALUE_ARRAY, .array = array}, "make");
+}
+
+void builtinFree(const Command &command, Executor &executor) {
+   for (size_t i = 0; i < command.argCount; ++i) {
+      Value a = arg(executor, command, i);
+      Value &value = resolveVariableByRef(executor, a);
+      if (value.type == VALUE_STRING) {
+         executor.strings.erase(value.string);
+      }
+      else if (value.type == VALUE_ARRAY) {
+         executor.arrays.erase(value.array);
+      }
+      else if (value.type == VALUE_MAP) {
+         executor.maps.erase(value.map);
+      }
+      else {
+         error(executor.diagnostics, command.file, command.line, "free: Expected String/Array/Map/Structure, got %s instead", getValueName(value.type));
+         continue;
+      }
+      value = NULL_VALUE;
+   }
+}
+
+void builtinDeepFree(const Command &command, Executor &executor) {
+   std::set<std::pair<size_t, ValueType>> visited;
+   for (size_t i = 0; i < command.argCount; ++i) {
+      Value a = arg(executor, command, i);
+      Value &value = resolveVariableByRef(executor, a);
+      if (value.type == VALUE_STRING) {
+         executor.strings.erase(value.string);
+      }
+      else if (value.type == VALUE_ARRAY || value.type == VALUE_MAP) {
+         visited.clear();
+         deepFree(command, executor, value, visited);
+      }
+      else {
+         error(executor.diagnostics, command.file, command.line, "deep-free: Expected String/Array/Map/Structure, got %s instead", getValueName(value.type));
+         continue;
+      }
+      value = NULL_VALUE;
+   }
+}
+
+void builtinCopy(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   if (value.type == VALUE_STRING) {
+      const std::string *string;
+      if (!constStringOrError(command, executor, "copy", string)) return;
+      storeString(executor, command, *string, back(executor, command), "copy");
+   }
+   else if (value.type == VALUE_ARRAY) {
+      std::vector<Value> *array;
+      if (!arrayOrError(command, executor, "copy", array, 0, true)) return;
+      storeArray(executor, command, *array, back(executor, command), "copy");
+   }
+   else if (value.type == VALUE_MAP) {
+      InternalPILMap *map;
+      if (!mapOrError(command, executor, "copy", map)) return;
+      storeMap(executor, command, *map, back(executor, command), "copy");
+   }
+   else {
+      storeInRegister(executor, command, value, "copy");
+   }
+}
+
+void builtinDeepCopy(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   if (value.type == VALUE_STRING) {
+      const std::string *string;
+      if (!constStringOrError(command, executor, "copy", string)) return;
+      storeString(executor, command, *string, back(executor, command), "copy");
+   }
+   else if (value.type == VALUE_ARRAY) {
+      if (auto it = executor.arrays.find(value.array); it == executor.arrays.end()) {
+         error(executor.diagnostics, command.file, command.line, "Invalid Array ID %zu. Use after free", value.array);
+         return;
+      }
+      std::map<std::pair<size_t, ValueType>, size_t> copied;
+      Value result {VALUE_ARRAY};
+      result.array = deepCopy(command, executor, value.array, value.type, copied);
+      storeInRegister(executor, command, back(executor, command), result, "deep-copy");
+   }
+   else if (value.type == VALUE_MAP) {
+      if (auto it = executor.maps.find(value.map); it == executor.maps.end()) {
+         error(executor.diagnostics, command.file, command.line, "Invalid Map ID %zu. Use after free", value.map);
+         return;
+      }
+      std::map<std::pair<size_t, ValueType>, size_t> copied;
+      Value result {VALUE_MAP};
+      result.map = deepCopy(command, executor, value.map, value.type, copied);
+      storeInRegister(executor, command, back(executor, command), result, "deep-copy");
+   }
+   else {
+      storeInRegister(executor, command, value, "copy");
+   }
+}
+
+void builtinSize(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   if (value.type == VALUE_STRING) {
+      const std::string *string;
+      if (!constStringOrError(command, executor, "size", string)) return;
+      storeNumber(executor, command, string->size(), false, "size");
+   }
+   else if (value.type == VALUE_ARRAY) {
+      std::vector<Value> *array;
+      if (!arrayOrError(command, executor, "size", array, 0, true)) return;
+      storeNumber(executor, command, array->size(), false, "size");
+   }
+   else if (value.type == VALUE_MAP) {
+      InternalPILMap *map;
+      if (!mapOrError(command, executor, "size", map)) return;
+      storeNumber(executor, command, map->size(), false, "size");
+   }
+   else {
+      storeNumber(executor, command, 1, false, "size");
+   }
+}
+
+void builtinAt(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   if (value.type == VALUE_STRING) {
+      const std::string *string;
+      if (!constStringOrError(command, executor, "at", string)) return;
+      piluint_t id = getNum(executor, command, 1, "at");
+      if (id < 0 || id >= string->size()) {
+         error(executor.diagnostics, command.file, command.line, "at: Index %zu for String is out of bounds", id);
+         return;
+      }
+      Value value {VALUE_CHARACTER};
+      value.character = (*string)[id];
+      storeInRegister(executor, command, value, "at");
+   }
+   else if (value.type == VALUE_ARRAY) {
+      std::vector<Value> *array;
+      if (!arrayOrError(command, executor, "at", array, 0, true)) return;
+      piluint_t id = getNum(executor, command, 1, "at");
+      if (id < 0 || id >= array->size()) {
+         error(executor.diagnostics, command.file, command.line, "at: Index %zu for Array is out of bounds", id);
+         return;
+      }
+      storeInRegister(executor, command, (*array)[id], "at");
+   }
+   else if (value.type == VALUE_MAP) {
+      InternalPILMap *map;
+      if (!mapOrError(command, executor, "at", map)) return;
+      Value key = resolveVariable(executor, arg(executor, command, 1));
+      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+         error(executor.diagnostics, command.file, command.line, "at: %s cannot be used as a key in a Map", getValueName(key.type));
+         return;
+      }
+      Value val = NULL_VALUE;
+      if (auto it = map->find(key); it != map->end()) {
+         val = it->second;
+      }
+      storeInRegister(executor, command, val, "at");
+   }
+   else {
+      error(executor.diagnostics, command.file, command.line, "at: %s is not indexable", getValueName(value.type));
+   }
+}
+
+void builtinStore(const Command &command, Executor &executor) {
+   Value value = resolveVariable(executor, arg(executor, command, 0));
+   if (value.type == VALUE_STRING) {
+      std::string *string;
+      if (!stringOrError(command, executor, "store", string)) return;
+      piluint_t id = getNum(executor, command, 1, "store");
+      if (id < 0 || id >= string->size()) {
+         error(executor.diagnostics, command.file, command.line, "store: Index %zu for String is out of bounds", id);
+         return;
+      }
+      (*string)[id] = getChar(command, executor, "string-set", 2);
+   }
+   else if (value.type == VALUE_ARRAY) {
+      std::vector<Value> *array;
+      if (!arrayOrError(command, executor, "store", array, 0, true)) return;
+      piluint_t id = getNum(executor, command, 1, "store");
+      if (id < 0 || id >= array->size()) {
+         error(executor.diagnostics, command.file, command.line, "store: Index %zu for Array is out of bounds", id);
+         return;
+      }
+      (*array)[id] = resolveVariable(executor, arg(executor, command, 2));
+   }
+   else if (value.type == VALUE_MAP) {
+      InternalPILMap *map;
+      if (!mapOrError(command, executor, "store", map)) return;
+      Value key = resolveVariable(executor, arg(executor, command, 1));
+      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+         error(executor.diagnostics, command.file, command.line, "store: %s cannot be used as a key in a Map", getValueName(key.type));
+         return;
+      }
+      (*map)[key] = resolveVariable(executor, arg(executor, command, 2));
+   }
+   else {
+      error(executor.diagnostics, command.file, command.line, "store: %s is not indexable", getValueName(value.type));
+   }
 }

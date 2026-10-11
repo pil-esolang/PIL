@@ -34,12 +34,11 @@ void builtinMapSet(const Command &command, Executor &executor) {
    InternalPILMap *map;
    if (!mapOrError(command, executor, "map-set", map)) return;
    Value key = resolveVariable(executor, arg(executor, command, 1));
-   Value val = resolveVariable(executor, arg(executor, command, 2));
    if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "map-set: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
-   (*map)[key] = val;
+   (*map)[key] = resolveVariable(executor, arg(executor, command, 2));
 }
 
 void builtinMapAt(const Command &command, Executor &executor) {
@@ -206,8 +205,8 @@ void builtinMapAnyMarked(const Command &command, Executor &executor) {
 
 void builtinMapShallowCopy(const Command &command, Executor &executor) {
    InternalPILMap *map;
-   if (!mapOrError(command, executor, "map-shallow-copy", map)) return;
-   storeMap(executor, command, *map, back(executor, command), "map-shallow-copy");
+   if (!mapOrError(command, executor, "map-copy", map)) return;
+   storeMap(executor, command, *map, back(executor, command), "map-copy");
 }
 
 void builtinMapDeepCopy(const Command &command, Executor &executor) {

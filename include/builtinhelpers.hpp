@@ -20,6 +20,39 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
       std::vector<Value> &registers = (value.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
       return registers[value.reg];
    }
+   else if (value.type == VALUE_STRUCT_ACCESS) {
+      StructChainLink &link = executor.structChains[value.chain];
+      Value &v = value;
+      if (link.parentIsChain) {
+         Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
+         v = resolveVariableByRef(executor, parent);
+      }
+      else {
+         v = resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
+      }
+
+      if (v.type != VALUE_ARRAY) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v.type));
+         return v;
+      }
+      auto it = executor.arrays.find(v.array);
+      if (it == executor.arrays.end()) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
+         return v;
+      }
+
+      if (it->second.structureId == 0) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access regular Array instead of structure Array using dot operator");
+         return v;
+      }
+
+      auto it2 = executor.structs.find({it->second.structureId, link.field});
+      if (it2 == executor.structs.end()) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
+         return v;
+      }
+      return it->second.array[it2->second];
+   }
    else {
       return value;
    }
@@ -44,6 +77,39 @@ inline void storeInRegister(Executor &executor, const Command &command, Value re
    else if (reg.type == VALUE_REGISTER || reg.type == VALUE_RETURN_REGISTER) {
       std::vector<Value> &registers = (reg.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
       registers[reg.reg] = value;
+   }
+   else if (reg.type == VALUE_STRUCT_ACCESS) {
+      StructChainLink &link = executor.structChains[value.chain];
+      Value &v = value;
+      if (link.parentIsChain) {
+         Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
+         v = resolveVariableByRef(executor, parent);
+      }
+      else {
+         v = resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
+      }
+
+      if (v.type != VALUE_ARRAY) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v.type));
+         return;
+      }
+      auto it = executor.arrays.find(v.array);
+      if (it == executor.arrays.end()) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
+         return;
+      }
+
+      if (it->second.structureId == 0) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access regular Array instead of structure Array using dot operator");
+         return;
+      }
+
+      auto it2 = executor.structs.find({it->second.structureId, link.field});
+      if (it2 == executor.structs.end()) {
+         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
+         return;
+      }
+      it->second.array[it2->second] = value;
    }
    else {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Register/Variable for the destination argument, got %s instead", function, getValueName(reg.type));
@@ -78,6 +144,7 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
    case VALUE_FILE: return true;
    case VALUE_FUNCTION: return true;
    case VALUE_LABEL: return true;
+   case VALUE_STRUCT: return true;
    case VALUE_COUNT: return false;
    default: // should not happen
       printf("PIL::isTruthy: Value %s cannot be checked for truthiness.\n", getValueName(v.type));
@@ -153,13 +220,18 @@ inline bool constStringOrCharOrError(const Command &command, Executor &executor,
    return false;
 }
 
-inline bool arrayOrError(const Command &command, Executor &executor, const char *function, std::vector<Value> *&out, size_t i = 0) {
+inline bool arrayOrError(const Command &command, Executor &executor, const char *function, std::vector<Value> *&out, size_t i = 0, bool allowStructs = false) {
    Value array = resolveVariable(executor, arg(executor, command, i));
    if (array.type != VALUE_ARRAY) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Array, got %s instead", function, getValueName(array.type));
       return false;
    }
    if (auto it = executor.arrays.find(array.array); it != executor.arrays.end()) {
+      if (!allowStructs && it->second.structureId != 0 && !executor.functions[it->second.structureId].isStructureArray) {
+         error(executor.diagnostics, command.file, command.line, "%s: Expected regular Array, got structure Array instead. If this is intended, define structure '%s' as 'struct array'", function, getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
+         return false;
+      }
+      
       out = &it->second.array;
       return true;
    }
@@ -250,7 +322,8 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
       }
       else if ((v1.type != v2.type) || (v1.type == VALUE_INTEGER && v1.integer != v2.integer) || (v1.type == VALUE_FLOATING && v1.floating != v2.floating)
             || (v1.type == VALUE_CHARACTER && v1.character != v2.character) || (v1.type == VALUE_FUNCTION && v1.function != v2.function)
-            || (v1.type == VALUE_LABEL && v1.label != v2.label) || (v1.type == VALUE_ARRAY && !arraysEqual(executor, v1, v2, file, line, function, active))) {
+            || (v1.type == VALUE_LABEL && v1.label != v2.label) || (v1.type == VALUE_STRUCT && v1.structure != v2.structure)
+            || (v1.type == VALUE_ARRAY && !arraysEqual(executor, v1, v2, file, line, function, active))) {
          return false;
       }
    }
@@ -272,10 +345,22 @@ inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t 
       int c = as.compare(bs);
       return (c < 0 ? COMPARISON_LESS : c > 0 ? COMPARISON_GREATER : COMPARISON_EQUAL);
    }
-   // only check equality for arrays
+   // only check equality for following types
    else if (a.type == VALUE_ARRAY && b.type == VALUE_ARRAY && softie) {
       std::set<std::pair<size_t, size_t>> active;
       return (arraysEqual(executor, a, b, file, line, function, active) ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL);
+   }
+   else if (a.type == VALUE_COUNT && b.type == VALUE_COUNT && softie) {
+      return COMPARISON_EQUAL;
+   }
+   else if (a.type == VALUE_FUNCTION && b.type == VALUE_FUNCTION && softie) {
+      return (a.function == b.function ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL);
+   }
+   else if (a.type == VALUE_LABEL && b.type == VALUE_LABEL && softie) {
+      return (a.label == b.label ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL);
+   }
+   else if (a.type == VALUE_STRUCT && b.type == VALUE_STRUCT && softie) {
+      return (a.structure == b.structure ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL);
    }
    else if (!softie) {
       error(executor.diagnostics, file, line, "%s: Cannot compare %s to %s", function, getValueName(a.type), getValueName(b.type));
@@ -321,6 +406,9 @@ inline bool valuesEqual(Executor &executor, const Command &command, Value a, Val
    else if (a.type == VALUE_LABEL && b.type == VALUE_LABEL) {
       return a.label == b.label;
    }
+   else if (a.type == VALUE_STRUCT && b.type == VALUE_STRUCT) {
+      return a.structure == b.structure;
+   }
    else if (a.type == VALUE_MAP || b.type == VALUE_MAP || a.type == VALUE_FILE || b.type == VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "%s: Cannot compare %s to %s", function, getValueName(a.type), getValueName(b.type));
       return false;
@@ -359,6 +447,7 @@ inline std::string toStringImpl(Executor &executor, Value value, const char *fun
    case VALUE_STRING: return getString(executor, value.string, file, line);
    case VALUE_FUNCTION: return getLexeme(executor.cache, executor.functions[value.function].lexeme);
    case VALUE_LABEL: return getLexeme(executor.cache, executor.functions[value.label].lexeme);
+   case VALUE_STRUCT: return getLexeme(executor.cache, executor.functions[value.structure].lexeme);
    case VALUE_ARRAY: {
       if (!active.insert(value.array).second) {
          return "...";
@@ -414,8 +503,9 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
    case VALUE_CHARACTER: printf("%c", a.character); break;
    case VALUE_CSTRING: printf("%s", getLexeme(executor.cache, a.string).c_str()); break;
    case VALUE_STRING: printf("%s", getString(executor, a.string, file, line).c_str()); break;
-   case VALUE_FUNCTION: printf("%s()", getLexeme(executor.cache, executor.functions[a.function].lexeme).c_str()); break;
-   case VALUE_LABEL: printf("%s:", getLexeme(executor.cache, executor.functions[a.label].lexeme).c_str()); break;
+   case VALUE_FUNCTION: printf("%s", getLexeme(executor.cache, executor.functions[a.function].lexeme).c_str()); break;
+   case VALUE_LABEL: printf("%s", getLexeme(executor.cache, executor.functions[a.label].lexeme).c_str()); break;
+   case VALUE_STRUCT: printf("%s", getLexeme(executor.cache, executor.functions[a.structure].lexeme).c_str()); break;
    case VALUE_ARRAY: {
       if (!active.insert({a.array, a.type}).second) {
          puts("...");

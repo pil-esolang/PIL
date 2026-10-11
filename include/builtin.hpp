@@ -275,6 +275,7 @@ void builtinIsfilehandle(const Command &command, Executor &executor);
 void builtinIsreg(const Command &command, Executor &executor);
 void builtinIsfunction(const Command &command, Executor &executor);
 void builtinIslabel(const Command &command, Executor &executor);
+void builtinIsStruct(const Command &command, Executor &executor);
 void builtinIsnull(const Command &command, Executor &executor);
 void builtinIsinf(const Command &command, Executor &executor);
 void builtinIsnan(const Command &command, Executor &executor);
@@ -303,6 +304,16 @@ void builtinReturnCount(const Command &command, Executor &executor);
 void builtinFuncArity(const Command &command, Executor &executor);
 void builtinFuncVariadic(const Command &command, Executor &executor);
 void builtinFuncArgMatch(const Command &command, Executor &executor);
+
+// structures
+void builtinMake(const Command &command, Executor &executor);
+void builtinFree(const Command &command, Executor &executor);
+void builtinDeepFree(const Command &command, Executor &executor);
+void builtinCopy(const Command &command, Executor &executor);
+void builtinDeepCopy(const Command &command, Executor &executor);
+void builtinSize(const Command &command, Executor &executor);
+void builtinAt(const Command &command, Executor &executor);
+void builtinStore(const Command &command, Executor &executor);
 
 // def table
 template <typename T, size_t N>
@@ -396,7 +407,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"array-find", builtinArrayFind, 3},
    {"array-contains", builtinArrayContains, 3},
    {"array-erase-all", builtinArrayEraseAll, 2},
-   {"array-shallow-copy", builtinArrayShallowCopy, 2},
+   {"array-copy", builtinArrayShallowCopy, 2},
    {"array-deep-copy", builtinArrayDeepCopy, 2},
 
    // map ops
@@ -419,7 +430,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"map-get-marked-count", builtinMapGetMarkedCount, 1},
    {"map-get-marked", builtinMapGetMarked, 1},
    {"map-any-marked", builtinMapAnyMarked, 1},
-   {"map-shallow-copy", builtinMapShallowCopy, 2},
+   {"map-copy", builtinMapShallowCopy, 2},
    {"map-deep-copy", builtinMapDeepCopy, 2},
 
    // math
@@ -584,6 +595,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"is-reg", builtinIsreg, 2},
    {"is-function", builtinIsfunction, 2},
    {"is-label", builtinIslabel, 2},
+   {"is-struct", builtinIsStruct, 2},
    {"is-null", builtinIsnull, 2},
    {"is-inf", builtinIsinf, 2},
    {"is-nan", builtinIsnan, 2},
@@ -612,4 +624,14 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"func-arity", builtinFuncArity, 2},
    {"func-variadic", builtinFuncVariadic, 2},
    {"func-arg-match", builtinFuncArgMatch, 3},
+
+   // structures
+   {"make", builtinMake, 3, VARIADIC},
+   {"free", builtinFree, 1, VARIADIC},
+   {"deep-free", builtinDeepFree, 1, VARIADIC},
+   {"copy", builtinCopy, 2},
+   {"deep-copy", builtinDeepCopy, 2},
+   {"size", builtinSize, 2},
+   {"at", builtinAt, 3},
+   {"store", builtinStore, 3},
 };

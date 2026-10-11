@@ -126,7 +126,29 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
       return Value{.type = (treg.type == TOKEN_REGISTER ? VALUE_REGISTER : VALUE_RETURN_REGISTER), .reg = reg};
    }
    else {
-      return parseToken(executor, tokens[i], functionParamMap, constants);
+      Value value = parseToken(executor, tokens[i], functionParamMap, constants);
+      while ((value.type == VALUE_LOCAL || value.type == VALUE_STRUCT_ACCESS) && tokens[i + 1].type == TOKEN_DOT) {
+         i += 2;
+         if (tokens[i].type != TOKEN_IDENTIFIER) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after structure field access, got %s instead", getTokenName(tokens[i].type));
+            return value;
+         }
+         StructChainLink link;
+         if (value.type == VALUE_LOCAL) {
+            link.parentIsChain = false;
+            link.parent = value.local;
+         }
+         else {
+            link.parentIsChain = true;
+            link.parent = value.chain;
+         }
+         link.field = tokens[i].lexeme;
+
+         size_t index = executor.structChains.size();
+         executor.structChains.push_back(link);
+         value = Value{.type = VALUE_STRUCT_ACCESS, .chain = index};
+      }
+      return value;
    }
 }
 
@@ -148,9 +170,50 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
    // function name and label prepass
    std::unordered_map<size_t, size_t> functionParamMap;
+   size_t returnLexeme = cacheLexeme(executor.cache, "return");
+   size_t returnId = constants[returnLexeme].function;
+   size_t returnRegisterCount = (executor.returnRegisters.empty() ? DEFAULT_RETURN_REGISTER_COUNT : executor.returnRegisters.size());
+
+   size_t defineLexeme = cacheLexeme(executor.cache, "let");
+   size_t callLexeme = cacheLexeme(executor.cache, "call");
+   size_t mainLexeme = cacheLexeme(executor.cache, "main");
+   size_t constLexeme = cacheLexeme(executor.cache, "const");
+   size_t structLexeme = cacheLexeme(executor.cache, "struct");
+   size_t arrayLexeme = cacheLexeme(executor.cache, "array");
 
    for (size_t i = 0; i < size; ++i) {
-      if (tokens[i].type == TOKEN_IDENTIFIER && (tokens[i + 1].type == TOKEN_L_PAREN || tokens[i + 1].type == TOKEN_LABEL)) {
+      if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == structLexeme) {
+         bool isArray = false;
+         if (tokens[i + 1].type == TOKEN_IDENTIFIER && tokens[i + 1].lexeme == arrayLexeme) {
+            i += 1;
+            isArray = true;
+         }
+
+         i += 1;
+         if (tokens[i].type != TOKEN_IDENTIFIER) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after 'struct' keyword, got %s instead", getTokenName(tokens[i].type));
+            continue;
+         }
+         
+         size_t position = tokens[i].lexeme;
+         if (auto it = constants.find(position); it != constants.end()) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "%s '%s' redefined", getValueName(it->second.type), getLexeme(executor.cache, position).c_str());
+         }
+
+         size_t functionId = executor.functions.size();
+         Function function;
+         function.isStructure = true;
+         function.isStructureArray = isArray;
+         function.lexeme = position;
+         function.position = functionId;
+         function.localCount = 0;
+
+         Value value {VALUE_STRUCT};
+         value.structure = functionId;
+         constants[position] = value;
+         executor.functions.push_back(function);
+      }
+      else if (tokens[i].type == TOKEN_IDENTIFIER && (tokens[i + 1].type == TOKEN_L_PAREN || tokens[i + 1].type == TOKEN_LABEL)) {
          size_t position = tokens[i].lexeme;
          if (auto it = constants.find(position); it != constants.end()) {
             error(executor.diagnostics, tokens[i].file, tokens[i].line, "%s '%s' redefined", getValueName(it->second.type), getLexeme(executor.cache, position).c_str());
@@ -176,14 +239,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    }
 
    // real parsing
-   size_t returnLexeme = cacheLexeme(executor.cache, "return");
-   size_t returnId = constants[returnLexeme].function;
-   size_t returnRegisterCount = (executor.returnRegisters.empty() ? DEFAULT_RETURN_REGISTER_COUNT : executor.returnRegisters.size());
-
-   size_t defineLexeme = cacheLexeme(executor.cache, "let");
-   size_t callLexeme = cacheLexeme(executor.cache, "call");
-   size_t mainLexeme = cacheLexeme(executor.cache, "main");
-   size_t constLexeme = cacheLexeme(executor.cache, "const");
+   Function *lastFunction = nullptr;
    bool firstFunction = true;
 
    for (size_t i = 0; i < size && tokens[i].type != TOKEN_EOF; ++i) {
@@ -200,6 +256,26 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          i += 2;
          if (i >= size || tokens[i].type != TOKEN_NEWLINE) {
             error(executor.diagnostics, tokens[start].file, tokens[start].line, "Excess tokens (or EOF) after label");
+         }
+      }
+      // structure declarations
+      else if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == structLexeme) {
+         if (tokens[i + 1].type == TOKEN_IDENTIFIER && tokens[i + 1].lexeme == arrayLexeme) {
+            i += 1;
+         }
+         
+         Function &structure = executor.functions[constants[tokens[i + 1].lexeme].structure];
+         for (i += 2; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
+            if (tokens[i].type != TOKEN_IDENTIFIER) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier, got %s instead", getTokenName(tokens[i].type));
+               break;
+            }
+            executor.structs[{structure.position, tokens[i].lexeme}] = structure.localCount;
+            structure.localCount += 1;
+         }
+
+         if (structure.localCount == 0) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Structure '%s' does not contain any fields", getLexeme(executor.cache, structure.lexeme).c_str());
          }
       }
       // function declarations
@@ -242,25 +318,11 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             error(executor.diagnostics, tokens[start].file, tokens[start].line, "Unterminated function parameters");
          }
 
-         // variable declarations
          i += 1;
-         if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == defineLexeme) {
-            for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
-               if (tokens[i].type != TOKEN_IDENTIFIER) {
-                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected unique Identifier, got %s instead", getTokenName(tokens[i].type));
-                  continue;
-               }
-
-               if (functionParamMap.find(tokens[i].lexeme) != functionParamMap.end() || constants.find(tokens[i].lexeme) != constants.end()) {
-                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Redefined define '%s'", getLexeme(executor.cache, tokens[i].lexeme).c_str());
-                  continue;
-               }
-               functionParamMap[tokens[i].lexeme] = functionParamMap.size();
-            }
-         }
          function.variadic = variadic;
          function.position = executor.code.size();
          function.localCount = functionParamMap.size();
+         lastFunction = &function;
 
          if (function.lexeme == mainLexeme) {
             executor.main = functionId;
@@ -285,6 +347,22 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             continue;
          }
          constants[lexeme] = internalParse(executor, tokens, i, {}, constants); // functionParamMap handles runtime values, not constants
+      }
+      // variable declaration
+      else if (lastFunction && tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == defineLexeme) {
+         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
+            if (tokens[i].type != TOKEN_IDENTIFIER) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected unique Identifier, got %s instead", getTokenName(tokens[i].type));
+               continue;
+            }
+
+            if (functionParamMap.find(tokens[i].lexeme) != functionParamMap.end() || constants.find(tokens[i].lexeme) != constants.end()) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Redefined variable '%s'", getLexeme(executor.cache, tokens[i].lexeme).c_str());
+               continue;
+            }
+            functionParamMap[tokens[i].lexeme] = functionParamMap.size();
+         }
+         lastFunction->localCount = functionParamMap.size();
       }
       // function calls
       else {

@@ -132,7 +132,12 @@ void logMemoryLeaks(Executor &executor) {
 
       printf(LEAKED_OBJECTS, arrays, "arrays");
       for (const auto &[id, array]: executor.arrays) {
-         printf("%zu: Array with size %zu, mark %d.\n", id, array.array.size(), array.mark);
+         if (array.structureId != 0) {
+            printf("%zu: Structure '%s' with size %zu, mark %d.\n", id, getLexeme(executor.cache, executor.functions[array.structureId].lexeme).c_str(), array.array.size(), array.mark);
+         }
+         else {
+            printf("%zu: Array with size %zu, mark %d.\n", id, array.array.size(), array.mark);
+         }
          i += 1;
          if (i >= size) break;
       }

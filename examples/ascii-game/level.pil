@@ -13,13 +13,13 @@ const l-plrpos 3
 const l-coins 4
 const l-collected 5
 
-; create a new level from file and return it. frees path
-create-level(path) let file, level, map, width, height, line, cond, tmp, i, n, coins, plrpos
+; create a new level from file and return it
+create-level(path)
+   let file, level, map, width, height, line, cond, tmp, i, n, coins, plrpos
    file-open path, 'r', file
    jmp file, create-level-file-exists
 
    printfln "File '{}' does not exist.", path
-   string-free path
    exit 0
 create-level-file-exists:
    array-new map
@@ -42,7 +42,7 @@ create-level-width-non-null:
 
    printfln "File '{}' is malformed: lines have varying width.", path
    array-free map
-   string-free path,, line
+   string-free line
    file-close file
    exit 0
 create-level-width-matches:
@@ -64,7 +64,7 @@ create-level-string-start:
    
    printfln "File '{}' contains multiple players.", path
    array-free map
-   string-free path, line
+   string-free line
    file-close file
    exit 0
 create-level-plrpos-null:
@@ -84,7 +84,6 @@ create-level-end:
 
    printfln "File '{}' doesn't contain a player.", path
    array-free map
-   string-free path
    exit 0
 create-level-plrpos-checked:
    leeq coins, 0, cond
@@ -92,7 +91,6 @@ create-level-plrpos-checked:
 
    printfln "File '{}' doesn't contain any coins.", path
    array-free map
-   string-free path
    exit 0
 create-level-coins-checked:
 
@@ -103,8 +101,6 @@ create-level-coins-checked:
    array-push level, plrpos
    array-push level, 0
    array-push level, coins
-
-   string-free path
    return level
 
 ; free the level
@@ -112,7 +108,8 @@ free-level(level)
    array-deep-free level
 
 ; prints the level to the console
-print-level(level) let coins, collected, map, width, height i, n, cond, tmp
+print-level(level)
+   let coins, collected, map, width, height i, n, cond, tmp
    array-at level, l-coins, coins
    array-at level, l-collected, collected
    array-at level, l-map, map
@@ -140,7 +137,8 @@ print-level-skip-newline:
 print-level-end:
 
 ; clear level
-clear-level(level) let height, i, cond
+clear-level(level)
+   let height, i, cond
    array-at level, l-height, height
    add height, 1, height ; off by one on purpose, see the loop
    set 0, i
@@ -155,7 +153,8 @@ clear-level-end:
    flush
 
 ; move player
-move-player(level, x, y) let map, row, col, plrpos, width, height, n, target, ty, tx cond, cond2, tmp
+move-player(level, x, y)
+   let map, row, col, plrpos, width, height, n, target, ty, tx cond, cond2, tmp
    array-at level, l-map, map
    array-at level, l-width, width
    array-at level, l-height, height
@@ -202,7 +201,8 @@ move-player-no-op:
    return
 
 ; play a level
-play-level(level) let ch, coins, collected, cond
+play-level(level)
+   let ch, coins, collected, cond
 play-level-start:
    print-level level
    print "Move > "

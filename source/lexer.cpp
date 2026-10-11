@@ -131,15 +131,20 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
             tokens.emplace_back(TOKEN_GREATER, 0, file.lexeme, line);
          }
          continue;
+      case '.':
+         if (i + 2 < size && file.code[i+1] == '.' && file.code[i+2] == '.') {
+            tokens.emplace_back(TOKEN_VARIADIC, 0, file.lexeme, line);
+            i += 2;
+         }
+         else {
+            tokens.emplace_back(TOKEN_DOT, 0, file.lexeme, line);
+         }
+         continue;
       }
 
       if (i + 1 < size && ch == '=' && file.code[i+1] == '=') {
          tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
          i += 1;
-      }
-      else if (i + 2 < size && ch == '.' && file.code[i+1] == '.' && file.code[i+2] == '.') {
-         tokens.emplace_back(TOKEN_VARIADIC, 0, file.lexeme, line);
-         i += 2;
       }
       else if (ch == ';') {
          while (i < size && file.code[i] != '\n') i += 1;

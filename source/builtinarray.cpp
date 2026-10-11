@@ -342,8 +342,8 @@ void builtinArrayEraseAll(const Command &command, Executor &executor) {
 
 void builtinArrayShallowCopy(const Command &command, Executor &executor) {
    std::vector<Value> *array;
-   if (!arrayOrError(command, executor, "array-shallow-copy", array)) return;
-   storeArray(executor, command, *array, back(executor, command), "array-shallow-copy");
+   if (!arrayOrError(command, executor, "array-copy", array)) return;
+   storeArray(executor, command, *array, back(executor, command), "array-copy");
 }
 
 void builtinArrayDeepCopy(const Command &command, Executor &executor) {

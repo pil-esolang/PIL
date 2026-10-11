@@ -8,13 +8,15 @@ typedef uint64_t piluint_t;
 typedef double pilfloat_t;
 
 enum ValueType: char {
-   VALUE_INTEGER, VALUE_FLOATING, VALUE_CHARACTER, VALUE_CSTRING, VALUE_STRING, VALUE_FUNCTION, VALUE_LABEL,
-   VALUE_LOCAL, VALUE_REGISTER, VALUE_RETURN_REGISTER, VALUE_ARRAY, VALUE_MAP, VALUE_FILE, VALUE_COUNT
+   VALUE_INTEGER, VALUE_FLOATING, VALUE_CHARACTER, VALUE_CSTRING, VALUE_STRING, VALUE_FUNCTION,
+   VALUE_LABEL, VALUE_LOCAL, VALUE_REGISTER, VALUE_RETURN_REGISTER, VALUE_ARRAY, VALUE_MAP,
+   VALUE_FILE, VALUE_STRUCT, VALUE_STRUCT_ACCESS, VALUE_COUNT
 };
 
 constexpr const char *valueTypeStrings[VALUE_COUNT + 1] = {
-   "Integer", "Floating", "Character", "Constant String", "String", "Function", "Label", "Local Variable",
-   "Register", "Return Register", "Array", "Map", "File", "Invalid Value"
+   "Integer", "Floating", "Character", "Constant String", "String", "Function", "Label",
+   "Local Variable", "Register", "Return Register", "Array", "Map", "File", "Structure",
+   "Structure Access", "Invalid Value"
 };
 
 constexpr const char *getValueName(ValueType value) {
@@ -40,6 +42,8 @@ struct Value {
       size_t function;
       size_t label;
       size_t handle;
+      size_t structure;
+      size_t chain;
    };
 };
 
@@ -47,6 +51,8 @@ struct Function {
    bool native = false;
    bool variadic = false;
    bool isLabel = false;
+   bool isStructure = false;
+   bool isStructureArray = false;
    size_t position;
    size_t lexeme;
    size_t localCount;

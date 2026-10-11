@@ -7,8 +7,10 @@ size_t ValueHash::operator () (Value v) const {
    case VALUE_CHARACTER: return std::hash<char>{}(v.character);
    case VALUE_STRING: return std::hash<std::string>{}(getString(*executor, v.string, 0, 0));
    case VALUE_CSTRING: return std::hash<std::string>{}(getLexeme(executor->cache, v.string));
+   // we can use the same hash since we know they won't overlap
    case VALUE_FUNCTION: return std::hash<size_t>{}(v.function) ^ 0x9E3779B9;
-   case VALUE_LABEL: return std::hash<size_t>{}(v.label) ^ 0x517CC1B7;
+   case VALUE_LABEL: return std::hash<size_t>{}(v.label) ^ 0x9E3779B9;
+   case VALUE_STRUCT: return std::hash<size_t>{}(v.structure) ^ 0x9E3779B9;
    default: return 0;
    }
 }
@@ -35,6 +37,9 @@ bool ValueEqual::operator () (Value a, Value b) const {
    }
    else if (a.type == VALUE_LABEL && b.type == VALUE_LABEL) {
       return a.label == b.label;
+   }
+   else if (a.type == VALUE_STRUCT && b.type == VALUE_STRUCT) {
+      return a.structure == b.structure;
    }
    return false;
 }
