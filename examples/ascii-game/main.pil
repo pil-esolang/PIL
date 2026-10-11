@@ -18,7 +18,7 @@ main-not-help:
    call level, create-level, path
    string-free path
    play-level level
-   free level.map, level
+   deep-free level
 
 ; list all files and some info about the game
 help()
@@ -27,9 +27,10 @@ help()
    println "To play a specific level, simply type its name."
    println "Here's a list of possible levels: "
 
-   let files, i, n, cond
+   let files, i, di, n, cond
    dir-list-recursive ".", files
    set 0, i
+   set 0, di
    array-size files, n
 help-start:
    greq i, n, cond
@@ -40,8 +41,8 @@ help-start:
    path-extension file, ext
    string-empty ext, cond
    jmpn cond, help-continue
-   add i, 1, idx
-   println idx, ": ", file
+   incr di
+   println di, ": ", file
 help-continue:
    string-free ext
    incr i

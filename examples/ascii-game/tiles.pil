@@ -1,0 +1,110 @@
+; level struct
+struct Level width, height, map, plrpos, coins, collected, dead, enemies
+
+; map elements. everything after coin-t kills you and everything after mine-t is an enemy
+const unknown-t [-1]
+const empty-t 0
+const player-t 1
+const block-t 2
+const coin-t 3
+const dead-t 4
+const mine-t 5
+const vbat-t 6
+const hbat-t 7
+
+; enemy struct
+struct Enemy pos, type, tile, dirx, diry
+
+; create a new enemy
+create-enemy(pos, type, enemies)
+   let enemy, cond
+   gr type, mine-t, cond
+   jmp cond, create-enemy-start
+   return
+create-enemy-start:
+   make Enemy enemy, pos, type, empty-t, 0, 0
+   eq type, vbat-t cond
+   jmp cond, create-enemy-vbat
+   eq type, hbat-t cond
+   jmp cond, create-enemy-hbat
+
+create-enemy-vbat:
+   set 1, enemy.diry
+   goto create-enemy-end
+create-enemy-hbat:
+   set 1, enemy.dirx
+   goto create-enemy-end
+create-enemy-end:
+   array-push enemies, enemy
+
+; move a single enemy
+move-enemy(level, enemy, x, y)
+   let row, col, n, target, ty, tx, cond, cond2, tmp
+
+   ; handle y axis
+   set enemy.pos, target
+   mul level.width, level.height, n
+   div enemy.pos, level.width, row
+   add row, y, ty
+   le ty, 0, cond
+   jmp cond, move-enemy-no-op
+   greq ty, level.height, cond
+   jmp cond, move-enemy-no-op
+   mul y, level.width, tmp
+   add target, tmp, target
+
+   ; handle x axis
+   mod enemy.pos, level.width, col
+   add col, x, tx
+   le tx, 0, cond
+   jmp cond, move-enemy-no-op
+   greq tx, level.width, cond
+   jmp cond, move-enemy-no-op
+   add target, x, target
+
+   ; move the enemy
+   array-at level.map, target, tmp
+   neq tmp, player-t, cond
+   jmp cond, move-enemy-skip-player
+   set 1, level.dead
+   goto move-enemy-force
+move-enemy-skip-player:
+   neq tmp, empty-t, cond
+   neq tmp, coin-t, cond2
+   and cond, cond2, cond
+   jmp cond, move-player-no-op
+move-enemy-force:
+   array-set level.map, enemy.pos, enemy.tile
+   array-set level.map, target, enemy.type
+   set tmp, enemy.tile
+   set target, enemy.pos
+
+move-enemy-no-op:
+   return
+
+; move all enemies
+move-enemies(level)
+   let i, n, cond, enemy
+   set 0, i
+   array-size level.enemies, n
+move-enemies-start:
+   greq i, n, cond
+   jmp cond, move-enemies-end
+
+   array-at level.enemies, i, enemy
+   eq enemy.type, vbat-t, cond
+   jmp cond, move-enemies-vbat
+   eq enemy.type, hbat-t, cond
+   jmp cond, move-enemies-hbat
+   goto move-enemies-continue
+
+move-enemies-vbat:
+   move-enemy level, enemy, enemy.dirx, enemy.diry
+   goto move-enemies-continue
+move-enemies-hbat:
+   move-enemy level, enemy, enemy.dirx, enemy.diry
+   goto move-enemies-continue
+move-enemies-continue:
+   incr i
+   goto move-enemies-start
+move-enemies-end:

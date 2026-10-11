@@ -1,23 +1,17 @@
-; level struct
-struct Level width, height, map, plrpos, coins, collected
-
-; map elements
-const inv [-1]
-const emp 0
-const plr 1
-const blk 2
-const con 3
+@include "tiles.pil"
 
 ; create a new level from file and return it
 create-level(path)
-   let file, level, map, width, height, line, cond, tmp, i, n, coins, plrpos
+   let file, level, map, width, height, line, cond, tmp, tmp2, i, n, coins, plrpos, enemies
    file-open path, 'r', file
    jmp file, create-level-file-exists
 
    printfln "File '{}' does not exist.", path
+   string-free path
    exit 0
 create-level-file-exists:
    array-new map
+   array-new enemies
    set 0, height
    set 0, coins
 
@@ -36,8 +30,8 @@ create-level-width-non-null:
    jmp cond, create-level-width-matches
 
    printfln "File '{}' is malformed: lines have varying width.", path
-   array-free map
-   string-free line
+   array-deep-free enemies, map
+   string-free line, path
    file-close file
    exit 0
 create-level-width-matches:
@@ -48,22 +42,24 @@ create-level-string-start:
    jmp cond, create-level-string-end
 
    string-at line, i, tmp
-   valtable tmp, tmp, 'p', plr, 'e', emp, 'b', blk, 'c', con, inv
+   valtable tmp, tmp, 'p', player-t, 'e', empty-t, 'b', block-t, 'c', coin-t, 'm', mine-t, 'v', vbat-t, 'h', hbat-t, unknown-t
+   array-size map, tmp2
+   create-enemy tmp2, tmp, enemies
    array-push map, tmp
-   eq tmp, con, cond
+   eq tmp, coin-t, cond
    add coins, cond, coins
-   eq tmp, plr, cond
+   eq tmp, player-t, cond
    jmpn cond, create-level-skip-player
    is-null plrpos, cond
    jmp cond, create-level-plrpos-null
    
    printfln "File '{}' contains multiple players.", path
-   array-free map
-   string-free line
+   array-deep-free enemies, map
+   string-free line, path
    file-close file
    exit 0
 create-level-plrpos-null:
-   set i, plrpos
+   set tmp2, plrpos
 
 create-level-skip-player:
    incr i
@@ -78,17 +74,19 @@ create-level-end:
    jmpn cond, create-level-plrpos-checked
 
    printfln "File '{}' doesn't contain a player.", path
-   array-free map
+   array-deep-free enemies, map
+   string-free path
    exit 0
 create-level-plrpos-checked:
    leeq coins, 0, cond
    jmpn cond, create-level-coins-checked
 
    printfln "File '{}' doesn't contain any coins.", path
-   array-free map
+   array-deep-free enemies, map
+   string-free path
    exit 0
 create-level-coins-checked:
-   make Level level, width, height, map, plrpos, 0, coins
+   make Level level, width, height, map, plrpos, 0, coins, 0, enemies
    return level
 
 ; prints the level to the console
@@ -103,7 +101,7 @@ print-level-start:
    jmp cond, print-level-end
 
    array-at level.map, i, tmp
-   valtable tmp, tmp, emp, "__", plr, "PL", blk, "BB", con, "_O", "??"
+   valtable tmp, tmp, empty-t, "__", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, "_\e[33mO\e[0m", dead-t, "_\e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", "??"
    print tmp
 
    incr i
@@ -157,16 +155,23 @@ move-player(level, x, y)
 
    ; move the player
    array-at level.map, target, tmp
-   neq tmp, emp, cond
-   neq tmp, con, cond2
+   leeq tmp, coin-t, cond
+   jmp cond, move-player-skip-death
+   set 1, level.dead
+   array-set level.map, level.plrpos, dead-t
+   goto move-player-no-op
+
+move-player-skip-death:
+   neq tmp, empty-t, cond
+   neq tmp, coin-t, cond2
    and cond, cond2, cond
    jmp cond, move-player-no-op
-
    jmp cond2, move-player-skip-coin
    incr level.coins
+
 move-player-skip-coin:
-   array-set level.map, level.plrpos, emp
-   array-set level.map, target, plr
+   array-set level.map, level.plrpos, empty-t
+   array-set level.map, target, player-t
    set target, level.plrpos
 
 move-player-no-op:
@@ -176,9 +181,11 @@ move-player-no-op:
 play-level(level)
    let ch, cond
 play-level-start:
+   move-enemies level
    print-level level
    print "Move > "
    flush
+   jmp level.dead, play-level-lost
    readch ch
    jmptable ch, 'a', play-level-left, 's', play-level-down, 'd', play-level-right, 'w', play-level-up, 'q', play-level-exit, play-level-input-end
 play-level-left:
@@ -194,12 +201,13 @@ play-level-up:
    move-player level [ 0], [-1]
    goto play-level-input-end
 play-level-exit:
-   free level.map, level
+   deep-free level
    printch '\n'
    exit 0
 play-level-input-end:
    greq level.coins, level.collected, cond
    jmp cond, play-level-won
+   jmp level.dead, play-level-lost
 
    clear-level level
    goto play-level-start
@@ -207,4 +215,11 @@ play-level-input-end:
 play-level-won:
    clear-level level
    print-level level
-   println "\nLevel won!"
+   println "Level won!"
+   return
+
+play-level-lost:
+   clear-level level
+   print-level level
+   println "\e[31m\nLevel lost!\e[0m"
+   return
