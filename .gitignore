@@ -3,6 +3,6 @@
 /.vscode/
 /.clangd/
 /build/
-/*.pilo
+*.pilo
 /TODO.md
 /private

@@ -4,7 +4,6 @@
 #include "tokens.hpp"
 #include "values.hpp"
 #include <fstream>
-#include <map>
 #include <stack>
 #include <string>
 
@@ -12,7 +11,7 @@ constexpr size_t DEFAULT_REGISTER_COUNT = 16;
 constexpr size_t DEFAULT_RETURN_REGISTER_COUNT = 4;
 constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
 
-constexpr size_t FILE_VERSION = 6;
+constexpr size_t FILE_VERSION = 7;
 
 // PIL parser
 struct PILFile {
@@ -53,7 +52,7 @@ struct PILString {
 
 struct PILArray {
    std::vector<Value> array;
-   int structureId = 0;
+   uint32_t structureId = 0;
    int mark = 0;
 };
 
@@ -84,6 +83,12 @@ struct StructChainLink {
    uint32_t field;
 };
 
+struct StructData {
+   uint32_t structId;
+   uint32_t lexeme;
+   uint32_t physicalId;
+};
+
 struct Executor {
    Diagnostics diagnostics;
    LexemeCache cache;
@@ -93,13 +98,13 @@ struct Executor {
    std::vector<Value> returnRegisters;
    std::stack<Trace, std::vector<Trace>> stackTrace;
 
-   std::map<std::pair<size_t, size_t>, size_t> structs;
    std::unordered_map<size_t, PILString> strings;
    std::unordered_map<size_t, PILArray> arrays;
    std::unordered_map<size_t, PILMap> maps;
    std::unordered_map<size_t, PILRuntimeFile> files;
 
-   std::vector<StructChainLink> structChains = {{}};
+   std::vector<StructData> structData;
+   std::vector<StructChainLink> structChains;
    std::vector<Function> functions;
    std::vector<Value> arguments;
    std::vector<Command> code;

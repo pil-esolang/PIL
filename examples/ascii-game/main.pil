@@ -23,14 +23,15 @@ main-not-help:
 ; list all files and some info about the game
 help()
    println "\nASCII-GAME written in PIL"
-   println "This game is capable of loading and playing a level from a file."
-   println "To play a specific level, simply type its name."
+   println "This game is capable of loading and playing a level from a file. To play a specific level, simply type its name."
+   println "You can also create your own levels, check out level files to see how it's done."
+   println "Here's the file legend:"
+   println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n"
    println "Here's a list of possible levels: "
 
-   let files, i, di, n, cond
+   let files, i, n, cond
    dir-list-recursive ".", files
    set 0, i
-   set 0, di
    array-size files, n
 help-start:
    greq i, n, cond
@@ -41,8 +42,7 @@ help-start:
    path-extension file, ext
    string-empty ext, cond
    jmpn cond, help-continue
-   incr di
-   println di, ": ", file
+   println "\t", file
 help-continue:
    string-free ext
    incr i

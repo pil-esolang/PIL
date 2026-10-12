@@ -1,93 +1,5 @@
 @include "tiles.pil"
-
-; create a new level from file and return it
-create-level(path)
-   let file, level, map, width, height, line, cond, tmp, tmp2, i, n, coins, plrpos, enemies
-   file-open path, 'r', file
-   jmp file, create-level-file-exists
-
-   printfln "File '{}' does not exist.", path
-   string-free path
-   exit 0
-create-level-file-exists:
-   array-new map
-   array-new enemies
-   set 0, height
-   set 0, coins
-
-create-level-start:
-   file-readln file, line
-   is-null line, cond
-   jmp cond, create-level-end   
-
-   incr height
-   is-null width, cond
-   jmpn cond, create-level-width-non-null
-   string-size line, width
-create-level-width-non-null:
-   string-size line, tmp
-   eq width, tmp, cond
-   jmp cond, create-level-width-matches
-
-   printfln "File '{}' is malformed: lines have varying width.", path
-   array-deep-free enemies, map
-   string-free line, path
-   file-close file
-   exit 0
-create-level-width-matches:
-   set 0, i
-   string-size line, n
-create-level-string-start:
-   greq i, n, cond
-   jmp cond, create-level-string-end
-
-   string-at line, i, tmp
-   valtable tmp, tmp, 'p', player-t, 'e', empty-t, 'b', block-t, 'c', coin-t, 'm', mine-t, 'v', vbat-t, 'h', hbat-t, unknown-t
-   array-size map, tmp2
-   create-enemy tmp2, tmp, enemies
-   array-push map, tmp
-   eq tmp, coin-t, cond
-   add coins, cond, coins
-   eq tmp, player-t, cond
-   jmpn cond, create-level-skip-player
-   is-null plrpos, cond
-   jmp cond, create-level-plrpos-null
-   
-   printfln "File '{}' contains multiple players.", path
-   array-deep-free enemies, map
-   string-free line, path
-   file-close file
-   exit 0
-create-level-plrpos-null:
-   set tmp2, plrpos
-
-create-level-skip-player:
-   incr i
-   goto create-level-string-start
-create-level-string-end:
-   string-free line
-   goto create-level-start
-create-level-end:
-   file-close file
-
-   is-null plrpos, cond
-   jmpn cond, create-level-plrpos-checked
-
-   printfln "File '{}' doesn't contain a player.", path
-   array-deep-free enemies, map
-   string-free path
-   exit 0
-create-level-plrpos-checked:
-   leeq coins, 0, cond
-   jmpn cond, create-level-coins-checked
-
-   printfln "File '{}' doesn't contain any coins.", path
-   array-deep-free enemies, map
-   string-free path
-   exit 0
-create-level-coins-checked:
-   make Level level, width, height, map, plrpos, 0, coins, 0, enemies
-   return level
+@include "read.pil"
 
 ; prints the level to the console
 print-level(level)
@@ -101,7 +13,7 @@ print-level-start:
    jmp cond, print-level-end
 
    array-at level.map, i, tmp
-   valtable tmp, tmp, empty-t, "__", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, "_\e[33mO\e[0m", dead-t, "_\e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", "??"
+   valtable tmp, tmp, empty-t, " .", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, " \e[33mO\e[0m", dead-t, " \e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", glimmer-t, "\e[31m<>\e[0m", "??"
    print tmp
 
    incr i

@@ -11,9 +11,15 @@ const dead-t 4
 const mine-t 5
 const vbat-t 6
 const hbat-t 7
+const glimmer-t 8
 
 ; enemy struct
 struct Enemy pos, type, tile, dirx, diry
+
+; get random enemy direction
+get-random-dir(enemy)
+   randi-range [-1], [ 1], enemy.dirx
+   randi-range [-1], [ 1], enemy.diry
 
 ; create a new enemy
 create-enemy(pos, type, enemies)
@@ -23,16 +29,21 @@ create-enemy(pos, type, enemies)
    return
 create-enemy-start:
    make Enemy enemy, pos, type, empty-t, 0, 0
-   eq type, vbat-t cond
+   eq type, vbat-t, cond
    jmp cond, create-enemy-vbat
-   eq type, hbat-t cond
+   eq type, hbat-t, cond
    jmp cond, create-enemy-hbat
+   eq type, glimmer-t, cond
+   jmp cond, create-enemy-glimmer
 
 create-enemy-vbat:
    set 1, enemy.diry
    goto create-enemy-end
 create-enemy-hbat:
    set 1, enemy.dirx
+   goto create-enemy-end
+create-enemy-glimmer:
+   set 1, enemy.diry
    goto create-enemy-end
 create-enemy-end:
    array-push enemies, enemy
@@ -84,7 +95,7 @@ move-enemy-no-op:
 
 ; move all enemies
 move-enemies(level)
-   let i, n, cond, enemy
+   let i, n, cond, enemy, tmp
    set 0, i
    array-size level.enemies, n
 move-enemies-start:
@@ -96,13 +107,30 @@ move-enemies-start:
    jmp cond, move-enemies-vbat
    eq enemy.type, hbat-t, cond
    jmp cond, move-enemies-hbat
+   eq enemy.type, glimmer-t, cond
+   jmp cond, move-enemies-glimmer
    goto move-enemies-continue
 
 move-enemies-vbat:
+   set enemy.pos, tmp
    move-enemy level, enemy, enemy.dirx, enemy.diry
+   neq enemy.pos, tmp, cond
+   jmp cond, move-enemies-continue
+   neg enemy.diry, enemy.diry
    goto move-enemies-continue
 move-enemies-hbat:
+   set enemy.pos, tmp
    move-enemy level, enemy, enemy.dirx, enemy.diry
+   neq enemy.pos, tmp, cond
+   jmp cond, move-enemies-continue
+   neg enemy.dirx, enemy.dirx
+   goto move-enemies-continue
+move-enemies-glimmer:
+   set enemy.pos, tmp
+   move-enemy level, enemy, enemy.dirx, enemy.diry
+   neq enemy.pos, tmp, cond
+   jmp cond, move-enemies-continue
+   get-random-dir enemy
    goto move-enemies-continue
 move-enemies-continue:
    incr i

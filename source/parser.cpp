@@ -207,6 +207,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          function.lexeme = position;
          function.position = functionId;
          function.localCount = 0;
+         function.paramCount = 0;
 
          Value value {VALUE_STRUCT};
          value.structure = functionId;
@@ -265,12 +266,15 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          }
          
          Function &structure = executor.functions[constants[tokens[i + 1].lexeme].structure];
+         structure.nativeFn = executor.structData.size();
+
          for (i += 2; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
             if (tokens[i].type != TOKEN_IDENTIFIER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier, got %s instead", getTokenName(tokens[i].type));
                break;
             }
-            executor.structs[{structure.position, tokens[i].lexeme}] = structure.localCount;
+            executor.structData.emplace_back(structure.position, tokens[i].lexeme, structure.localCount);
+            structure.paramCount += 1;
             structure.localCount += 1;
          }
 

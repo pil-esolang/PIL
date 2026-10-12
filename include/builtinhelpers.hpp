@@ -46,12 +46,15 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
          return *v;
       }
 
-      auto it2 = executor.structs.find({it->second.structureId, link.field});
-      if (it2 == executor.structs.end()) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
-         return *v;
+      const Function &structure = executor.functions[it->second.structureId];
+      for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
+         const StructData &data = executor.structData[i];
+         if (link.field == data.lexeme && it->second.structureId == data.structId) {
+            return it->second.array[data.physicalId];
+         }
       }
-      return it->second.array[it2->second];
+      error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
+      return *v;
    }
    else {
       return value;
@@ -104,12 +107,15 @@ inline void storeInRegister(Executor &executor, const Command &command, Value re
          return;
       }
 
-      auto it2 = executor.structs.find({it->second.structureId, link.field});
-      if (it2 == executor.structs.end()) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
-         return;
+      const Function &structure = executor.functions[it->second.structureId];
+      for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
+         const StructData &data = executor.structData[i];
+         if (link.field == data.lexeme && it->second.structureId == data.structId) {
+            it->second.array[data.physicalId] = value;
+            return;
+         }
       }
-      it->second.array[it2->second] = value;
+      error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
    }
    else {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Register/Variable for the destination argument, got %s instead", function, getValueName(reg.type));
