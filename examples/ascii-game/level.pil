@@ -13,7 +13,7 @@ print-level-start:
    jmp cond, print-level-end
 
    array-at level.map, i, tmp
-   valtable tmp, tmp, empty-t, " .", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, " \e[33mO\e[0m", dead-t, " \e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", glimmer-t, "\e[31m<>\e[0m", "??"
+   valtable tmp, tmp, empty-t, " .", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, " \e[33mO\e[0m", dead-t, " \e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", glimmer-t, "\e[31m<>\e[0m", seeker-t, "\e[31m[]\e[0m", "??"
    print tmp
 
    incr i

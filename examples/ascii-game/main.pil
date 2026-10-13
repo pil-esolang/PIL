@@ -26,7 +26,7 @@ help()
    println "This game is capable of loading and playing a level from a file. To play a specific level, simply type its name."
    println "You can also create your own levels, check out level files to see how it's done."
    println "Here's the file legend:"
-   println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n"
+   println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n\ts - seeker\n"
    println "Here's a list of possible levels: "
 
    let files, i, n, cond

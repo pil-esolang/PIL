@@ -12,9 +12,10 @@ const mine-t 5
 const vbat-t 6
 const hbat-t 7
 const glimmer-t 8
+const seeker-t 9
 
 ; enemy struct
-struct Enemy pos, type, tile, dirx, diry
+struct Enemy pos, type, tile, dirx, diry, turn
 
 ; get random enemy direction
 get-random-dir(enemy)
@@ -28,13 +29,8 @@ create-enemy(pos, type, enemies)
    jmp cond, create-enemy-start
    return
 create-enemy-start:
-   make Enemy enemy, pos, type, empty-t, 0, 0
-   eq type, vbat-t, cond
-   jmp cond, create-enemy-vbat
-   eq type, hbat-t, cond
-   jmp cond, create-enemy-hbat
-   eq type, glimmer-t, cond
-   jmp cond, create-enemy-glimmer
+   make Enemy enemy, pos, type, empty-t, 0, 0, 0
+   jmptable type, vbat-t, create-enemy-vbat, hbat-t, create-enemy-hbat, glimmer-t, create-enemy-glimmer, seeker-t, create-enemy-seeker, create-enemy-end
 
 create-enemy-vbat:
    set 1, enemy.diry
@@ -44,6 +40,8 @@ create-enemy-hbat:
    goto create-enemy-end
 create-enemy-glimmer:
    set 1, enemy.diry
+   goto create-enemy-end
+create-enemy-seeker:
    goto create-enemy-end
 create-enemy-end:
    array-push enemies, enemy
@@ -95,7 +93,7 @@ move-enemy-no-op:
 
 ; move all enemies
 move-enemies(level)
-   let i, n, cond, enemy, tmp
+   let i, n, cond, enemy, tmp, plrx, plry, enx, eny
    set 0, i
    array-size level.enemies, n
 move-enemies-start:
@@ -103,13 +101,8 @@ move-enemies-start:
    jmp cond, move-enemies-end
 
    array-at level.enemies, i, enemy
-   eq enemy.type, vbat-t, cond
-   jmp cond, move-enemies-vbat
-   eq enemy.type, hbat-t, cond
-   jmp cond, move-enemies-hbat
-   eq enemy.type, glimmer-t, cond
-   jmp cond, move-enemies-glimmer
-   goto move-enemies-continue
+   incr enemy.turn
+   jmptable enemy.type, vbat-t, move-enemies-vbat, hbat-t, move-enemies-hbat, glimmer-t, move-enemies-glimmer, seeker-t, move-enemies-seeker, move-enemies-continue
 
 move-enemies-vbat:
    set enemy.pos, tmp
@@ -131,6 +124,38 @@ move-enemies-glimmer:
    neq enemy.pos, tmp, cond
    jmp cond, move-enemies-continue
    get-random-dir enemy
+   goto move-enemies-continue
+move-enemies-seeker:
+   mod enemy.turn, 2, tmp
+   jmp tmp, move-enemies-continue
+   div level.plrpos, level.width, plry
+   div enemy.pos, level.width, eny
+   gr plry, eny, tmp
+   jmp tmp, move-enemies-seeker-grplry
+   le plry, eny, tmp
+   jmp tmp, move-enemies-seeker-leplry
+   goto move-enemies-seeker-endy
+move-enemies-seeker-grplry:
+   move-enemy level, enemy, [ 0], [ 1]
+   goto move-enemies-seeker-endy
+move-enemies-seeker-leplry:
+   move-enemy level, enemy, [ 0], [-1]
+   goto move-enemies-seeker-endy
+move-enemies-seeker-endy:
+   mod level.plrpos, level.width, plrx
+   mod enemy.pos, level.width, enx
+   gr plrx, enx, tmp
+   jmp tmp, move-enemies-seeker-grplrx
+   le plrx, enx, tmp
+   jmp tmp, move-enemies-seeker-leplrx
+   goto move-enemies-seeker-endx
+move-enemies-seeker-grplrx:
+   move-enemy level, enemy, [ 1], [ 0]
+   goto move-enemies-seeker-endx
+move-enemies-seeker-leplrx:
+   move-enemy level, enemy, [-1], [ 0]
+   goto move-enemies-seeker-endx
+move-enemies-seeker-endx:
    goto move-enemies-continue
 move-enemies-continue:
    incr i

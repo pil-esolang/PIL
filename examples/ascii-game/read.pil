@@ -42,7 +42,7 @@ create-level-string-start:
    jmp cond, create-level-string-end
 
    string-at line, i, tmp
-   valtable tmp, tmp, 'p', player-t, 'e', empty-t, 'b', block-t, 'c', coin-t, 'm', mine-t, 'v', vbat-t, 'h', hbat-t, 'g', glimmer-t, unknown-t
+   valtable tmp, tmp, 'p', player-t, 'e', empty-t, 'b', block-t, 'c', coin-t, 'm', mine-t, 'v', vbat-t, 'h', hbat-t, 'g', glimmer-t, 's', seeker-t, unknown-t
    array-size map, tmp2
    create-enemy tmp2, tmp, enemies
    array-push map, tmp
