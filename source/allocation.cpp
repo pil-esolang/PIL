@@ -46,64 +46,56 @@ bool ValueEqual::operator () (Value a, Value b) const {
 
 std::string &getString(Executor &executor, size_t ID, size_t file, size_t line) {
    if (auto it = executor.strings.find(ID); it != executor.strings.end()) {
-      return it->second.string;
+      return it->second;
    }
    error(executor.diagnostics, file, line, "Invalid string ID %zu. Use after free", ID);
-   static std::string temp;
-   return temp;
+   return executor.strings[ID]; // return something. erroring anyway
 }
 
-std::vector<Value> &getArray(Executor &executor, size_t ID, size_t file, size_t line) {
+PILArray &getArray(Executor &executor, size_t ID, size_t file, size_t line) {
    if (auto it = executor.arrays.find(ID); it != executor.arrays.end()) {
-      return it->second.array;
+      return it->second;
    }
    error(executor.diagnostics, file, line, "Invalid array ID %zu. Use after free", ID);
-   static std::vector<Value> temp;
-   return temp;
+   return executor.arrays[ID];
 }
 
-std::unordered_map<Value, Value, ValueHash, ValueEqual> &getMap(Executor &executor, size_t ID, size_t file, size_t line) {
+PILMap &getMap(Executor &executor, size_t ID, size_t file, size_t line) {
    if (auto it = executor.maps.find(ID); it != executor.maps.end()) {
-      return it->second.map;
+      return it->second;
    }
    error(executor.diagnostics, file, line, "Invalid map ID %zu. Use after free", ID);
-   static std::unordered_map<Value, Value, ValueHash, ValueEqual> map;
-   return map;
+   return executor.maps[ID];
 }
 
 std::fstream &getFile(Executor &executor, size_t ID, size_t file, size_t line) {
    if (auto it = executor.files.find(ID); it != executor.files.end()) {
-      return it->second.file;
+      return it->second;
    }
    error(executor.diagnostics, file, line, "Invalid file ID %zu. Use after free", ID);
-   static std::fstream f;
-   return f;
+   return executor.files[ID];
 }
 
 size_t allocateString(Executor &executor, const std::string &string) {
-   static size_t stringID = 0;
-   stringID += 1;
-   executor.strings[stringID].string = string;
-   return stringID;
+   executor.stringIdCounter += 1;
+   executor.strings[executor.stringIdCounter] = string;
+   return executor.stringIdCounter;
 }
 
 size_t allocateArray(Executor &executor, const std::vector<Value> &array) {
-   static size_t arrayID = 0;
-   arrayID += 1;
-   executor.arrays[arrayID].array = array;
-   return arrayID;
+   executor.arrayIdCounter += 1;
+   executor.arrays[executor.arrayIdCounter].array = array;
+   return executor.arrayIdCounter;
 }
 
 size_t allocateMap(Executor &executor, const std::unordered_map<Value, Value, ValueHash, ValueEqual> &map) {
-   static size_t mapID = 0;
-   mapID += 1;
-   executor.maps[mapID].map = map;
-   return mapID;
+   executor.mapIdCounter += 1;
+   executor.maps[executor.mapIdCounter] = map;
+   return executor.mapIdCounter;
 }
 
 size_t allocateFile(Executor &executor, std::fstream &&file) {
-   static size_t fileID = 0;
-   fileID += 1;
-   executor.files[fileID].file = std::move(file);
-   return fileID;
+   executor.fileIdCounter += 1;
+   executor.files[executor.fileIdCounter] = std::move(file);
+   return executor.fileIdCounter;
 }

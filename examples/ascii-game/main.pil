@@ -1,52 +1,52 @@
 @include "level.pil"
 
-; game entry point
+# game entry point
 main()
-   print "Input level to play (or help): "
-   let path, comp
-   readln path
+   print "Input level to play (or help): ";
+   let path, comp;
+   readln path;
 
-   string-trim path
-   neq path, "help", comp
-   jmp comp, main-not-help
-   help
-   string-free path
-   return
+   string-trim path;
+   neq path, "help", comp;
+   jmp comp, main-not-help;
+   help;
+   string-free path;
+   return;
 
 main-not-help:
-   let level
-   call level, create-level, path
-   string-free path
-   play-level level
-   deep-free level
+   let level;
+   call level, create-level, path;
+   string-free path;
+   play-level level;
+   deep-free level;
 
-; list all files and some info about the game
+# list all files and some info about the game
 help()
-   println "\nASCII-GAME written in PIL"
-   println "This game is capable of loading and playing a level from a file. To play a specific level, simply type its name."
-   println "You can also create your own levels, check out level files to see how it's done."
-   println "Here's the file legend:"
-   println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n\ts - seeker\n"
-   println "Here's a list of possible levels: "
+   println "\nASCII-GAME written in PIL";
+   println "This game is capable of loading and playing a level from a file. To play a specific level, simply type its name.";
+   println "You can also create your own levels, check out level files to see how it's done.";
+   println "Here's the file legend:";
+   println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n\ts - seeker\n";
+   println "Here's a list of possible levels: ";
 
-   let files, i, n, cond
-   dir-list-recursive ".", files
-   set 0, i
-   array-size files, n
+   let files, i, n, cond;
+   dir-list-recursive ".", files;
+   set 0, i;
+   array-size files, n;
 help-start:
-   greq i, n, cond
-   jmp cond, help-end
+   greq i, n, cond;
+   jmp cond, help-end;
 
-   let file, idx, ext
-   array-at files, i, file
-   path-extension file, ext
-   string-empty ext, cond
-   jmpn cond, help-continue
-   println "\t", file
+   let file, idx, ext;
+   array-at files, i, file;
+   path-extension file, ext;
+   string-empty ext, cond;
+   jmpn cond, help-continue;
+   println "\t", file;
 help-continue:
-   string-free ext
-   incr i
-   goto help-start
+   string-free ext;
+   incr i;
+   goto help-start;
 help-end:
-   array-deep-free files
-   println "\nHave fun! - Daniel Vishnevsky"
+   array-deep-free files;
+   println "\nHave fun! - Daniel Vishnevsky";

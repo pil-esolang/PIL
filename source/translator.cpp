@@ -17,15 +17,9 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
       
       // handle includes
       if (tokens[i].lexeme == includeLexeme && i + 1 < size && tokens[i + 1].type == TOKEN_STRING) {
-         if (i + 2 >= size || tokens[i + 2].type != TOKEN_NEWLINE) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Excess tokens (or EOF) after include directive");
-            continue;
-         }
- 
          // destroy all after the loop
          tokens[i].parsed = true;
          tokens[i + 1].parsed = true;
-         tokens[i + 2].parsed = true;
  
          std::string &filename = getLexeme(executor.cache, tokens[i + 1].lexeme);
          if (includedFiles.find(filename) != includedFiles.end()) {
@@ -38,19 +32,14 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
  
          readPIL(executor.diagnostics, executor.cache, filename, newFile, tokens[i + 1].file, tokens[i + 1].line);
          lexPILFile(executor.diagnostics, executor.cache, newFile, newTokens);
-         tokens.insert(tokens.begin() + i + 3, newTokens.begin(), newTokens.end());
-         i += 2;
+         tokens.insert(tokens.begin() + i + 2, newTokens.begin(), newTokens.end());
+         i += 1;
          size = tokens.size();
       }
       // handle register config
       else if ((tokens[i].lexeme == registerLexeme || tokens[i].lexeme == returnRegisterLexeme) && i + 1 < size && tokens[i + 1].type == TOKEN_INTEGER) {
-         if (i + 2 >= size || tokens[i + 2].type != TOKEN_NEWLINE) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Excess tokens (or EOF) after register configuration directive");
-            continue;
-         }
          tokens[i].parsed = true;
          tokens[i + 1].parsed = true;
-         tokens[i + 2].parsed = true;
  
          Value value = parseToken(executor, tokens[i + 1], {}, {});
          if (tokens[i].lexeme == registerLexeme) {
@@ -59,7 +48,7 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
          else {
             executor.returnRegisters.resize(value.integer);
          }
-         i += 2;
+         i += 1;
       }
       // unknown directive
       else {

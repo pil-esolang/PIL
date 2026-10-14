@@ -244,20 +244,11 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    bool firstFunction = true;
 
    for (size_t i = 0; i < size && tokens[i].type != TOKEN_EOF; ++i) {
-      // skip extraneous newlines
-      while (i < size && tokens[i].type == TOKEN_NEWLINE) ++i;
-      if (tokens[i].type == TOKEN_EOF) break;
-
       // labels
       if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i + 1].type == TOKEN_LABEL) {
-         size_t start = i;
          Function &label = executor.functions[constants[tokens[i].lexeme].label];
          label.position = executor.code.size();
-
-         i += 2;
-         if (i >= size || tokens[i].type != TOKEN_NEWLINE) {
-            error(executor.diagnostics, tokens[start].file, tokens[start].line, "Excess tokens (or EOF) after label");
-         }
+         i += 1;
       }
       // structure declarations
       else if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == structLexeme) {
@@ -265,10 +256,17 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             i += 1;
          }
          
+         size_t line = tokens[i].line, file = tokens[i].file;
          Function &structure = executor.functions[constants[tokens[i + 1].lexeme].structure];
          structure.nativeFn = executor.structData.size();
 
-         for (i += 2; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
+         i += 2;
+         if (tokens[i].type != TOKEN_L_PAREN) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Left Parentheses after structure Identifier, got %d instead", getTokenName(tokens[i].type));
+            continue;
+         }
+
+         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_R_PAREN; ++i) {
             if (tokens[i].type != TOKEN_IDENTIFIER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier, got %s instead", getTokenName(tokens[i].type));
                break;
@@ -276,10 +274,23 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             executor.structData.emplace_back(structure.position, tokens[i].lexeme, structure.localCount);
             structure.paramCount += 1;
             structure.localCount += 1;
+
+            i += 1;
+            if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_R_PAREN) {
+               break;
+            }
+
+            if (tokens[i].type != TOKEN_COMMA) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Comma after Identifier, got %s instead", getTokenName(tokens[i].type));
+            }
+         }
+
+         if (tokens[i].type != TOKEN_R_PAREN) {
+            error(executor.diagnostics, file, line, "Unterminated structure");
          }
 
          if (structure.localCount == 0) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Structure '%s' does not contain any fields", getLexeme(executor.cache, structure.lexeme).c_str());
+            error(executor.diagnostics, file, line, "Structure '%s' does not contain any fields", getLexeme(executor.cache, structure.lexeme).c_str());
          }
       }
       // function declarations
@@ -313,6 +324,15 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             }
             function.paramCount += 1;
             functionParamMap[tokens[i].lexeme] = functionParamMap.size();
+
+            i += 1;
+            if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_R_PAREN) {
+               break;
+            }
+
+            if (tokens[i].type != TOKEN_COMMA) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Comma after Identifier, got %s instead", getTokenName(tokens[i].type));
+            }
          }
 
          if (variadic && tokens[i].type != TOKEN_R_PAREN) {
@@ -321,8 +341,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          else if (!variadic && tokens[i].type != TOKEN_R_PAREN) {
             error(executor.diagnostics, tokens[start].file, tokens[start].line, "Unterminated function parameters");
          }
-
-         i += 1;
          function.variadic = variadic;
          function.position = executor.code.size();
          function.localCount = functionParamMap.size();
@@ -330,10 +348,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
          if (function.lexeme == mainLexeme) {
             executor.main = functionId;
-         }
-
-         if (i >= size || tokens[i].type != TOKEN_NEWLINE) {
-            error(executor.diagnostics, tokens[start].file, tokens[start].line, "Excess tokens (or EOF) after function definition");
          }
       }
       // const declaration
@@ -346,15 +360,22 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          }
          i += 1;
          TokenType type = tokens[i].type;
-         if (type == TOKEN_NEWLINE || type == TOKEN_EOF || type == TOKEN_REGISTER || type == TOKEN_RETURN_REGISTER) {
+         if (type == TOKEN_EOF || type == TOKEN_REGISTER || type == TOKEN_RETURN_REGISTER) {
             error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a constant value in the constant declaration, got %s instead", getTokenName(tokens[i].type));
             continue;
          }
          constants[lexeme] = internalParse(executor, tokens, i, {}, constants); // functionParamMap handles runtime values, not constants
+
+         i += 1;
+         if (tokens[i].type != TOKEN_SEMICOLON) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a semicolon after constant declaration, got %s instead", getTokenName(tokens[i].type));
+            i -= 1;
+            continue;
+         }
       }
       // variable declaration
       else if (lastFunction && tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == defineLexeme) {
-         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
+         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON; ++i) {
             if (tokens[i].type != TOKEN_IDENTIFIER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected unique Identifier, got %s instead", getTokenName(tokens[i].type));
                continue;
@@ -365,11 +386,20 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                continue;
             }
             functionParamMap[tokens[i].lexeme] = functionParamMap.size();
+
+            i += 1;
+            if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_SEMICOLON) {
+               break;
+            }
+
+            if (tokens[i].type != TOKEN_COMMA) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Comma after Identifier, got %s instead", getTokenName(tokens[i].type));
+            }
          }
          lastFunction->localCount = functionParamMap.size();
       }
       // function calls
-      else {
+      else if (tokens[i].type == TOKEN_IDENTIFIER) {
          auto it = constants.find(tokens[i].lexeme);
          if (it == constants.end()) {
             if (tokens[i].type == TOKEN_IDENTIFIER) {
@@ -379,7 +409,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a function call, got %s instead", getTokenName(tokens[i].type));
             }
             // to not spiral errors out of control
-            while (i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE) i += 1;
+            while (i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON) i += 1;
             i -= 1;
             continue;
          }
@@ -388,19 +418,27 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          Command &command = executor.code.back();
          bool isCall = (tokens[i].lexeme == callLexeme);
          bool isReturn = (tokens[i].lexeme == returnLexeme);
-         size_t start = i + 1;
 
-         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_NEWLINE; ++i) {
+         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON; ++i) {
             Value value = internalParse(executor, tokens, i, functionParamMap, constants);
             if (isCall && value.type == VALUE_FUNCTION) {
                if (command.callee != std::string::npos) {
                   error(executor.diagnostics, command.file, command.line, "call: Cannot call multiple functions in a single call");
                }
-               command.callee = i - start;
+               command.callee = command.argCount;
             }
 
             executor.arguments.push_back(value);
             command.argCount += 1;
+
+            i += 1;
+            if (tokens[i].type == TOKEN_SEMICOLON || tokens[i].type == TOKEN_EOF) {
+               break;
+            }
+
+            if (tokens[i].type != TOKEN_COMMA) {
+               error(executor.diagnostics, command.file, command.line, "Expected a Comma to separate arguments, got %s instead", getTokenName(tokens[i].type));
+            }
          }
 
          if (isCall && command.callee == std::string::npos) {
@@ -428,6 +466,15 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          else if (isReturn && args > returnRegisterCount) {
             error(executor.diagnostics, command.file, command.line, "return: Can return at maximum %zu values. Define '@return-reg-size %zu' directive to mitigate. Error", returnRegisterCount, args);
          }
+
+         if (tokens[i].type != TOKEN_SEMICOLON) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a semicolon after function call, got %s instead", getTokenName(tokens[i].type));
+            continue;
+         }
+      }
+      // something we didn't expect
+      else {
+         error(executor.diagnostics, tokens[i].file, tokens[i].line, "Unexpected %s", getTokenName(tokens[i].type));
       }
    }
    if (!tokens.empty()) {

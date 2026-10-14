@@ -25,7 +25,6 @@ inline char handleEscapeCode(Diagnostics &diagnostics, LexemeCache &cache, PILFi
 
 constexpr bool isDigit(char c) { return c >= '0' && c <= '9'; }
 constexpr bool isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
-constexpr bool isSpace(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\f' || c == '\v'; }
 constexpr bool isAlnum(char c) { return isDigit(c) || isAlpha(c); }
 constexpr char toLower(char c) { return (c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c); }
 
@@ -56,7 +55,8 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       char ch = file.code[i];
 
       switch (ch) {
-      case '\n': tokens.emplace_back(TOKEN_NEWLINE, 0, file.lexeme, line); line += 1; continue;
+      case ' ': case '\t': case '\r': case '\f': case '\v': continue;
+      case '\n': line += 1; continue;
       case '$': tokens.emplace_back(TOKEN_REGISTER, 0, file.lexeme, line); continue;
       case '(': tokens.emplace_back(TOKEN_L_PAREN, 0, file.lexeme, line); continue;
       case ')': tokens.emplace_back(TOKEN_R_PAREN, 0, file.lexeme, line); continue;
@@ -69,6 +69,8 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       case '~': tokens.emplace_back(TOKEN_BNOT, 0, file.lexeme, line); continue;
       case '[': tokens.emplace_back(TOKEN_L_BRACKET, 0, file.lexeme, line); continue;
       case ']': tokens.emplace_back(TOKEN_R_BRACKET, 0, file.lexeme, line); continue;
+      case ',': tokens.emplace_back(TOKEN_COMMA, 0, file.lexeme, line); continue;
+      case ';': tokens.emplace_back(TOKEN_SEMICOLON, 0, file.lexeme, line); continue;
       case '*':
          if (i + 1 < size && file.code[i + 1] == '*') {
             tokens.emplace_back(TOKEN_STAR_STAR, 0, file.lexeme, line);
@@ -146,9 +148,8 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
          i += 1;
       }
-      else if (ch == ';') {
+      else if (ch == '#') {
          while (i < size && file.code[i] != '\n') i += 1;
-         tokens.emplace_back(TOKEN_NEWLINE, 0, file.lexeme, line);
          line += 1;
       }
       else if ((ch == 'r' || ch == 'R') && i + 1 < size && file.code[i + 1] == '$') {
@@ -215,7 +216,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          tokens.emplace_back(TOKEN_IDENTIFIER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
          i = end - 1;
       }
-      else if (!isSpace(ch) && ch != ',') {
+      else {
          error(diagnostics, file.lexeme, line, "Unexpected character '%c'", ch);
       }
    }

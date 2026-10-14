@@ -690,7 +690,7 @@ void builtinCopy(const Command &command, Executor &executor) {
       storeArray(executor, command, *array, back(executor, command), "copy");
    }
    else if (value.type == VALUE_MAP) {
-      InternalPILMap *map;
+      PILMap *map;
       if (!mapOrError(command, executor, "copy", map)) return;
       storeMap(executor, command, *map, back(executor, command), "copy");
    }
@@ -744,7 +744,7 @@ void builtinSize(const Command &command, Executor &executor) {
       storeNumber(executor, command, array->size(), false, "size");
    }
    else if (value.type == VALUE_MAP) {
-      InternalPILMap *map;
+      PILMap *map;
       if (!mapOrError(command, executor, "size", map)) return;
       storeNumber(executor, command, map->size(), false, "size");
    }
@@ -778,7 +778,7 @@ void builtinAt(const Command &command, Executor &executor) {
       storeInRegister(executor, command, (*array)[id], "at");
    }
    else if (value.type == VALUE_MAP) {
-      InternalPILMap *map;
+      PILMap *map;
       if (!mapOrError(command, executor, "at", map)) return;
       Value key = resolveVariable(executor, arg(executor, command, 1));
       if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
@@ -819,7 +819,7 @@ void builtinStore(const Command &command, Executor &executor) {
       (*array)[id] = resolveVariable(executor, arg(executor, command, 2));
    }
    else if (value.type == VALUE_MAP) {
-      InternalPILMap *map;
+      PILMap *map;
       if (!mapOrError(command, executor, "store", map)) return;
       Value key = resolveVariable(executor, arg(executor, command, 1));
       if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {

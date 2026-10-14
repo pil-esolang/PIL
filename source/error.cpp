@@ -117,7 +117,7 @@ void logMemoryLeaks(Executor &executor) {
 
       printf(LEAKED_OBJECTS, strings, "strings");
       for (const auto &[id, string]: executor.strings) {
-         printf("%zu: '%s', mark %d.\n", id, string.string.c_str(), string.mark);
+         printf("%zu: '%s' with size %zu.\n", id, string.c_str(), string.size());
          i += 1;
          if (i >= size) break;
       }
@@ -133,10 +133,10 @@ void logMemoryLeaks(Executor &executor) {
       printf(LEAKED_OBJECTS, arrays, "arrays");
       for (const auto &[id, array]: executor.arrays) {
          if (array.structureId != 0) {
-            printf("%zu: Structure '%s' with size %zu, mark %d.\n", id, getLexeme(executor.cache, executor.functions[array.structureId].lexeme).c_str(), array.array.size(), array.mark);
+            printf("%zu: Structure '%s' with size %zu.\n", id, getLexeme(executor.cache, executor.functions[array.structureId].lexeme).c_str(), array.array.size());
          }
          else {
-            printf("%zu: Array with size %zu, mark %d.\n", id, array.array.size(), array.mark);
+            printf("%zu: Array with size %zu.\n", id, array.array.size());
          }
          i += 1;
          if (i >= size) break;
@@ -152,7 +152,7 @@ void logMemoryLeaks(Executor &executor) {
 
       printf(LEAKED_OBJECTS, maps, "maps");
       for (const auto &[id, map]: executor.maps) {
-         printf("%zu: Map with size %zu, mark %d.\n", id, map.map.size(), map.mark);
+         printf("%zu: Map with size %zu.\n", id, map.size());
          i += 1;
          if (i >= size) break;
       }
@@ -167,7 +167,7 @@ void logMemoryLeaks(Executor &executor) {
 
       printf(LEAKED_OBJECTS, handles, "files");
       for (const auto &[id, handle]: executor.files) {
-         printf("%zu: File handle %zu, mark %d.\n", id, id, handle.mark);
+         printf("%zu: File handle %zu.\n", id, id);
          i += 1;
          if (i >= size) break;
       }

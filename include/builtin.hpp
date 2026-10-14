@@ -21,12 +21,6 @@ void builtinStringInsert(const Command &command, Executor &executor);
 void builtinStringPop(const Command &command, Executor &executor);
 void builtinStringErase(const Command &command, Executor &executor);
 void builtinStringFree(const Command &command, Executor &executor);
-void builtinStringMark(const Command &command, Executor &executor);
-void builtinStringGetMark(const Command &command, Executor &executor);
-void builtinStringFreeMarked(const Command &command, Executor &executor);
-void builtinStringGetMarkedCount(const Command &command, Executor &executor);
-void builtinStringGetMarked(const Command &command, Executor &executor);
-void builtinStringAnyMarked(const Command &command, Executor &executor);
 void builtinStringSplit(const Command &command, Executor &executor);
 void builtinStringConcat(const Command &command, Executor &executor);
 void builtinStringSubstr(const Command &command, Executor &executor);
@@ -70,12 +64,6 @@ void builtinArrayPop(const Command &command, Executor &executor);
 void builtinArrayErase(const Command &command, Executor &executor);
 void builtinArrayFree(const Command &command, Executor &executor);
 void builtinArrayDeepFree(const Command &command, Executor &executor);
-void builtinArrayMark(const Command &command, Executor &executor);
-void builtinArrayGetMark(const Command &command, Executor &executor);
-void builtinArrayFreeMarked(const Command &command, Executor &executor);
-void builtinArrayGetMarkedCount(const Command &command, Executor &executor);
-void builtinArrayGetMarked(const Command &command, Executor &executor);
-void builtinArrayAnyMarked(const Command &command, Executor &executor);
 void builtinArrayJoin(const Command &command, Executor &executor);
 void builtinArrayConcat(const Command &command, Executor &executor);
 void builtinArraySlice(const Command &command, Executor &executor);
@@ -103,12 +91,6 @@ void builtinMapValues(const Command &command, Executor &executor);
 void builtinMapMerge(const Command &command, Executor &executor);
 void builtinMapFree(const Command &command, Executor &executor);
 void builtinMapDeepFree(const Command &command, Executor &executor);
-void builtinMapMark(const Command &command, Executor &executor);
-void builtinMapGetMark(const Command &command, Executor &executor);
-void builtinMapFreeMarked(const Command &command, Executor &executor);
-void builtinMapGetMarkedCount(const Command &command, Executor &executor);
-void builtinMapGetMarked(const Command &command, Executor &executor);
-void builtinMapAnyMarked(const Command &command, Executor &executor);
 void builtinMapShallowCopy(const Command &command, Executor &executor);
 void builtinMapDeepCopy(const Command &command, Executor &executor);
 
@@ -342,12 +324,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"string-pop", builtinStringPop, 1},
    {"string-erase", builtinStringErase, 2},
    {"string-free", builtinStringFree, 1, VARIADIC},
-   {"string-mark", builtinStringMark, 2},
-   {"string-get-mark", builtinStringGetMark, 2},
-   {"string-free-marked", builtinStringFreeMarked, 1},
-   {"string-get-marked-count", builtinStringGetMarkedCount, 1},
-   {"string-get-marked", builtinStringGetMarked, 1},
-   {"string-any-marked", builtinStringAnyMarked, 1},
    {"string-split", builtinStringSplit, 3},
    {"string-concat", builtinStringConcat, 2, VARIADIC},
    {"string-substr", builtinStringSubstr, 4},
@@ -391,12 +367,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"array-erase", builtinArrayErase, 2},
    {"array-free", builtinArrayFree, 1, VARIADIC},
    {"array-deep-free", builtinArrayDeepFree, 1, VARIADIC},
-   {"array-mark", builtinArrayMark, 2},
-   {"array-get-mark", builtinArrayGetMark, 2},
-   {"array-free-marked", builtinArrayFreeMarked, 1},
-   {"array-get-marked-count", builtinArrayGetMarkedCount, 1},
-   {"array-get-marked", builtinArrayGetMarked, 1},
-   {"array-any-marked", builtinArrayAnyMarked, 1},
    {"array-join", builtinArrayJoin, 3},
    {"array-concat", builtinArrayConcat, 3},
    {"array-slice", builtinArraySlice, 4},
@@ -424,12 +394,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"map-merge", builtinMapMerge, 3},
    {"map-free", builtinMapFree, 1, VARIADIC},
    {"map-deep-free", builtinMapDeepFree, 1, VARIADIC},
-   {"map-mark", builtinMapMark, 2},
-   {"map-get-mark", builtinMapGetMark, 2},
-   {"map-free-marked", builtinMapFreeMarked, 1},
-   {"map-get-marked-count", builtinMapGetMarkedCount, 1},
-   {"map-get-marked", builtinMapGetMarked, 1},
-   {"map-any-marked", builtinMapAnyMarked, 1},
    {"map-copy", builtinMapShallowCopy, 2},
    {"map-deep-copy", builtinMapDeepCopy, 2},
 

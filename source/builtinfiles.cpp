@@ -53,7 +53,7 @@ void builtinFileClose(const Command &command, Executor &executor) {
       return;
    }
    if (auto it = executor.files.find(handle.handle); it != executor.files.end()) {
-      it->second.file.close();
+      it->second.close();
       executor.files.erase(it);
    }
    handle = NULL_VALUE;

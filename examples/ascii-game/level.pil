@@ -1,137 +1,156 @@
 @include "tiles.pil"
 @include "read.pil"
 
-; prints the level to the console
+# prints the level to the console
 print-level(level)
-   let i, n, cond, tmp
-   set 0, i
-   mul level.width, level.height, n
+   let i, n, cond, tmp;
+   set 0, i;
+   mul level.width, level.height, n;
 
-   printfln "Coins collected: {}/{}", level.coins, level.collected
+   printfln "Coins collected: {}/{}", level.coins, level.collected;
 print-level-start:
-   greq i, n, cond
-   jmp cond, print-level-end
+   greq i, n, cond;
+   jmp cond, print-level-end;
 
-   array-at level.map, i, tmp
-   valtable tmp, tmp, empty-t, " .", player-t, "\e[34mPL\e[0m", block-t, "\e[30mBB\e[0m", coin-t, " \e[33mO\e[0m", dead-t, " \e[31mX\e[0m", mine-t, "\e[31mXX\e[0m", vbat-t, "\e[31m||\e[0m", hbat-t, "\e[31m==\e[0m", glimmer-t, "\e[31m<>\e[0m", seeker-t, "\e[31m[]\e[0m", "??"
-   print tmp
+   array-at level.map, i, tmp;
+   valtable tmp, tmp,
+      empty-t,    " .",
+      player-t,    "\e[34mPL\e[0m",
+      block-t,    "\e[90m██\e[0m",
+      coin-t,     " \e[33mO\e[0m",
+      dead-t,     " \e[31mX\e[0m",
+      mine-t,     "\e[31mXX\e[0m",
+      vbat-t,     "\e[31m||\e[0m",
+      hbat-t,     "\e[31m==\e[0m",
+      glimmer-t,  "\e[31m<>\e[0m",
+      seeker-t,   "\e[31m[]\e[0m",
+                  "??";
 
-   incr i
-   mod i, level.width, cond
-   jmp cond, print-level-skip-newline
-   printch '\n'
+   print tmp;
+   incr i;
+   mod i, level.width, cond;
+   jmp cond, print-level-skip-newline;
+   printch '\n';
 print-level-skip-newline:
 
-   goto print-level-start
+   goto print-level-start;
 print-level-end:
 
-; clear level
+# clear level
 clear-level(level)
-   let i, cond, n
-   add level.height, 1, n ; off by one on purpose, see the loop
-   set 0, i
+   let i, cond, n;
+   add level.height, 1, n; # off by one on purpose, see the loop
+   set 0, i;
 clear-level-start:
-   greq i, n, cond
-   jmp cond, clear-level-end
-   print "\r\e[K\e[F"
-   incr i
-   goto clear-level-start
+   greq i, n, cond;
+   jmp cond, clear-level-end;
+   print "\r\e[K\e[F";
+   incr i;
+   goto clear-level-start;
 clear-level-end:
-   print "\r\e[K"
-   flush
+   print "\r\e[K";
+   flush;
 
-; move player
+# move player
 move-player(level, x, y)
-   let row, col, n, target, ty, tx cond, cond2, tmp
+   let row, col, n, target, ty, tx, cond, cond2, tmp;
 
-   ; handle y axis
-   set level.plrpos, target
-   mul level.width, level.height, n
-   div level.plrpos, level.width, row
-   add row, y, ty
-   le ty, 0, cond
-   jmp cond, move-player-no-op
-   greq ty, level.height, cond
-   jmp cond, move-player-no-op
-   mul y, level.width, tmp
-   add target, tmp, target
+   # handle y axis
+   set level.plrpos, target;
+   mul level.width, level.height, n;
+   div level.plrpos, level.width, row;
+   add row, y, ty;
+   le ty, 0, cond;
+   jmp cond, move-player-no-op;
+   greq ty, level.height, cond;
+   jmp cond, move-player-no-op;
+   mul y, level.width, tmp;
+   add target, tmp, target;
 
-   ; handle x axis
-   mod level.plrpos, level.width, col
-   add col, x, tx
-   le tx, 0, cond
-   jmp cond, move-player-no-op
-   greq tx, level.width, cond
-   jmp cond, move-player-no-op
-   add target, x, target
+   # handle x axis
+   mod level.plrpos, level.width, col;
+   add col, x, tx;
+   le tx, 0, cond;
+   jmp cond, move-player-no-op;
+   greq tx, level.width, cond;
+   jmp cond, move-player-no-op;
+   add target, x, target;
 
-   ; move the player
-   array-at level.map, target, tmp
-   leeq tmp, coin-t, cond
-   jmp cond, move-player-skip-death
-   set 1, level.dead
-   array-set level.map, level.plrpos, dead-t
-   goto move-player-no-op
+   # move the player
+   array-at level.map, target, tmp;
+   leeq tmp, coin-t, cond;
+   jmp cond, move-player-skip-death;
+   set 1, level.dead;
+   array-set level.map, level.plrpos, dead-t;
+   goto move-player-no-op;
 
 move-player-skip-death:
-   neq tmp, empty-t, cond
-   neq tmp, coin-t, cond2
-   and cond, cond2, cond
-   jmp cond, move-player-no-op
-   jmp cond2, move-player-skip-coin
-   incr level.coins
+   neq tmp, empty-t, cond;
+   neq tmp, coin-t, cond2;
+   and cond, cond2, cond;
+   jmp cond, move-player-no-op;
+   jmp cond2, move-player-skip-coin;
+   incr level.coins;
 
 move-player-skip-coin:
-   array-set level.map, level.plrpos, empty-t
-   array-set level.map, target, player-t
-   set target, level.plrpos
+   array-set level.map, level.plrpos, empty-t;
+   array-set level.map, target, player-t;
+   set target, level.plrpos;
 
 move-player-no-op:
-   return
+   return;
 
-; play a level
+# play a level
 play-level(level)
-   let ch, cond
+   let ch, cond;
 play-level-start:
-   move-enemies level
-   print-level level
-   print "Move > "
-   flush
-   jmp level.dead, play-level-lost
-   readch ch
-   jmptable ch, 'a', play-level-left, 's', play-level-down, 'd', play-level-right, 'w', play-level-up, 'q', play-level-exit, play-level-input-end
-play-level-left:
-   move-player level [-1], [ 0]
-   goto play-level-input-end
-play-level-down:
-   move-player level [ 0], [ 1]
-   goto play-level-input-end
-play-level-right:
-   move-player level [ 1], [ 0]
-   goto play-level-input-end
-play-level-up:
-   move-player level [ 0], [-1]
-   goto play-level-input-end
-play-level-exit:
-   deep-free level
-   printch '\n'
-   exit 0
-play-level-input-end:
-   greq level.coins, level.collected, cond
-   jmp cond, play-level-won
-   jmp level.dead, play-level-lost
+   move-enemies level;
+   print-level level;
+   print "Move > ";
+   flush;
+   jmp level.dead, play-level-lost;
 
-   clear-level level
-   goto play-level-start
+   readch ch;
+   jmptable ch,
+      'a',  play-level-left,
+      's',  play-level-down,
+      'd',  play-level-right,
+      'w',  play-level-up,
+      'q',  play-level-exit,
+            play-level-input-end;
+
+play-level-left:
+   move-player level, [-1], [ 0];
+   goto play-level-input-end;
+play-level-down:
+   move-player level, [ 0], [ 1];
+   goto play-level-input-end;
+play-level-right:
+   move-player level, [ 1], [ 0];
+   goto play-level-input-end;
+play-level-up:
+   move-player level, [ 0], [-1];
+   goto play-level-input-end;
+play-level-exit:
+   deep-free level;
+   printch '\n';
+   exit 0;
+play-level-input-end:
+   greq level.coins, level.collected, cond;
+   jmp cond, play-level-won;
+   jmp level.dead, play-level-lost;
+
+   clear-level level;
+   goto play-level-start;
 
 play-level-won:
-   clear-level level
-   print-level level
-   println "Level won!"
-   return
+   clear-level level;
+   print-level level;
+   println "Level won!";
+   return;
 
 play-level-lost:
-   clear-level level
-   print-level level
-   println "\e[31m\nLevel lost!\e[0m"
-   return
+   clear-level level;
+   print-level level;
+   println "\e[31m\nLevel lost!\e[0m";
+   return;

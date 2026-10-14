@@ -145,7 +145,7 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
    case VALUE_CHARACTER: return v.character != 0;
    case VALUE_CSTRING: return !getLexeme(executor.cache, v.string).empty();
    case VALUE_STRING: return !getString(executor, v.string, command.file, command.line).empty();
-   case VALUE_ARRAY: return !getArray(executor, v.array, command.file, command.line).empty();
+   case VALUE_ARRAY: return !getArray(executor, v.array, command.file, command.line).array.empty();
    case VALUE_MAP: return !getMap(executor, v.map, command.file, command.line).empty();
    case VALUE_FILE: return true;
    case VALUE_FUNCTION: return true;
@@ -174,7 +174,7 @@ inline bool stringOrError(const Command &command, Executor &executor, const char
       return false;
    }
    if (auto it = executor.strings.find(string.string); it != executor.strings.end()) {
-      out = &it->second.string;
+      out = &it->second;
       return true;
    }
    error(executor.diagnostics, command.file, command.line, "Invalid String ID %zu. Use after free", string.string);
@@ -194,7 +194,7 @@ inline bool constStringOrError(const Command &command, Executor &executor, const
    }
 
    if (auto it = executor.strings.find(value.string); it != executor.strings.end()) {
-      stringOut = &it->second.string;
+      stringOut = &it->second;
       return true;
    }
    error(executor.diagnostics, command.file, command.line, "Invalid String ID %zu. Use after free", value.string);
@@ -219,7 +219,7 @@ inline bool constStringOrCharOrError(const Command &command, Executor &executor,
    }
 
    if (auto it = executor.strings.find(value.string); it != executor.strings.end()) {
-      stringOut = &it->second.string;
+      stringOut = &it->second;
       return true;
    }
    error(executor.diagnostics, command.file, command.line, "Invalid String ID %zu. Use after free", value.string);
@@ -245,14 +245,14 @@ inline bool arrayOrError(const Command &command, Executor &executor, const char 
    return false;
 }
 
-inline bool mapOrError(const Command &command, Executor &executor, const char *function, InternalPILMap *&out, size_t i = 0) {
+inline bool mapOrError(const Command &command, Executor &executor, const char *function, PILMap *&out, size_t i = 0) {
    Value map = resolveVariable(executor, arg(executor, command, i));
    if (map.type != VALUE_MAP) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Map, got %s instead", function, getValueName(map.type));
       return false;
    }
    if (auto it = executor.maps.find(map.map); it != executor.maps.end()) {
-      out = &it->second.map;
+      out = &it->second;
       return true;
    }
    error(executor.diagnostics, command.file, command.line, "Invalid Map ID %zu. Use after free", map.map);
@@ -266,7 +266,7 @@ inline bool fileHandleOrError(const Command &command, Executor &executor, const 
       return false;
    }
    if (auto it = executor.files.find(handle.handle); it != executor.files.end()) {
-      out = &it->second.file;
+      out = &it->second;
       return true;
    }
    error(executor.diagnostics, command.file, command.line, "Invalid File ID %zu. Use after free", handle.handle);
@@ -299,7 +299,7 @@ inline void storeArray(Executor &executor, const Command &command, const std::ve
    storeInRegister(executor, command, reg, value, function);
 }
 
-inline void storeMap(Executor &executor, const Command &command, const InternalPILMap &map, Value reg, const char *function) {
+inline void storeMap(Executor &executor, const Command &command, const PILMap &map, Value reg, const char *function) {
    Value value {VALUE_MAP};
    value.map = allocateMap(executor, map);
    storeInRegister(executor, command, reg, value, function);
@@ -310,8 +310,8 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
    auto key = std::minmax(arr1.array, arr2.array);
    if (!active.insert(key).second) return true;
 
-   const std::vector<Value> &array1 = getArray(executor, arr1.array, file, line);
-   const std::vector<Value> &array2 = getArray(executor, arr2.array, file, line);
+   const std::vector<Value> &array1 = getArray(executor, arr1.array, file, line).array;
+   const std::vector<Value> &array2 = getArray(executor, arr2.array, file, line).array;
    if (array1.size() != array2.size()) return false;
 
    for (size_t i = 0; i < array1.size(); ++i) {
@@ -459,7 +459,7 @@ inline std::string toStringImpl(Executor &executor, Value value, const char *fun
          return "...";
       }
       std::string result;
-      std::vector<Value> &array = getArray(executor, value.array, file, line);
+      std::vector<Value> &array = getArray(executor, value.array, file, line).array;
       size_t size = array.size();
       result.reserve(2 + 4 * array.size());
       result += '[';
@@ -518,7 +518,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
          break;
       }
       putchar('[');
-      std::vector<Value> &array = getArray(executor, a.array, file, line);
+      std::vector<Value> &array = getArray(executor, a.array, file, line).array;
       size_t size = array.size();
       for (size_t i = 0; i < size; ++i) {
          printValue(executor, array[i], file, line, active);
@@ -534,7 +534,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
          break;
       }
       putchar('[');
-      InternalPILMap &map = getMap(executor, a.map, file, line);
+      PILMap &map = getMap(executor, a.map, file, line);
       for (auto it = map.begin(); it != map.end(); ++it) {
          printValue(executor, it->first, file, line, active);
          putchar(':');
@@ -581,7 +581,7 @@ inline size_t deepCopy(const Command &command, Executor &executor, size_t origin
       size_t newId = allocateArray(executor, {});
       copied[{originalId, type}] = newId;
 
-      std::vector<Value> copy = getArray(executor, originalId, command.file, command.line);
+      std::vector<Value> copy = getArray(executor, originalId, command.file, command.line).array;
       for (Value &value: copy) {
          if (value.type == VALUE_ARRAY) {
             value.array = deepCopy(command, executor, value.array, value.type, copied);
@@ -593,15 +593,15 @@ inline size_t deepCopy(const Command &command, Executor &executor, size_t origin
             copyString(value);
          }
       }
-      getArray(executor, newId, command.file, command.line) = std::move(copy);
+      getArray(executor, newId, command.file, command.line).array = std::move(copy);
       return newId;
    }
    else {
       size_t newId = allocateMap(executor, {});
       copied[{originalId, type}] = newId;
 
-      InternalPILMap &original = getMap(executor, originalId, command.file, command.line);
-      InternalPILMap copy {original.size(), ValueHash{&executor}, ValueEqual{&executor}};
+      PILMap &original = getMap(executor, originalId, command.file, command.line);
+      PILMap copy {original.size(), ValueHash{&executor}, ValueEqual{&executor}};
 
       for (auto &[key, value]: original) {
          Value newValue = value;
@@ -630,7 +630,7 @@ inline void deepFree(const Command &command, Executor &executor, Value &value, s
    if (value.type == VALUE_MAP) {
       if (!visited.insert({value.map, value.type}).second) return;
       if (auto it = executor.maps.find(value.map); it != executor.maps.end()) {
-         InternalPILMap &map = it->second.map;
+         PILMap &map = it->second;
          for (auto &[key, value]: map) {
             if (value.type == VALUE_ARRAY || value.type == VALUE_MAP) {
                deepFree(command, executor, value, visited);

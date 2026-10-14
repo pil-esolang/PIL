@@ -45,17 +45,6 @@ struct Command {
    size_t functionId;
 };
 
-struct PILString {
-   std::string string;
-   int mark = 0;
-};
-
-struct PILArray {
-   std::vector<Value> array;
-   uint32_t structureId = 0;
-   int mark = 0;
-};
-
 struct ValueHash {
    Executor *executor;
    size_t operator () (Value v) const;
@@ -66,16 +55,12 @@ struct ValueEqual {
    bool operator () (Value a, Value b) const;
 };
 
-typedef std::unordered_map<Value, Value, ValueHash, ValueEqual> InternalPILMap;
-struct PILMap {
-   InternalPILMap map;
-   int mark = 0;
+struct PILArray {
+   std::vector<Value> array;
+   uint32_t structureId = 0;
 };
 
-struct PILRuntimeFile {
-   std::fstream file;
-   int mark = 0;
-};
+typedef std::unordered_map<Value, Value, ValueHash, ValueEqual> PILMap;
 
 struct StructChainLink {
    bool parentIsChain;
@@ -98,10 +83,10 @@ struct Executor {
    std::vector<Value> returnRegisters;
    std::stack<Trace, std::vector<Trace>> stackTrace;
 
-   std::unordered_map<size_t, PILString> strings;
+   std::unordered_map<size_t, std::string> strings;
    std::unordered_map<size_t, PILArray> arrays;
    std::unordered_map<size_t, PILMap> maps;
-   std::unordered_map<size_t, PILRuntimeFile> files;
+   std::unordered_map<size_t, std::fstream> files;
 
    std::vector<StructData> structData;
    std::vector<StructChainLink> structChains;
@@ -109,11 +94,17 @@ struct Executor {
    std::vector<Value> arguments;
    std::vector<Command> code;
 
+   size_t stringIdCounter = 0;
+   size_t arrayIdCounter = 0;
+   size_t mapIdCounter = 0;
+   size_t fileIdCounter = 0;
+
    size_t main;
    size_t pointer;
    size_t returnCount;
    int lastExecExitCode;
    bool exitCalled;
+
    bool silenceLeaks = false;
    bool allowFileio = false;
    bool allowEnv = false;
@@ -141,13 +132,13 @@ Value evaluateMath(Executor &executor, std::vector<Token> &tokens, size_t &i, co
 
 // allocation
 std::string &getString(Executor &executor, size_t ID, size_t file, size_t line);
-std::vector<Value> &getArray(Executor &executor, size_t ID, size_t file, size_t line);
-InternalPILMap &getMap(Executor &executor, size_t ID, size_t file, size_t line);
+PILArray &getArray(Executor &executor, size_t ID, size_t file, size_t line);
+PILMap &getMap(Executor &executor, size_t ID, size_t file, size_t line);
 std::fstream &getFile(Executor &executor, size_t ID, size_t file, size_t line);
 
 size_t allocateString(Executor &executor, const std::string &string);
 size_t allocateArray(Executor &executor, const std::vector<Value> &array);
-size_t allocateMap(Executor &executor, const InternalPILMap &map);
+size_t allocateMap(Executor &executor, const PILMap &map);
 size_t allocateFile(Executor &executor, std::fstream &&file);
 
 // debug
