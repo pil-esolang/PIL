@@ -24,6 +24,8 @@ print-level-start:
       Tile.hbat,     "\e[31m==\e[0m",
       Tile.glimmer,  "\e[31m<>\e[0m",
       Tile.seeker,   "\e[31m[]\e[0m",
+      Tile.observer, "\e[31m/\\\e[0m",
+      Tile.wanderer, "\e[31m{}\e[0m",
                      "??";
 
    print tmp;
@@ -52,29 +54,27 @@ clear-level-end:
    flush;
 
 # move player
-move-player(level, x, y)
-   let row, col, n, target, ty, tx, cond, cond2, tmp;
+move-player(level, dx, dy)
+   let target, ty, tx, x, y, cond, cond2, tmp;
+   call x, y, get-x-y, level, level.plrpos;
+   set level.plrpos, target;
 
    # handle y axis
-   set level.plrpos, target;
-   mul level.width, level.height, n;
-   div level.plrpos, level.width, row;
-   add row, y, ty;
+   add y, dy, ty;
    le ty, 0, cond;
    jmp cond, move-player-no-op;
    greq ty, level.height, cond;
    jmp cond, move-player-no-op;
-   mul y, level.width, tmp;
+   mul dy, level.width, tmp;
    add target, tmp, target;
 
    # handle x axis
-   mod level.plrpos, level.width, col;
-   add col, x, tx;
+   add x, dx, tx;
    le tx, 0, cond;
    jmp cond, move-player-no-op;
    greq tx, level.width, cond;
    jmp cond, move-player-no-op;
-   add target, x, target;
+   add target, dx, target;
 
    # move the player
    array-at level.map, target, tmp;

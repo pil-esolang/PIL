@@ -31,12 +31,41 @@ enum Tile (
    hbat,
    glimmer,
    seeker,
+   observer,
+   wanderer,
 )
 
-# get random enemy direction
+# utility functions
 get-random-dir(enemy)
    randi-range [-1], [ 1], enemy.dirx;
    randi-range [-1], [ 1], enemy.diry;
+
+get-x-y(level, pos)
+   let x, y;
+   div pos, level.width, y;
+   mod pos, level.width, x;
+   return x, y;
+
+get-dir(start, end)
+   let cond;
+   le start, end, cond;
+   jmp cond, get-dir-le;
+   gr start, end, cond;
+   jmp cond, get-dir-gr;
+get-dir-eq: return [ 0];
+get-dir-le: return [ 1];
+get-dir-gr: return [-1];
+
+int-distance(sx, sy, dx, dy)
+   let rx1, rx2, ry1, ry2, x, y, distance;
+   sub sx, dx, rx1;
+   sub dx, sx, rx2;
+   sub sy, dy, ry1;
+   sub dy, sy, ry2;
+   max rx1, rx2, x;
+   max ry1, ry2, y;
+   add x, y, distance;
+   return distance;
 
 # create a new enemy
 create-enemy(pos, type, enemies)
@@ -50,7 +79,6 @@ create-enemy-start:
       Tile.vbat,     create-enemy-vbat,
       Tile.hbat,     create-enemy-hbat,
       Tile.glimmer,  create-enemy-glimmer,
-      Tile.seeker,   create-enemy-seeker,
                      create-enemy-end;
 
 create-enemy-vbat:
@@ -62,35 +90,31 @@ create-enemy-hbat:
 create-enemy-glimmer:
    set 1, enemy.diry;
    goto create-enemy-end;
-create-enemy-seeker:
-   goto create-enemy-end;
 create-enemy-end:
    array-push enemies, enemy;
 
 # move a single enemy
-move-enemy(level, enemy, x, y)
-   let row, col, n, target, ty, tx, cond, cond2, tmp;
+move-enemy(level, enemy, dx, dy)
+   let target, x, y, ty, tx, cond, cond2, tmp;
+   call x, y, get-x-y, level, enemy.pos;
+   set enemy.pos, target;
 
    # handle y axis
-   set enemy.pos, target;
-   mul level.width, level.height, n;
-   div enemy.pos, level.width, row;
-   add row, y, ty;
+   add y, dy, ty;
    le ty, 0, cond;
    jmp cond, move-enemy-no-op;
    greq ty, level.height, cond;
    jmp cond, move-enemy-no-op;
-   mul y, level.width, tmp;
+   mul dy, level.width, tmp;
    add target, tmp, target;
 
    # handle x axis
-   mod enemy.pos, level.width, col;
-   add col, x, tx;
+   add x, dx, tx;
    le tx, 0, cond;
    jmp cond, move-enemy-no-op;
    greq tx, level.width, cond;
    jmp cond, move-enemy-no-op;
-   add target, x, target;
+   add target, dx, target;
 
    # move the enemy
    array-at level.map, target, tmp;
@@ -114,7 +138,8 @@ move-enemy-no-op:
 
 # move all enemies
 move-enemies(level)
-   let i, n, cond, enemy, tmp, plrx, plry, enx, eny;
+   let i, n, cond, enemy, tmp, px, py;
+   call px, py, get-x-y, level, level.plrpos;
    set 0, i;
    array-size level.enemies, n;
 move-enemies-start:
@@ -128,6 +153,8 @@ move-enemies-start:
       Tile.hbat,     move-enemies-hbat,
       Tile.glimmer,  move-enemies-glimmer,
       Tile.seeker,   move-enemies-seeker,
+      Tile.observer, move-enemies-observer,
+      Tile.wanderer, move-enemies-wanderer,
                      move-enemies-continue;
 
 move-enemies-vbat:
@@ -154,34 +181,35 @@ move-enemies-glimmer:
 move-enemies-seeker:
    mod enemy.turn, 2, tmp;
    jmp tmp, move-enemies-continue;
-   div level.plrpos, level.width, plry;
-   div enemy.pos, level.width, eny;
-   gr plry, eny, tmp;
-   jmp tmp, move-enemies-seeker-grplry;
-   le plry, eny, tmp;
-   jmp tmp, move-enemies-seeker-leplry;
-   goto move-enemies-seeker-endy;
-move-enemies-seeker-grplry:
-   move-enemy level, enemy, [ 0], [ 1];
-   goto move-enemies-seeker-endy;
-move-enemies-seeker-leplry:
-   move-enemy level, enemy, [ 0], [-1];
-   goto move-enemies-seeker-endy;
-move-enemies-seeker-endy:
-   mod level.plrpos, level.width, plrx;
-   mod enemy.pos, level.width, enx;
-   gr plrx, enx, tmp;
-   jmp tmp, move-enemies-seeker-grplrx;
-   le plrx, enx, tmp;
-   jmp tmp, move-enemies-seeker-leplrx;
-   goto move-enemies-seeker-endx;
-move-enemies-seeker-grplrx:
-   move-enemy level, enemy, [ 1], [ 0];
-   goto move-enemies-seeker-endx;
-move-enemies-seeker-leplrx:
-   move-enemy level, enemy, [-1], [ 0];
-   goto move-enemies-seeker-endx;
-move-enemies-seeker-endx:
+
+   let ex, ey, dx, dy;
+   call ex, ey, get-x-y, level, enemy.pos;
+   call dx, get-dir, ex, px;
+   call dy, get-dir, ey, py;
+
+   move-enemy level, enemy, 0, dy;
+   move-enemy level, enemy, dx, 0;
+   goto move-enemies-continue;
+move-enemies-observer:
+   let distance;
+   call ex, ey, get-x-y, level, enemy.pos;
+   call distance, int-distance, ex, ey, px, py;
+
+   greq distance, 3, cond;
+   jmp cond, move-enemies-continue;
+   call dx, get-dir, ex, px;
+   call dy, get-dir, ey, py;
+
+   neq dx, 0, cond;
+   jmp cond, move-enemies-observer-x;
+   move-enemy level, enemy, 0, dy;
+   goto move-enemies-continue;
+   move-enemies-observer-x:
+   move-enemy level, enemy, dx, 0;
+   goto move-enemies-continue;
+move-enemies-wanderer:
+   get-random-dir enemy;
+   move-enemy level, enemy, enemy.dirx, enemy.diry;
    goto move-enemies-continue;
 move-enemies-continue:
    incr i;

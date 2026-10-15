@@ -52,6 +52,8 @@ create-level-string-start:
       'h',  Tile.hbat,
       'g',  Tile.glimmer,
       's',  Tile.seeker,
+      'o',  Tile.observer,
+      'w',  Tile.wanderer,
             Tile.unknown;
 
    array-size map, tmp2;
