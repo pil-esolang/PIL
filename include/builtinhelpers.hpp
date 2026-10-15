@@ -504,7 +504,7 @@ inline std::string format(const Command &command, Executor &executor, const char
 
 inline void printValue(Executor &executor, Value a, size_t file, size_t line, std::set<std::pair<size_t, ValueType>> &active) {
    switch (a.type) {
-   case VALUE_INTEGER: printf("%zu", a.integer); break;
+   case VALUE_INTEGER: printf("%ld", a.integer); break;
    case VALUE_FLOATING: printf("%.3F", a.floating); break;
    case VALUE_CHARACTER: printf("%c", a.character); break;
    case VALUE_CSTRING: printf("%s", getLexeme(executor.cache, a.string).c_str()); break;

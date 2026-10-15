@@ -98,6 +98,15 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
             tokens.emplace_back(TOKEN_BOR, 0, file.lexeme, line);
          }
          continue;
+      case '=':
+         if (i + 1 < size && file.code[i + 1] == '=') {
+            tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
+            i += 1;
+         }
+         else {
+            tokens.emplace_back(TOKEN_ASSIGN, 0, file.lexeme, line);
+         }
+         continue;
       case '!':
          if (i + 1 < size && file.code[i + 1] == '=') {
             tokens.emplace_back(TOKEN_INEQUAL, 0, file.lexeme, line);
@@ -144,11 +153,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          continue;
       }
 
-      if (i + 1 < size && ch == '=' && file.code[i+1] == '=') {
-         tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
-         i += 1;
-      }
-      else if (ch == '#') {
+      if (ch == '#') {
          while (i < size && file.code[i] != '\n') i += 1;
          line += 1;
       }

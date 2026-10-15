@@ -14,17 +14,17 @@ print-level-start:
 
    array-at level.map, i, tmp;
    valtable tmp, tmp,
-      empty-t,    " .",
-      player-t,    "\e[34mPL\e[0m",
-      block-t,    "\e[90m██\e[0m",
-      coin-t,     " \e[33mO\e[0m",
-      dead-t,     " \e[31mX\e[0m",
-      mine-t,     "\e[31mXX\e[0m",
-      vbat-t,     "\e[31m||\e[0m",
-      hbat-t,     "\e[31m==\e[0m",
-      glimmer-t,  "\e[31m<>\e[0m",
-      seeker-t,   "\e[31m[]\e[0m",
-                  "??";
+      Tile.empty,    " .",
+      Tile.player,   "\e[34mPL\e[0m",
+      Tile.block,    "\e[90m██\e[0m",
+      Tile.coin,     "\e[33m O\e[0m",
+      Tile.dead,     "\e[31m X\e[0m",
+      Tile.mine,     "\e[31mXX\e[0m",
+      Tile.vbat,     "\e[31m||\e[0m",
+      Tile.hbat,     "\e[31m==\e[0m",
+      Tile.glimmer,  "\e[31m<>\e[0m",
+      Tile.seeker,   "\e[31m[]\e[0m",
+                     "??";
 
    print tmp;
    incr i;
@@ -78,23 +78,23 @@ move-player(level, x, y)
 
    # move the player
    array-at level.map, target, tmp;
-   leeq tmp, coin-t, cond;
+   leeq tmp, Tile.coin, cond;
    jmp cond, move-player-skip-death;
    set 1, level.dead;
-   array-set level.map, level.plrpos, dead-t;
+   array-set level.map, level.plrpos, Tile.dead;
    goto move-player-no-op;
 
 move-player-skip-death:
-   neq tmp, empty-t, cond;
-   neq tmp, coin-t, cond2;
+   neq tmp, Tile.empty, cond;
+   neq tmp, Tile.coin, cond2;
    and cond, cond2, cond;
    jmp cond, move-player-no-op;
    jmp cond2, move-player-skip-coin;
    incr level.coins;
 
 move-player-skip-coin:
-   array-set level.map, level.plrpos, empty-t;
-   array-set level.map, target, player-t;
+   array-set level.map, level.plrpos, Tile.empty;
+   array-set level.map, target, Tile.player;
    set target, level.plrpos;
 
 move-player-no-op:

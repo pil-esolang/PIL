@@ -43,23 +43,23 @@ create-level-string-start:
 
    string-at line, i, tmp;
    valtable tmp, tmp,
-      'p',  player-t,
-      'e',  empty-t,
-      'b',  block-t,
-      'c',  coin-t,
-      'm',  mine-t,
-      'v',  vbat-t,
-      'h',  hbat-t,
-      'g',  glimmer-t,
-      's',  seeker-t,
-            unknown-t;
+      'p',  Tile.player,
+      'e',  Tile.empty,
+      'b',  Tile.block,
+      'c',  Tile.coin,
+      'm',  Tile.mine,
+      'v',  Tile.vbat,
+      'h',  Tile.hbat,
+      'g',  Tile.glimmer,
+      's',  Tile.seeker,
+            Tile.unknown;
 
    array-size map, tmp2;
    create-enemy tmp2, tmp, enemies;
    array-push map, tmp;
-   eq tmp, coin-t, cond;
+   eq tmp, Tile.coin, cond;
    add coins, cond, coins;
-   eq tmp, player-t, cond;
+   eq tmp, Tile.player, cond;
    jmpn cond, create-level-skip-player;
    is-null plrpos, cond;
    jmp cond, create-level-plrpos-null;

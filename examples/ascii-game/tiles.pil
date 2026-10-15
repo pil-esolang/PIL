@@ -10,26 +10,28 @@ struct Enemy (
 struct Level (
    width,      # int
    height,     # int
-   map,        # vector<int>
+   map,        # array<int>
    plrpos,     # int
    coins,      # int
    collected,  # int
    dead,       # bool
-   enemies,    # vector<Enemy>
+   enemies,    # array<Enemy>
 )
 
-# map elements. everything after coin-t kills you and everything after mine-t is an enemy
-const unknown-t [-1];
-const empty-t 0;
-const player-t 1;
-const block-t 2;
-const coin-t 3;
-const dead-t 4;
-const mine-t 5;
-const vbat-t 6;
-const hbat-t 7;
-const glimmer-t 8;
-const seeker-t 9;
+# map tiles. everything after coin kills you and everything after mine is an enemy
+enum Tile (
+   unknown = [-1],
+   empty,
+   player,
+   block,
+   coin,
+   dead,
+   mine,
+   vbat,
+   hbat,
+   glimmer,
+   seeker,
+)
 
 # get random enemy direction
 get-random-dir(enemy)
@@ -39,17 +41,17 @@ get-random-dir(enemy)
 # create a new enemy
 create-enemy(pos, type, enemies)
    let enemy, cond;
-   gr type, mine-t, cond;
+   gr type, Tile.mine, cond;
    jmp cond, create-enemy-start;
    return;
 create-enemy-start:
-   make Enemy, enemy, pos, type, empty-t, 0, 0, 0;
+   make Enemy, enemy, pos, type, Tile.empty, 0, 0, 0;
    jmptable type,
-      vbat-t,     create-enemy-vbat,
-      hbat-t,     create-enemy-hbat,
-      glimmer-t,  create-enemy-glimmer,
-      seeker-t,   create-enemy-seeker,
-                  create-enemy-end;
+      Tile.vbat,     create-enemy-vbat,
+      Tile.hbat,     create-enemy-hbat,
+      Tile.glimmer,  create-enemy-glimmer,
+      Tile.seeker,   create-enemy-seeker,
+                     create-enemy-end;
 
 create-enemy-vbat:
    set 1, enemy.diry;
@@ -92,13 +94,13 @@ move-enemy(level, enemy, x, y)
 
    # move the enemy
    array-at level.map, target, tmp;
-   neq tmp, player-t, cond;
+   neq tmp, Tile.player, cond;
    jmp cond, move-enemy-skip-player;
    set 1, level.dead;
    goto move-enemy-force;
 move-enemy-skip-player:
-   neq tmp, empty-t, cond;
-   neq tmp, coin-t, cond2;
+   neq tmp, Tile.empty, cond;
+   neq tmp, Tile.coin, cond2;
    and cond, cond2, cond;
    jmp cond, move-player-no-op;
 move-enemy-force:
@@ -122,11 +124,11 @@ move-enemies-start:
    array-at level.enemies, i, enemy;
    incr enemy.turn;
    jmptable enemy.type,
-      vbat-t,     move-enemies-vbat,
-      hbat-t,     move-enemies-hbat,
-      glimmer-t,  move-enemies-glimmer,
-      seeker-t,   move-enemies-seeker,
-                  move-enemies-continue;
+      Tile.vbat,     move-enemies-vbat,
+      Tile.hbat,     move-enemies-hbat,
+      Tile.glimmer,  move-enemies-glimmer,
+      Tile.seeker,   move-enemies-seeker,
+                     move-enemies-continue;
 
 move-enemies-vbat:
    set enemy.pos, tmp;
