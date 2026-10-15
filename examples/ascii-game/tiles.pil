@@ -1,7 +1,7 @@
 struct Enemy (
    pos,  # int
-   type, # int
-   tile, # int
+   type, # Tile
+   tile, # Tile
    dirx, # int
    diry, # int
    turn, # int
@@ -10,7 +10,7 @@ struct Enemy (
 struct Level (
    width,      # int
    height,     # int
-   map,        # array<int>
+   map,        # array<Tile>
    plrpos,     # int
    coins,      # int
    collected,  # int
@@ -102,7 +102,7 @@ move-enemy-skip-player:
    neq tmp, Tile.empty, cond;
    neq tmp, Tile.coin, cond2;
    and cond, cond2, cond;
-   jmp cond, move-player-no-op;
+   jmp cond, move-enemy-no-op;
 move-enemy-force:
    array-set level.map, enemy.pos, enemy.tile;
    array-set level.map, target, enemy.type;

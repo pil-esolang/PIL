@@ -16,6 +16,9 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
    if (value.type == VALUE_LOCAL) {
       return executor.locals[executor.stackTrace.top().localStart + value.local];
    }
+   else if (value.type == VALUE_GLOBAL) {
+      return executor.globals[value.global];
+   }
    else if (value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER) {
       std::vector<Value> &registers = (value.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
       return registers[value.reg];
@@ -76,6 +79,9 @@ inline Value back(const Executor &executor, const Command &command) {
 inline void storeInRegister(Executor &executor, const Command &command, Value reg, Value value, const char *function) {
    if (reg.type == VALUE_LOCAL) {
       executor.locals[executor.stackTrace.top().localStart + reg.local] = value;
+   }
+   else if (reg.type == VALUE_GLOBAL) {
+      executor.globals[reg.global] = value;
    }
    else if (reg.type == VALUE_REGISTER || reg.type == VALUE_RETURN_REGISTER) {
       std::vector<Value> &registers = (reg.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);

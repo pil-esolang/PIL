@@ -343,7 +343,7 @@ void builtinIsfilehandle(const Command &command, Executor &executor) {
 
 void builtinIsreg(const Command &command, Executor &executor) {
    Value value = arg(executor, command, 0);
-   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER || value.type == VALUE_STRUCT_ACCESS, "is-reg");
+   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_GLOBAL || value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER || value.type == VALUE_STRUCT_ACCESS, "is-reg");
 }
 
 void builtinIsfunction(const Command &command, Executor &executor) {

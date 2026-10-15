@@ -190,6 +190,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    size_t callLexeme = cacheLexeme(executor.cache, "call");
    size_t mainLexeme = cacheLexeme(executor.cache, "main");
    size_t constLexeme = cacheLexeme(executor.cache, "const");
+   size_t globalLexeme = cacheLexeme(executor.cache, "global");
    size_t structLexeme = cacheLexeme(executor.cache, "struct");
    size_t arrayLexeme = cacheLexeme(executor.cache, "array");
    size_t enumLexeme = cacheLexeme(executor.cache, "enum");
@@ -430,34 +431,53 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             executor.main = functionId;
          }
       }
-      // const declaration
-      else if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == constLexeme) {
+      // const/global declaration
+      else if (tokens[i].type == TOKEN_IDENTIFIER && (tokens[i].lexeme == constLexeme || tokens[i].lexeme == globalLexeme)) {
+         bool constant = (tokens[i].lexeme == constLexeme);
          do {
             i += 1;
             size_t lexeme = tokens[i].lexeme;
             if (tokens[i].type != TOKEN_IDENTIFIER) {
-               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected identifier after const keyword, got %s instead", getTokenName(tokens[i].type));
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected identifier after const/global keyword, got %s instead", getTokenName(tokens[i].type));
                continue; // might be EOF
             }
+
             i += 1;
+            if (tokens[i].type != TOKEN_ASSIGN && !constant) {
+               constants[lexeme] = Value{.type = VALUE_GLOBAL, .global = executor.globals.size()};
+               executor.globals.push_back(NULL_VALUE);
+               continue;
+            }
+
             if (tokens[i].type != TOKEN_ASSIGN) {
-               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Assign after constant declaration identifier, got %s instead", getTokenName(tokens[i].type));
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Assign after constant/global declaration identifier, got %s instead", getTokenName(tokens[i].type));
                continue;
             }
 
             i += 1;
             TokenType type = tokens[i].type;
             if (type == TOKEN_EOF || type == TOKEN_REGISTER || type == TOKEN_RETURN_REGISTER) {
-               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a constant value in the constant declaration, got %s instead", getTokenName(tokens[i].type));
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a constant value in the constant/global declaration, got %s instead", getTokenName(tokens[i].type));
                continue;
             }
-            constants[lexeme] = internalParse(executor, tokens, i, {}, constants, enumerationMap); // functionParamMap handles runtime values, not constants
+
+            if (constants.find(lexeme) != constants.end()) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Identifier '%s' redefined in constant/global declaration", getLexeme(executor.cache, lexeme).c_str());
+            }
+
+            if (constant) {
+               constants[lexeme] = internalParse(executor, tokens, i, {}, constants, enumerationMap); // functionParamMap handles runtime values, not constants
+            }
+            else {
+               constants[lexeme] = Value{.type = VALUE_GLOBAL, .global = executor.globals.size()};
+               executor.globals.push_back(internalParse(executor, tokens, i, {}, constants, enumerationMap));
+            }
             i += 1;
          }
          while (tokens[i].type == TOKEN_COMMA);
 
          if (tokens[i].type != TOKEN_SEMICOLON) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a semicolon after constant declaration, got %s instead", getTokenName(tokens[i].type));
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a semicolon after constant/global declaration, got %s instead", getTokenName(tokens[i].type));
             i -= 1;
             continue;
          }

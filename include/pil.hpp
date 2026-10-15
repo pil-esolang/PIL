@@ -93,6 +93,7 @@ struct Executor {
    std::vector<Function> functions;
    std::vector<Value> arguments;
    std::vector<Command> code;
+   std::vector<Value> globals;
 
    size_t stringIdCounter = 0;
    size_t arrayIdCounter = 0;
