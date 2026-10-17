@@ -1,59 +1,101 @@
-cat() let f, c, i
-   print "Input file to read: "
-   read i
-   file-open i, 'r', f
-   file-read f, c
-   println c
-   file-close f
-   string-free c, i
+# If you are getting a bunch of errors, try running with
+# the --allow-fileio flag.
 
-ls() let d, e, a, i, n, c
-   print "Input directory to list: "
-   read d
-   dir-list-recursive d, a
+# Little shell that can execute a command. Value table
+# can be found in main. Currently there are a lot of
+# file-related commands, but feel free to add any other
+# commands you like.
 
-   array-size a, n
-   set 0, i
+# Another thing you could add is the REPL. Have fun
+# experimenting! That is what these examples are for.
+cat()
+   let file, content, path;
+   print "Input file to read: ";
+   read path;
+   file-open path, 'r', file;
+   file-read file, content;
+   println content;
+   file-close file;
+   string-free c, path;
+
+ls()
+   let dir, entry, entries, i, n, condition;
+   print "Input directory to list: ";
+   read dir;
+   dir-list-recursive dir, entries;
+
+   array-size entries, n;
+   set 0, i;
 ls-loop-begin:
-   greq i, n, c
-   jmp c, ls-loop-end
+   greq i, n, condition;
+   jmp condition, ls-loop-end;
 
-   array-at a, i, e
-   println e
-   incr i
-   goto ls-loop-begin
+   array-at entries, i, entry;
+   println entry;
+   incr i;
+   goto ls-loop-begin;
 ls-loop-end:
-   string-free d
-   array-deep-free a
+   string-free dir;
+   array-deep-free entries;
 
-mv() let i, o
-   print "Input file to move: "
-   read i
-   print "Input destination: "
-   read o
-   path-move i, o
-   string-free i, o
+mv()
+   let source, destination;
+   print "Input file to move: ";
+   read source;
+   print "Input destination: ";
+   read destination;
+   path-move source, destination;
+   string-free source, destination;
 
-cp() let i, o
-   print "Input file to copy: "
-   read i
-   print "Input destination: "
-   read o
-   path-copy i, o
-   string-free i, o
+cp()
+   let source, destination;
+   print "Input file to copy: ";
+   read source;
+   print "Input destination: ";
+   read destination;
+   path-copy source, destination;
+   string-free source, destination;
 
-rm() let f
-   print "Input file to remove: "
-   read f
-   path-remove-all f
-   string-free f
+rm()
+   let path;
+   print "Input path to remove: ";
+   read path;
+   path-remove-all path;
+   string-free path;
 
 err()
-   error "Invalid command"
+   error "Invalid command";
 
-main() let s, f
-   print "Input command: "
-   read s
-   valtable s, f, "cat", cat, "ls", ls, "mv", mv, "cp", cp, "rm", rm, err
-   string-free s
-   func-call f
+# exit is already taken
+_exit()
+   return;
+
+# Don't forget to update help!
+help()
+   println "cat - output contents of a file";
+   println "ls - list directory";
+   println "mv - move file";
+   println "cp - copy file";
+   println "rm - remove file/directory";
+   println "exit - exit shell";
+   println "help - list commands";
+
+main()
+   let command, function;
+   print "Input command: ";
+   read command;
+   # After implementing a new command, add it to this list.
+   # err needs to be the last argument. That is the default
+   # one whenever there are no matches.
+   valtable command, function,
+      "cat",   cat,
+      "ls",    ls,
+      "mv",    mv,
+      "cp",    cp,
+      "rm",    rm,
+      "exit", _exit,
+      "help",  help,
+               err;
+
+   string-free command;
+   func-call function;

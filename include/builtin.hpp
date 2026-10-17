@@ -82,6 +82,7 @@ void builtinMapNew(const Command &command, Executor &executor);
 void builtinMapErase(const Command &command, Executor &executor);
 void builtinMapSet(const Command &command, Executor &executor);
 void builtinMapAt(const Command &command, Executor &executor);
+void builtinMapAtOr(const Command &command, Executor &executor);
 void builtinMapContains(const Command &command, Executor &executor);
 void builtinMapSize(const Command &command, Executor &executor);
 void builtinMapEmpty(const Command &command, Executor &executor);
@@ -385,6 +386,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"map-erase", builtinMapErase, 2},
    {"map-set", builtinMapSet, 3},
    {"map-at", builtinMapAt, 3},
+   {"map-at-or", builtinMapAtOr, 4},
    {"map-contains", builtinMapContains, 3},
    {"map-size", builtinMapSize, 2},
    {"map-empty", builtinMapEmpty, 2},

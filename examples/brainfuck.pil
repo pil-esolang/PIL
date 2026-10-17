@@ -1,77 +1,107 @@
-const memsize [20 * 1024]
+# brainfuck esolang implementation.
+# https://esolangs.org/wiki/Brainfuck
 
-main() let code, memory, pc, i, ch, tmp, depth, size
-   print "Input code: "
-   readln code
+main()
+   let code, memory, pc, i, ch, n, condition, depth, tmp;
+   print "Input code: ";
+   readln code;
 
-   array-fill memory, memsize, 0
-   string-size code, size
-   set 0, i
-   set 0, pc
+   map-new memory;
+   string-size code, n;
+   set 0, i;
+   set 0, pc;
 
-   @loop i < size
-      string-at code, i, ch
-      jmptable ch, '>', BRAINFUCK-RIGHT, '<', BRAINFUCK-LEFT, '-', BRAINFUCK-MINUS, '+', BRAINFUCK-PLUS, '.', BRAINFUCK-WRITE, ',', BRAINFUCK-READ, '[', BRAINFUCK-LOOP-START, ']', BRAINFUCK-LOOP-END, BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-RIGHT:
-      incr pc
-      floor-mod pc, memsize, pc
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-LEFT:
-      decr pc
-      floor-mod pc, memsize, pc
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-MINUS:
-      array-at memory, pc, tmp
-      decr tmp
-      array-set memory, pc, tmp
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-PLUS:
-      array-at memory, pc, tmp
-      incr tmp
-      array-set memory, pc, tmp
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-WRITE:
-      array-at memory, pc, tmp
-      to-char tmp, tmp
-      print tmp
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-READ:
-      readch tmp
-      to-int tmp, tmp
-      array-set memory, pc, tmp
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-LOOP-START:
-      array-at memory, pc, tmp
-      jmp tmp, BRAINFUCK-HANDLE-LOOP
-      set 1, depth
-      incr i
+main-loop-start:
+   greq i, n, condition;
+   jmp condition, main-loop-end;
+   string-at code, i, ch;
+   jmptable ch,
+      '>',  brainfuck-right,
+      '<',  brainfuck-left,
+      '-',  brainfuck-minus,
+      '+',  brainfuck-plus,
+      '.',  brainfuck-write,
+      ',',  brainfuck-read,
+      '[',  brainfuck-start,
+      ']',  brainfuck-end,
+            main-loop-continue;
 
-      @loop depth > 0 && i < size
-         string-at code, i, ch
-         eq ch, '[', tmp
-         add depth, tmp, depth
-         eq ch, ']', tmp
-         sub depth, tmp, depth
-         incr i
-      @end
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-LOOP-END:
-      array-at memory, pc, tmp
-      jmpn tmp, BRAINFUCK-HANDLE-LOOP
-      set 1, depth
-      decr i
+brainfuck-right:
+   incr pc;
+   goto main-loop-continue;
+brainfuck-left:
+   decr pc;
+   goto main-loop-continue;
+brainfuck-minus:
+   map-at-or memory, pc, 0, tmp;
+   decr tmp;
+   le tmp, 0, condition;
+   jmpn condition, minus-no-wrap;
+   set 255, tmp;
+minus-no-wrap:
+   map-set memory, pc, tmp;
+   goto main-loop-continue;
+brainfuck-plus:
+   map-at-or memory, pc, 0, tmp;
+   incr tmp;
+   gr tmp, 255, condition;
+   jmpn condition, plus-no-wrap;
+   set 0, tmp;
+plus-no-wrap:
+   map-set memory, pc, tmp;
+   goto main-loop-continue;
+brainfuck-write:
+   map-at-or memory, pc, 0, tmp;
+   to-char tmp, tmp;
+   printch tmp;
+   goto main-loop-continue;
+brainfuck-read:
+   readch tmp;
+   to-int tmp, tmp;
+   map-set memory, pc, tmp;
+   goto main-loop-continue;
+brainfuck-start:
+   map-at-or memory, pc, 0, tmp;
+   jmp tmp, main-loop-continue;
+   set 1, depth;
+   incr i;
 
-      @loop depth > 0 && i < size
-         string-at code, i, ch
-         eq ch, '[', tmp
-         sub depth, tmp, depth
-         eq ch, ']', tmp
-         add depth, tmp, depth
-         decr i
-      @end
-      goto BRAINFUCK-HANDLE-LOOP
-BRAINFUCK-HANDLE-LOOP:
-      incr i
-   @end
-   string-free code
-   array-free memory
+   brainfuck-start-start:
+      greq i, n, condition;
+      jmp condition, main-loop-continue;
+
+      string-at code, i, ch;
+      eq ch, '[', tmp;
+      add depth, tmp, depth;
+      eq ch, ']', tmp;
+      sub depth, tmp, depth;
+
+      leeq depth, 0, condition;
+      jmp condition, main-loop-continue;
+
+      incr i;
+      goto brainfuck-start-start;
+brainfuck-end:
+   map-at-or memory, pc, 0, tmp;
+   jmpn tmp, main-loop-continue;
+   set 1, depth;
+   decr i;
+
+   brainfuck-end-start:
+      leeq depth, 0, condition;
+      jmp condition, main-loop-continue;
+      greq i, n, condition;
+      jmp condition, main-loop-continue;
+
+      string-at code, i, ch;
+      eq ch, '[', tmp;
+      sub depth, tmp, depth;
+      eq ch, ']', tmp;
+      add depth, tmp, depth;
+      decr i;
+      goto brainfuck-end-start;
+main-loop-continue:
+   incr i;
+   goto main-loop-start;
+main-loop-end:
+   free code, memory;

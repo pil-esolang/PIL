@@ -27,10 +27,10 @@ void builtinFileOpen(const Command &command, Executor &executor) {
    char mode = getChar(command, executor, "file-open", 1);
    std::fstream file;
 
-   if (mode == 'r') file.open(path->c_str(), std::ios::in);
-   else if (mode == 'w') file.open(path->c_str(), std::ios::out);
-   else if (mode == 'a') file.open(path->c_str(), std::ios::out | std::ios::app);
-   else if (mode == 'x') file.open(path->c_str(), std::ios::out | std::ios::in);
+   if (mode == 'r' || mode == 'R') file.open(path->c_str(), std::ios::in);
+   else if (mode == 'w' || mode == 'W') file.open(path->c_str(), std::ios::out);
+   else if (mode == 'a' || mode == 'A') file.open(path->c_str(), std::ios::out | std::ios::app);
+   else if (mode == 'x' || mode == 'X') file.open(path->c_str(), std::ios::out | std::ios::in);
    else {
       error(executor.diagnostics, command.file, command.line, "file-open: Unknown mode '%c'. Valid modes are 'r', 'w', 'a' and 'x'", mode);
       return;

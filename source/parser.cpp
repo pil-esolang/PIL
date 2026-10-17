@@ -520,7 +520,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             }
             // to not spiral errors out of control
             while (i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON) i += 1;
-            i -= 1;
             continue;
          }
 

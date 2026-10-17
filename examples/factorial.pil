@@ -1,30 +1,33 @@
-; this file contains 2 factorial implementations.
+# This file contains 2 factorial implementations -
+# a recursive and an iterative variant.
 factorial(n)
-   leeq n, 1, $0
-   jmp $0, factorial-end
+   let result;
+   leeq n, 1, $0;
+   jmp $0, factorial-end;
 
-   sub n, 1, $1
-   factorial, $1
-   mul R$0, n, R$0
-   return R$0
+   sub n, 1, $1;
+   call result, factorial, $1;
+   mul result, n, result;
+   return result;
 factorial-end:
-   return 1
+   return 1;
 
 factorial-iterative(n)
-   leeq n, 1, $0
-   jmp $0, factorial-iterative-end
+   let i;
+   leeq n, 1, $0;
+   jmp $0, factorial-iterative-end;
 
-   sub n, 1, $0
+   sub n, 1, i;
 factorial-iterative-loop:
-   mul n, $0, n
-   decr $0
-   gr $0, 1, $1
-   jmp $1, factorial-iterative-loop
-   return n
+   mul n, i, n;
+   decr i;
+   gr i, 1, $0;
+   jmp $0, factorial-iterative-loop;
+   return n;
 factorial-iterative-end:
-   return 1
+   return 1;
 
-; test here
+# Test here.
 main()
-   factorial 5.0
-   println R$0
+   factorial 5.0;
+   println r$0;

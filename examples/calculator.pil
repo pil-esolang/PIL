@@ -1,38 +1,54 @@
-; simple, 6 command calculator.
+# 6 command calculator application. If you'd like
+# something more, feel free to add more commands.
+# Or even write up something more powerful, like
+# a mathematical expression evaluator.
 
-; read float input from the user with error checking
-input-number(msg) let input, tmp
-   goto input-number-start
+# Read a number from the user with error checking.
+input-number(msg)
+   let num, input;
+   goto input-number-start;
+
 input-number-error:
-   print "Invalid input, try again."
+   print "Invalid input, try again.";
+
 input-number-start:
-   print msg
-   readln tmp
-   to-float tmp, input
-   string-free tmp
-   is-null input, tmp
-   jmp tmp, input-number-error
-   return input
+   print msg;
+   readln input;
+   to-float input, num;
+   string-free input;
+   is-null num, input;
+   jmp input, input-number-error;
+   return num;
 
-; calculate result based on the operator. we have a table where a character is tied to a function.
-; think of it like a map. if the op is in the map, call the function on n1 and n2, if not, throw
-; an error
-calculate-result(n1, n2, op) let fn, tmp, result
-   valtable op, fn, '+', add, '-', sub, '*', mul, '/', div, '%', mod, '^', pow
-   is-null fn, tmp
-   jmpn tmp, valid-op
-   println "Invalid operator."
-   exit 0
+# Calculate the result based on the operator. We
+# have a function table and just call the function
+# with N1 and N2 as arguments.
+calculate-result(n1, n2, op)
+   let fn, tmp, result;
+   valtable op, fn,
+      '+', add,
+      '-', sub,
+      '*', mul,
+      '/', div,
+      '%', mod,
+      '^', pow;
+
+   is-null fn, tmp;
+   jmpn tmp, valid-op;
+   println "Invalid operator.";
+   exit 0;
 valid-op:
-   func-call fn, n1, n2, result
-   return result
+   func-call fn, n1, n2, result;
+   return result;
 
-; program.
-main() let n1, n2, op
-   call n1, input-number, "Input first number: "
-   call n2, input-number, "Input second number: "
-   print "Input operator (+,-,*,/,%,^): "
-   readch op
-   println op ; readch does not print the character
-   calculate-result n1, n2, op
-   printfln "{} {} {} = {}", n1, op, n2, R$0
+# Main program entry point.
+main()
+   let n1, n2, op, result;
+   call n1, input-number, "Input first number: ";
+   call n2, input-number, "Input second number: ";
+   print "Input operator (+,-,*,/,%,^): ";
+   flush;
+   readch op;
+   println op; # readch does not print the character
+   call result, calculate-result, n1, n2, op;
+   printfln "{} {} {} = {}", n1, op, n2, result;

@@ -100,11 +100,11 @@ struct Executor {
    size_t mapIdCounter = 0;
    size_t fileIdCounter = 0;
 
-   size_t main;
-   size_t pointer;
-   size_t returnCount;
-   int lastExecExitCode;
-   bool exitCalled;
+   size_t main = std::string::npos;
+   size_t pointer = 0;
+   size_t returnCount = 0;
+   int lastExecExitCode = 0;
+   bool exitCalled = false;
 
    bool silenceLeaks = false;
    bool allowFileio = false;

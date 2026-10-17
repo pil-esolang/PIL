@@ -1,11 +1,14 @@
-; legacy code written using the simplest instructions. outdated due to the
-; @loop directive
+# A loop that counts up from 0 to 10.
+# What about a loop that counts downwards?
 main()
-   set 1, $1        ; starting index
-   set 100, $2      ; how many times to loop
+   let i, n, condition;
+   set 0, i;
+   set 10, n;
 
-loop:
-   print $1         ; print current iteration
-   add $1, 1, $1    ; increment by one
-   leeq $1, $2, $3  ; check and store in $3
-   jmp $3, loop     ; jump until i is larger than 100
+loop-start:
+   gr i, n, condition;
+   jmp condition, loop-end;
+   println i;
+   incr i;
+   goto loop-start;
+loop-end:

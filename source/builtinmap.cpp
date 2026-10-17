@@ -56,6 +56,24 @@ void builtinMapAt(const Command &command, Executor &executor) {
    storeInRegister(executor, command, val, "map-at");
 }
 
+void builtinMapAtOr(const Command &command, Executor &executor) {
+   PILMap *map;
+   if (!mapOrError(command, executor, "map-at-or", map)) return;
+   Value key = resolveVariable(executor, arg(executor, command, 1));
+   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+      error(executor.diagnostics, command.file, command.line, "map-at-or: %s cannot be used as a key in a Map", getValueName(key.type));
+      return;
+   }
+
+   if (auto it = map->find(key); it != map->end()) {
+      storeInRegister(executor, command, it->second, "map-at-or");
+   }
+   else {
+      Value defaultValue = resolveVariable(executor, arg(executor, command, 2));
+      storeInRegister(executor, command, (*map)[key] = defaultValue, "map-at-or");
+   }
+}
+
 void builtinMapContains(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-contains", map)) return;

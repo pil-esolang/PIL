@@ -1,5 +1,6 @@
-# this file contains 3 different nth fibonacci number implementations.
-# fib-iterative is by far the most efficient.
+# This file contains 2 different nth fibonacci
+# number implementations. fib-iterative is by
+# far the most efficient.
 fib(n)
    let minus1, minus2, fib1, fib2, result;
    leeq n, 1, $0;
@@ -15,27 +16,12 @@ fib(n)
 fib-end:
    return n;
 
-fib-less(n)
-   let r1;
-   leeq n, 1, $0;
-   jmp $0, fib-less-end;
-
-   sub n, 1, $1;
-   fib $1;
-   set R$0, r1;
-   sub n, 2, $1;
-   fib $1;
-   add r1, R$0, $1;
-   return $1;
-fib-less-end:
-   return n;
-
 fib-iterative(n)
-   let prev1, prev2, curr;
+   let prev1, prev2, curr, i;
    leeq n, 1, $0;
    jmp $0, fib-iterative-end;
 
-   set n, $1;
+   set n, i;
    set 1, prev1;
    set 0, prev2;
    set 0, curr;
@@ -44,14 +30,14 @@ fib-iterative-loop:
    add prev1, prev2, curr;
    set prev1, prev2;
    set curr, prev1;
-   decr $1;
-   gr $1, 1, $2;
+   decr i;
+   gr i, 1, $2;
    jmp $2, fib-iterative-loop;
    return curr;
 fib-iterative-end:
    return n;
 
-# test here
+# Test here.
 main()
    fib 30;
    println R$0;

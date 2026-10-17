@@ -1,44 +1,49 @@
-; written before sign and step-towards functions were added.
-; left here as an implementation example.
-move-to-zero(n) let cond, tmp
-   gr n, 0, cond
-   jmp cond, move-to-zero-positive
-   le n, 0, cond
-   jmp cond, move-to-zero-negative
-   return 0   
+# A fun little implementation of integer multiplication.
+# Written before sign and step-towards functions were
+# added and ported to the newest PIL version.
+move-to-zero(n)
+   let cond, tmp;
+   gr n, 0, cond;
+   jmp cond, move-to-zero-positive;
+   le n, 0, cond;
+   jmp cond, move-to-zero-negative;
+   return 0;
 move-to-zero-positive:
-   sub n, 1, tmp
-   return tmp
+   sub n, 1, tmp;
+   return tmp;
 move-to-zero-negative:
-   add n, 1, tmp
-   return tmp
+   add n, 1, tmp;
+   return tmp;
 
-; multiple two integers without using mul command. while not
-; effective, it works. supports negative numbers.
-imul(a, b) let r, c, sa, cond
-   set 0, r
-   set b, c
-   set a, sa
-   greq b, 0, cond
-   jmp cond, imul-loop
-   neg sa, sa
+# Multiply two integers. While not effective, it works.
+# Also supports negative numbers.
+imul(a, b)
+   let result, c, sa, cond;
+   set 0, result;
+   set b, c;
+   set a, sa;
+   greq b, 0, cond;
+   jmp cond, imul-loop;
+   neg sa, sa;
 imul-loop:
-   eq c, 0, cond
-   jmp cond, imul-end
-   add sa, r, r
-   move-to-zero c ; step-towards/sign is now available in the standard library
-   set R$0, c
-   goto imul-loop
+   eq c, 0, cond;
+   jmp cond, imul-end;
+   add sa, result, result;
+   move-to-zero c;
+   set r$0, c;
+   goto imul-loop;
 imul-end:
-   return r
+   return result;
 
-; test here
+# Test here. Negative numbers have to be wrapped in []
+# so for formatting reasons we do the same for
+# non-negative numbers.
 main()
-   imul 9, 8
-   println R$0
-   imul [-2], 4
-   println R$0
-   imul [-4], [-5]
-   println R$0
-   imul 4, [-2]
-   println R$0
+   imul [ 9], [ 8];
+   println R$0;
+   imul [-2], [ 4];
+   println R$0;
+   imul [-4], [-5];
+   println R$0;
+   imul [ 4], [-2];
+   println R$0;
