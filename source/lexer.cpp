@@ -69,6 +69,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       case '~': tokens.emplace_back(TOKEN_BNOT, 0, file.lexeme, line); continue;
       case '[': tokens.emplace_back(TOKEN_L_BRACKET, 0, file.lexeme, line); continue;
       case ']': tokens.emplace_back(TOKEN_R_BRACKET, 0, file.lexeme, line); continue;
+      case '.': tokens.emplace_back(TOKEN_DOT, 0, file.lexeme, line); continue;
       case ',': tokens.emplace_back(TOKEN_COMMA, 0, file.lexeme, line); continue;
       case ';': tokens.emplace_back(TOKEN_SEMICOLON, 0, file.lexeme, line); continue;
       case '*':
@@ -140,15 +141,6 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          }
          else {
             tokens.emplace_back(TOKEN_GREATER, 0, file.lexeme, line);
-         }
-         continue;
-      case '.':
-         if (i + 2 < size && file.code[i+1] == '.' && file.code[i+2] == '.') {
-            tokens.emplace_back(TOKEN_VARIADIC, 0, file.lexeme, line);
-            i += 2;
-         }
-         else {
-            tokens.emplace_back(TOKEN_DOT, 0, file.lexeme, line);
          }
          continue;
       }

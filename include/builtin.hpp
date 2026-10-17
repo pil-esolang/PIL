@@ -104,7 +104,7 @@ void builtinSub(const Command &command, Executor &executor);
 void builtinMul(const Command &command, Executor &executor);
 void builtinDiv(const Command &command, Executor &executor);
 void builtinMod(const Command &command, Executor &executor);
-void builtinFloorMod(const Command &command, Executor &executor);
+void builtinFmod(const Command &command, Executor &executor);
 void builtinPow(const Command &command, Executor &executor);
 void builtinNeg(const Command &command, Executor &executor);
 void builtinSqrt(const Command &command, Executor &executor);
@@ -275,8 +275,6 @@ void builtinSwap(const Command &command, Executor &executor);
 void builtinSet(const Command &command, Executor &executor);
 void builtinValTable(const Command &command, Executor &executor);
 void builtinTableContains(const Command &command, Executor &executor);
-void builtinVariadicSize(const Command &command, Executor &executor);
-void builtinVariadicAt(const Command &command, Executor &executor);
 void builtinRegSize(const Command &command, Executor &executor);
 void builtinRegAt(const Command &command, Executor &executor);
 void builtinRegSet(const Command &command, Executor &executor);
@@ -408,7 +406,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"mul", builtinMul, 3},
    {"div", builtinDiv, 3},
    {"mod", builtinMod, 3},
-   {"floor-mod", builtinFloorMod, 3},
+   {"fmod", builtinFmod, 3},
    {"pow", builtinPow, 3},
    {"neg", builtinNeg, 2},
    {"sqrt", builtinSqrt, 2},
@@ -578,8 +576,6 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"set", builtinSet, 2},
    {"valtable", builtinValTable, 4, VARIADIC},
    {"table-contains", builtinTableContains, 3, VARIADIC},
-   {"variadic-size", builtinVariadicSize, 1},
-   {"variadic-at", builtinVariadicAt, 2},
    {"reg-size", builtinRegSize, 1},
    {"reg-at", builtinRegAt, 2},
    {"reg-set", builtinRegSet, 2},

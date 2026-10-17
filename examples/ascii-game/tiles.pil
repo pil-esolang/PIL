@@ -41,13 +41,13 @@ get-random-dir(enemy)
    randi-range [-1], [ 1], enemy.diry;
 
 get-x-y(level, pos)
-   let x, y;
+   local x, y;
    div pos, level.width, y;
    mod pos, level.width, x;
    return x, y;
 
 get-dir(start, end)
-   let cond;
+   local cond;
    le start, end, cond;
    jmp cond, get-dir-le;
    gr start, end, cond;
@@ -57,7 +57,7 @@ get-dir-le: return [ 1];
 get-dir-gr: return [-1];
 
 int-distance(sx, sy, dx, dy)
-   let rx1, rx2, ry1, ry2, x, y, distance;
+   local rx1, rx2, ry1, ry2, x, y, distance;
    sub sx, dx, rx1;
    sub dx, sx, rx2;
    sub sy, dy, ry1;
@@ -69,7 +69,7 @@ int-distance(sx, sy, dx, dy)
 
 # create a new enemy
 create-enemy(pos, type, enemies)
-   let enemy, cond;
+   local enemy, cond;
    gr type, Tile.mine, cond;
    jmp cond, create-enemy-start;
    return;
@@ -95,7 +95,7 @@ create-enemy-end:
 
 # move a single enemy
 move-enemy(level, enemy, dx, dy)
-   let target, x, y, ty, tx, cond, cond2, tmp;
+   local target, x, y, ty, tx, cond, cond2, tmp;
    call x, y, get-x-y, level, enemy.pos;
    set enemy.pos, target;
 
@@ -138,7 +138,7 @@ move-enemy-no-op:
 
 # move all enemies
 move-enemies(level)
-   let i, n, cond, enemy, tmp, px, py;
+   local i, n, cond, enemy, tmp, px, py;
    call px, py, get-x-y, level, level.plrpos;
    set 0, i;
    array-size level.enemies, n;
@@ -182,7 +182,7 @@ move-enemies-seeker:
    mod enemy.turn, 2, tmp;
    jmp tmp, move-enemies-continue;
 
-   let ex, ey, dx, dy;
+   local ex, ey, dx, dy;
    call ex, ey, get-x-y, level, enemy.pos;
    call dx, get-dir, ex, px;
    call dy, get-dir, ey, py;
@@ -191,7 +191,7 @@ move-enemies-seeker:
    move-enemy level, enemy, dx, 0;
    goto move-enemies-continue;
 move-enemies-observer:
-   let distance;
+   local distance;
    call ex, ey, get-x-y, level, enemy.pos;
    call distance, int-distance, ex, ey, px, py;
 

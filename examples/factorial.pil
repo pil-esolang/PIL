@@ -1,7 +1,7 @@
 # This file contains 2 factorial implementations -
 # a recursive and an iterative variant.
 factorial(n)
-   let result;
+   local result;
    leeq n, 1, $0;
    jmp $0, factorial-end;
 
@@ -13,7 +13,7 @@ factorial-end:
    return 1;
 
 factorial-iterative(n)
-   let i;
+   local i;
    leeq n, 1, $0;
    jmp $0, factorial-iterative-end;
 

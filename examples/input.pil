@@ -1,7 +1,7 @@
 # Simple input-output application. Feel free to
 # add more things to read from the user.
 main()
-   let name, age-string, age;
+   local name, age-string, age;
    print "Input your name: ";
    readln name;
    goto main-input-age;

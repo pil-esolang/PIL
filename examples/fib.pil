@@ -2,7 +2,7 @@
 # number implementations. fib-iterative is by
 # far the most efficient.
 fib(n)
-   let minus1, minus2, fib1, fib2, result;
+   local minus1, minus2, fib1, fib2, result;
    leeq n, 1, $0;
    jmp $0, fib-end;
 
@@ -17,7 +17,7 @@ fib-end:
    return n;
 
 fib-iterative(n)
-   let prev1, prev2, curr, i;
+   local prev1, prev2, curr, i;
    leeq n, 1, $0;
    jmp $0, fib-iterative-end;
 

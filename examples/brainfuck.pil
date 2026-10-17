@@ -2,7 +2,7 @@
 # https://esolangs.org/wiki/Brainfuck
 
 main()
-   let code, memory, pc, i, ch, n, condition, depth, tmp;
+   local code, memory, pc, i, ch, n, condition, depth, tmp;
    print "Input code: ";
    readln code;
 

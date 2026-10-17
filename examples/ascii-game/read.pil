@@ -2,7 +2,7 @@
 
 # create a new level from file and return it
 create-level(path)
-   let file, level, map, width, height, line, cond, tmp, tmp2, i, n, coins, plrpos, enemies;
+   local file, level, map, width, height, line, cond, tmp, tmp2, i, n, coins, plrpos, enemies;
    file-open path, 'r', file;
    jmp file, create-level-file-exists;
 

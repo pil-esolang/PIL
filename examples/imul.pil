@@ -2,7 +2,7 @@
 # Written before sign and step-towards functions were
 # added and ported to the newest PIL version.
 move-to-zero(n)
-   let cond, tmp;
+   local cond, tmp;
    gr n, 0, cond;
    jmp cond, move-to-zero-positive;
    le n, 0, cond;
@@ -18,7 +18,7 @@ move-to-zero-negative:
 # Multiply two integers. While not effective, it works.
 # Also supports negative numbers.
 imul(a, b)
-   let result, c, sa, cond;
+   local result, c, sa, cond;
    set 0, result;
    set b, c;
    set a, sa;

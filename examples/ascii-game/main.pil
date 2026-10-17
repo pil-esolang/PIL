@@ -3,7 +3,7 @@
 # game entry point
 main()
    print "Input level to play (or help): ";
-   let path, comp;
+   local path, comp;
    readln path;
 
    string-trim path;
@@ -14,7 +14,7 @@ main()
    return;
 
 main-not-help:
-   let level;
+   local level;
    call level, create-level, path;
    string-free path;
    play-level level;
@@ -29,15 +29,16 @@ help()
    println "\tp - player\n\te - empty\n\tb - block\n\tc - coin\n\tm - mine\n\tv - vertical bat\n\th - horizontal bat\n\tg - glimmer\n\ts - seeker\n\to - observer\n\tw - wanderer\n";
    println "Here's a list of possible levels: ";
 
-   let files, i, n, cond;
+   local files, i, n, cond;
    dir-list-recursive ".", files;
+   array-sort files, 1;
    set 0, i;
    array-size files, n;
 help-start:
    greq i, n, cond;
    jmp cond, help-end;
 
-   let file, idx, ext;
+   local file, idx, ext;
    array-at files, i, file;
    path-extension file, ext;
    string-empty ext, cond;

@@ -2,7 +2,7 @@
 # includes a 'p' command that prints the accumulator as ASCII
 
 main()
-   let code, accumulator, i, ch, n, condition;
+   local code, accumulator, i, ch, n, condition;
    print "Input code: ";
    readln code;
 
@@ -25,15 +25,15 @@ main-loop-start:
 
 deadfish-increment:
    incr accumulator;
-   floor-mod accumulator, 256, accumulator;
+   fmod accumulator, 256, accumulator;
    goto main-loop-continue;
 deadfish-decrement:
    decr accumulator;
-   floor-mod accumulator, 256, accumulator;
+   fmod accumulator, 256, accumulator;
    goto main-loop-continue;
 deadfish-square:
    mul accumulator, accumulator, accumulator;
-   floor-mod accumulator, 256, accumulator;
+   fmod accumulator, 256, accumulator;
    goto main-loop-continue;
 deadfish-output:
    print accumulator;

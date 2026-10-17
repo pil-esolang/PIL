@@ -28,7 +28,6 @@ struct Trace {
    size_t callArgCount;
    size_t localStart;
    size_t localCount;
-   size_t variadicCount;
 };
 
 struct Command {

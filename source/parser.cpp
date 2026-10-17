@@ -186,7 +186,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    size_t returnId = constants[returnLexeme].function;
    size_t returnRegisterCount = (executor.returnRegisters.empty() ? DEFAULT_RETURN_REGISTER_COUNT : executor.returnRegisters.size());
 
-   size_t defineLexeme = cacheLexeme(executor.cache, "let");
+   size_t defineLexeme = cacheLexeme(executor.cache, "local");
    size_t callLexeme = cacheLexeme(executor.cache, "call");
    size_t mainLexeme = cacheLexeme(executor.cache, "main");
    size_t constLexeme = cacheLexeme(executor.cache, "const");
@@ -384,17 +384,10 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          Function &function = executor.functions[functionId];
          function.paramCount = 0;
 
-         bool variadic = false;
          firstFunction = false;
          functionParamMap.clear();
 
          for (i += 2; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_R_PAREN; ++i) {
-            if (tokens[i].type == TOKEN_VARIADIC) {
-               variadic = true;
-               i += 1;
-               break;
-            }
-
             if (tokens[i].type != TOKEN_IDENTIFIER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier, got %s instead", getTokenName(tokens[i].type));
             }
@@ -416,13 +409,9 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             }
          }
 
-         if (variadic && tokens[i].type != TOKEN_R_PAREN) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Variadic parameter (...) should be at the end of the parameter list");
-         }
-         else if (!variadic && tokens[i].type != TOKEN_R_PAREN) {
+         if (tokens[i].type != TOKEN_R_PAREN) {
             error(executor.diagnostics, tokens[start].file, tokens[start].line, "Unterminated function parameters");
          }
-         function.variadic = variadic;
          function.position = executor.code.size();
          function.localCount = functionParamMap.size();
          lastFunction = &function;

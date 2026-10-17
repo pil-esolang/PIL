@@ -15,22 +15,11 @@ void call(Executor &executor, const Command &command, Function &function, size_t
       Trace trace (executor.pointer, command.argStart, returnCount);
       trace.localStart = executor.locals.size();
       trace.localCount = function.localCount;
-      trace.variadicCount = args - params;
-
-      size_t locals = trace.localCount + trace.variadicCount;
-      executor.locals.resize(trace.localStart + locals, NULL_VALUE);
+      executor.locals.resize(trace.localStart + trace.localCount, NULL_VALUE);
 
       for (size_t i = 0; i < params; ++i) {
          Value value = resolveVariable(executor, executor.arguments[i + offset]);
          executor.locals[trace.localStart + i] = value;
-      }
-
-      if (function.variadic) {
-         size_t defines = function.localCount - params;
-         for (size_t i = trace.localCount; i < locals; ++i) {
-            Value value = resolveVariable(executor, executor.arguments[i + offset - defines]);
-            executor.locals[trace.localStart + i] = value;
-         }
       }
       executor.stackTrace.push(trace);
       executor.pointer = function.position - 1;
@@ -59,7 +48,6 @@ void callMain(Executor &executor, ErrorSeverity stopSeverity) {
    executor.stackTrace.emplace(main.position, std::string::npos, std::string::npos);
    executor.stackTrace.top().localStart = 0;
    executor.stackTrace.top().localCount = main.localCount;
-   executor.stackTrace.top().variadicCount = 0;
 
    executor.pointer = main.position;
    executor.returnCount = 0;

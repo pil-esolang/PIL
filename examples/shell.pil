@@ -9,7 +9,7 @@
 # Another thing you could add is the REPL. Have fun
 # experimenting! That is what these examples are for.
 cat()
-   let file, content, path;
+   local file, content, path;
    print "Input file to read: ";
    read path;
    file-open path, 'r', file;
@@ -19,7 +19,7 @@ cat()
    string-free c, path;
 
 ls()
-   let dir, entry, entries, i, n, condition;
+   local dir, entry, entries, i, n, condition;
    print "Input directory to list: ";
    read dir;
    dir-list-recursive dir, entries;
@@ -39,7 +39,7 @@ ls-loop-end:
    array-deep-free entries;
 
 mv()
-   let source, destination;
+   local source, destination;
    print "Input file to move: ";
    read source;
    print "Input destination: ";
@@ -48,7 +48,7 @@ mv()
    string-free source, destination;
 
 cp()
-   let source, destination;
+   local source, destination;
    print "Input file to copy: ";
    read source;
    print "Input destination: ";
@@ -57,7 +57,7 @@ cp()
    string-free source, destination;
 
 rm()
-   let path;
+   local path;
    print "Input path to remove: ";
    read path;
    path-remove-all path;
@@ -81,7 +81,7 @@ help()
    println "help - list commands";
 
 main()
-   let command, function;
+   local command, function;
    print "Input command: ";
    read command;
    # After implementing a new command, add it to this list.

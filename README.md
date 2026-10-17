@@ -3,22 +3,25 @@
 ## About
 PIL is a primitive interpreted esolang (esoteric programming language) based off COBOL and assembly. It is a loosely-typed language with no GC.
 
-Here's a full working factorial example: 
+Here's a factorial example: 
 ```txt
-factorial(n) let minus1, result     ; define a new function and two variables - minus1, result
-   leeq n, 1, $0                    ; check if N is smaller or equal to 1 and store the result in register 0
-   jmp $0, factorial-end            ; if it is, jump to end, where we return 1
+# calculates the factorial of N
+factorial(n)
+   local result;                 # define a new variable
+   leeq n, 1, $0;                # check if N is smaller or equal to 1
+   jmp $0, factorial-end;        # if it is, jump to end, where we return 1
 
-   sub n, 1, minus1                 ; subtract one from N and store it in minus1
-   call result, factorial, minus1   ; call factorial and store in result
-   mul result, n, result            ; multiply N by result
-   return result                    ; return it
+   sub n, 1, $1;                 # calculate n-1
+   call result, factorial, $1;   # call factorial and store in result
+   mul result, n, result;        # calculate the factorial of N
+   return result;                # return the result
+
 factorial-end:
-   return 1
+   return 1;
 
-main()                              ; main program entry point
-   factorial 5.0                    ; calculate factorial of 5
-   println R$0                       ; 120
+main()                           # main is called on start
+   factorial 5.0;                # calculate 5!
+   println r$0;                  # 120
 ```
 Think of it like interpreted assembly with functions, returns and higher-level instructions. Documentation can be found [here](https://pil-esolang.github.io/).
 
@@ -40,6 +43,9 @@ You can also simply build using your favorite compiler:
 ```bash
 g++ -std=c++20 -Iinclude source/*.cpp -o pil
 ```
+
+## Installation
+You can download a pre-built executable from [Github Releases](https://github.com/pil-esolang/PIL/releases).
 
 ## Usage
 To run a file or cached bytecode:

@@ -5,7 +5,7 @@
 
 # Read a number from the user with error checking.
 input-number(msg)
-   let num, input;
+   local num, input;
    goto input-number-start;
 
 input-number-error:
@@ -24,7 +24,7 @@ input-number-start:
 # have a function table and just call the function
 # with N1 and N2 as arguments.
 calculate-result(n1, n2, op)
-   let fn, tmp, result;
+   local fn, tmp, result;
    valtable op, fn,
       '+', add,
       '-', sub,
@@ -43,7 +43,7 @@ valid-op:
 
 # Main program entry point.
 main()
-   let n1, n2, op, result;
+   local n1, n2, op, result;
    call n1, input-number, "Input first number: ";
    call n2, input-number, "Input second number: ";
    print "Input operator (+,-,*,/,%,^): ";

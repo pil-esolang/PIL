@@ -67,11 +67,11 @@ void builtinMod(const Command &command, Executor &executor) {
    storeNumber(executor, command, (b == 0.0 ? 0.0 : fmod(a, b)), floating, "mod");
 }
 
-void builtinFloorMod(const Command &command, Executor &executor) {
+void builtinFmod(const Command &command, Executor &executor) {
    bool floating = false;
-   pilfloat_t a = getNum(executor, command, 0, "floor-mod", &floating);
-   pilfloat_t b = getNum(executor, command, 1, "floor-mod", &floating);
-   storeNumber(executor, command, (b == 0.0 ? 0.0 : fmod(fmod(a, b) + b, b)), floating, "floor-mod");
+   pilfloat_t a = getNum(executor, command, 0, "fmod", &floating);
+   pilfloat_t b = getNum(executor, command, 1, "fmod", &floating);
+   storeNumber(executor, command, (b == 0.0 ? 0.0 : fmod(fmod(a, b) + b, b)), floating, "fmod");
 }
 
 void builtinPow(const Command &command, Executor &executor) {

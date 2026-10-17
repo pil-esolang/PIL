@@ -3,7 +3,7 @@
 
 # prints the level to the console
 print-level(level)
-   let i, n, cond, tmp;
+   local i, n, cond, tmp;
    set 0, i;
    mul level.width, level.height, n;
 
@@ -40,7 +40,7 @@ print-level-end:
 
 # clear level
 clear-level(level)
-   let i, cond, n;
+   local i, cond, n;
    add level.height, 1, n; # off by one on purpose, see the loop
    set 0, i;
 clear-level-start:
@@ -55,7 +55,7 @@ clear-level-end:
 
 # move player
 move-player(level, dx, dy)
-   let target, ty, tx, x, y, cond, cond2, tmp;
+   local target, ty, tx, x, y, cond, cond2, tmp;
    call x, y, get-x-y, level, level.plrpos;
    set level.plrpos, target;
 
@@ -102,7 +102,7 @@ move-player-no-op:
 
 # play a level
 play-level(level)
-   let ch, cond;
+   local ch, cond;
 play-level-start:
    move-enemies level;
    print-level level;

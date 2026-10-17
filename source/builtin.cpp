@@ -517,20 +517,6 @@ void builtinTableContains(const Command &command, Executor &executor) {
    storeInRegister(executor, command, dest, returnValue, "table-contains");
 }
 
-void builtinVariadicSize(const Command &command, Executor &executor) {
-   storeNumber(executor, command, executor.stackTrace.top().variadicCount, false, "variadic-size");
-}
-
-void builtinVariadicAt(const Command &command, Executor &executor) {
-   piluint_t id = getNum(executor, command, 0, "variadic-at");
-   Trace &trace = executor.stackTrace.top();
-   if (id < 0 || id >= trace.variadicCount) {
-      error(executor.diagnostics, command.file, command.line, "variadic-at: Index %zu is out of bounds", id);
-      return;
-   }
-   storeInRegister(executor, command, executor.locals[trace.localStart + trace.localCount + id], "variadic-at");
-}
-
 void builtinRegSize(const Command &command, Executor &executor) {
    storeNumber(executor, command, executor.registers.size(), false, "reg-size");
 }
