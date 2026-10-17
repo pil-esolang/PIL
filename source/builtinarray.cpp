@@ -30,7 +30,7 @@ void builtinArrayIota(const Command &command, Executor &executor) {
    }
 
    std::vector<Value> values (count);
-   for (piluint_t i = 0; i < count; ++i) {
+   for (pilint_t i = 0; i < count; ++i) {
       values[i].type = VALUE_INTEGER;
       values[i].integer = start + i;
    }
@@ -84,7 +84,7 @@ void builtinArraySet(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-set", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-set");
-   if (id < 0 || id >= array->size()) {
+   if (id < 0 || (size_t)id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-set: Index %ld is out of bounds", id);
       return;
    }
@@ -95,7 +95,7 @@ void builtinArrayAt(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-at", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-at");
-   if (id < 0 || id >= array->size()) {
+   if (id < 0 || (size_t)id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-at: Index %ld is out of bounds", id);
       return;
    }
@@ -132,7 +132,7 @@ void builtinArrayInsert(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-insert", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-insert");
-   if (id < 0 || id > array->size()) {
+   if (id < 0 || (size_t)id > array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-insert: Index %ld is out of bounds", id);
       return;
    }
@@ -153,7 +153,7 @@ void builtinArrayErase(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-erase", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-erase");
-   if (id < 0 || id >= array->size()) {
+   if (id < 0 || (size_t)id >= array->size()) {
       error(executor.diagnostics, command.file, command.line, "array-erase: Index %ld is out of bounds", id);
       return;
    }
@@ -214,7 +214,7 @@ void builtinArraySlice(const Command &command, Executor &executor) {
    if (!arrayOrError(command, executor, "array-slice", array)) return;
    pilint_t start = getNum(executor, command, 1, "array-slice");
    pilint_t end = getNum(executor, command, 2, "array-slice");
-   if (start < 0 || start >= array->size() || end < 0 || end > array->size() || start >= end) {
+   if (start < 0 || (size_t)start >= array->size() || end < 0 || (size_t)end > array->size() || start >= end) {
       error(executor.diagnostics, command.file, command.line, "array-slice: Invalid slice range %ld-%ld", start, end);
       return;
    }

@@ -544,7 +544,7 @@ void builtinRegSize(const Command &command, Executor &executor) {
 
 void builtinRegAt(const Command &command, Executor &executor) {
    pilint_t id = getNum(executor, command, 0, "reg-at");
-   if (id < 0 || id >= executor.registers.size()) {
+   if (id < 0 || (size_t)id >= executor.registers.size()) {
       error(executor.diagnostics, command.file, command.line, "reg-at: Index %ld is out of bounds", id);
       return;
    }
@@ -553,7 +553,7 @@ void builtinRegAt(const Command &command, Executor &executor) {
 
 void builtinRegSet(const Command &command, Executor &executor) {
    pilint_t id = getNum(executor, command, 0, "reg-set");
-   if (id < 0 || id >= executor.registers.size()) {
+   if (id < 0 || (size_t)id >= executor.registers.size()) {
       error(executor.diagnostics, command.file, command.line, "reg-set: Index %ld is out of bounds", id);
       return;
    }
@@ -567,7 +567,7 @@ void builtinReturnRegSize(const Command &command, Executor &executor) {
 
 void builtinReturnRegAt(const Command &command, Executor &executor) {
    pilint_t id = getNum(executor, command, 0, "return-reg-at");
-   if (id < 0 || id >= executor.returnRegisters.size()) {
+   if (id < 0 || (size_t)id >= executor.returnRegisters.size()) {
       error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %ld is out of bounds", id);
       return;
    }
@@ -576,7 +576,7 @@ void builtinReturnRegAt(const Command &command, Executor &executor) {
 
 void builtinReturnRegSet(const Command &command, Executor &executor) {
    pilint_t id = getNum(executor, command, 0, "return-reg-set");
-   if (id < 0 || id >= executor.returnRegisters.size()) {
+   if (id < 0 || (size_t)id >= executor.returnRegisters.size()) {
       error(executor.diagnostics, command.file, command.line, "return-reg-set: Index %ld is out of bounds", id);
       return;
    }
@@ -766,7 +766,7 @@ void builtinAt(const Command &command, Executor &executor) {
       const std::string *string;
       if (!constStringOrError(command, executor, "at", string)) return;
       pilint_t id = getNum(executor, command, 1, "at");
-      if (id < 0 || id >= string->size()) {
+      if (id < 0 || (size_t)id >= string->size()) {
          error(executor.diagnostics, command.file, command.line, "at: Index %zu for String is out of bounds", id);
          return;
       }
@@ -778,7 +778,7 @@ void builtinAt(const Command &command, Executor &executor) {
       std::vector<Value> *array;
       if (!arrayOrError(command, executor, "at", array, 0, true)) return;
       pilint_t id = getNum(executor, command, 1, "at");
-      if (id < 0 || id >= array->size()) {
+      if (id < 0 || (size_t)id >= array->size()) {
          error(executor.diagnostics, command.file, command.line, "at: Index %zu for Array is out of bounds", id);
          return;
       }
@@ -809,7 +809,7 @@ void builtinStore(const Command &command, Executor &executor) {
       std::string *string;
       if (!stringOrError(command, executor, "store", string)) return;
       pilint_t id = getNum(executor, command, 1, "store");
-      if (id < 0 || id >= string->size()) {
+      if (id < 0 || (size_t)id >= string->size()) {
          error(executor.diagnostics, command.file, command.line, "store: Index %zu for String is out of bounds", id);
          return;
       }
@@ -819,7 +819,7 @@ void builtinStore(const Command &command, Executor &executor) {
       std::vector<Value> *array;
       if (!arrayOrError(command, executor, "store", array, 0, true)) return;
       pilint_t id = getNum(executor, command, 1, "store");
-      if (id < 0 || id >= array->size()) {
+      if (id < 0 || (size_t)id >= array->size()) {
          error(executor.diagnostics, command.file, command.line, "store: Index %zu for Array is out of bounds", id);
          return;
       }

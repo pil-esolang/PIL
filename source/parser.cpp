@@ -195,7 +195,13 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    size_t arrayLexeme = cacheLexeme(executor.cache, "array");
    size_t enumLexeme = cacheLexeme(executor.cache, "enum");
 
+   bool isConstantEvaluator = false;
+
    for (size_t i = 0; i < size; ++i) {
+      if (tokens[i].type == TOKEN_L_BRACKET) isConstantEvaluator = true;
+      if (tokens[i].type == TOKEN_R_BRACKET) isConstantEvaluator = false;
+      if (isConstantEvaluator) continue;
+
       if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == structLexeme) {
          bool isArray = false;
          if (tokens[i + 1].type == TOKEN_IDENTIFIER && tokens[i + 1].lexeme == arrayLexeme) {

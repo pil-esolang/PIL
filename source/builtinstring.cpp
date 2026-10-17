@@ -21,7 +21,7 @@ inline void stringCharFind(const Command &command, Executor &executor, const cha
    const char *cfind = nullptr;
    if (!constStringOrError(command, executor, function, string) || !constStringOrCharOrError(command, executor, function, sfind, cfind, 1)) return;
    pilint_t start = getNum(executor, command, 2, function);
-   if (start < 0 || start > string->size()) {
+   if (start < 0 || (size_t)start > string->size()) {
       error(executor.diagnostics, command.file, command.line, "%s: Start position %zu is out of bounds", function, start);
       return;
    }
@@ -53,7 +53,7 @@ void builtinStringRepeat(const Command &command, Executor &executor) {
 
    std::string fill = toString(executor, arg(executor, command, 2), "string-repeat", command.file, command.line);
    result.reserve(n * fill.size());
-   for (piluint_t i = 0; i < n; ++i) {
+   for (pilint_t i = 0; i < n; ++i) {
       result += fill;
    }
    storeString(executor, command, result, arg(executor, command, 0), "string-repeat");
@@ -106,7 +106,7 @@ void builtinStringSet(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-set", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-set");
-   if (id < 0 || id >= string->size()) {
+   if (id < 0 || (size_t)id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-set: Index %ld is out of bounds", id);
       return;
    }
@@ -117,7 +117,7 @@ void builtinStringAt(const Command &command, Executor &executor) {
    const std::string *string;
    if (!constStringOrError(command, executor, "string-at", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-at");
-   if (id < 0 || id >= string->size()) {
+   if (id < 0 || (size_t)id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-at: Index %ld is out of bounds", id);
       return;
    }
@@ -160,7 +160,7 @@ void builtinStringInsert(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-insert", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-insert");
-   if (id < 0 || id > string->size()) {
+   if (id < 0 || (size_t)id > string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-insert: Index %ld is out of bounds", id);
       return;
    }
@@ -181,7 +181,7 @@ void builtinStringErase(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-erase", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-erase");
-   if (id < 0 || id >= string->size()) {
+   if (id < 0 || (size_t)id >= string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-erase: Index %ld is out of bounds", id);
       return;
    }
@@ -269,7 +269,7 @@ void builtinStringSubstr(const Command &command, Executor &executor) {
    if (!constStringOrError(command, executor, "string-substr", string)) return;
    pilint_t start = getNum(executor, command, 1, "string-substr");
    pilint_t end = getNum(executor, command, 2, "string-substr");
-   if (start < 0 || start >= string->size() || end < 0 || end > string->size() || start >= end) {
+   if (start < 0 || (size_t)start >= string->size() || end < 0 || (size_t)end > string->size() || start >= end) {
       error(executor.diagnostics, command.file, command.line, "string-substr: Invalid substring range %ld-%ld", start, end);
       return;
    }
@@ -357,7 +357,7 @@ void builtinStringReplace(const Command &command, Executor &executor) {
    const char *cfind = nullptr, *creplace = nullptr;
    if (!stringOrError(command, executor, "string-replace", string) || !constStringOrCharOrError(command, executor, "string-replace", sfind, cfind, 1) || !constStringOrCharOrError(command, executor, "string-replace", sreplace, creplace, 2)) return;
    pilint_t start = getNum(executor, command, 3, "string-replace");
-   if (start < 0 || start > string->size()) {
+   if (start < 0 || (size_t)start > string->size()) {
       error(executor.diagnostics, command.file, command.line, "string-replace: Start position %ld is out of bounds", start);
       return;
    }
