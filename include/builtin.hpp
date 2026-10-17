@@ -259,6 +259,7 @@ void builtinIsreg(const Command &command, Executor &executor);
 void builtinIsfunction(const Command &command, Executor &executor);
 void builtinIslabel(const Command &command, Executor &executor);
 void builtinIsStruct(const Command &command, Executor &executor);
+void builtinIsOfStruct(const Command &command, Executor &executor);
 void builtinIsnull(const Command &command, Executor &executor);
 void builtinIsinf(const Command &command, Executor &executor);
 void builtinIsnan(const Command &command, Executor &executor);
@@ -560,6 +561,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"is-function", builtinIsfunction, 2},
    {"is-label", builtinIslabel, 2},
    {"is-struct", builtinIsStruct, 2},
+   {"is-of-struct", builtinIsOfStruct, 3},
    {"is-null", builtinIsnull, 2},
    {"is-inf", builtinIsinf, 2},
    {"is-nan", builtinIsnan, 2},

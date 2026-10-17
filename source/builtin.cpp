@@ -361,6 +361,27 @@ void builtinIsStruct(const Command &command, Executor &executor) {
    storeBoolean(executor, command, value.type == VALUE_LABEL, "is-struct");
 }
 
+void builtinIsOfStruct(const Command &command, Executor &executor) {
+   Value arrayValue = resolveVariable(executor, arg(executor, command, 0));
+   if (arrayValue.type != VALUE_ARRAY) {
+      error(executor.diagnostics, command.file, command.line, "is-of-struct: Expected Array for the 1st argument, got %s instead", getValueName(arrayValue.type));
+      return;
+   }
+
+   auto it = executor.arrays.find(arrayValue.array);
+   if (it == executor.arrays.end()) {
+      error(executor.diagnostics, command.file, command.line, "Invalid Array ID %zu. Use after free", arrayValue.array);
+      return;
+   }
+
+   Value structValue = resolveVariable(executor, arg(executor, command, 1));
+   if (structValue.type != VALUE_STRUCT) {
+      error(executor.diagnostics, command.file, command.line, "is-of-struct: Expected Struct for the 2nd argument, got %s instead", getValueName(structValue.type));
+      return;
+   }
+   storeBoolean(executor, command, it->second.structureId == structValue.structure, "is-of-struct");
+}
+
 void builtinIsnull(const Command &command, Executor &executor) {
    Value value = resolveVariable(executor, arg(executor, command, 0));
    storeBoolean(executor, command, value.type == VALUE_COUNT, "is-null");
@@ -522,21 +543,21 @@ void builtinRegSize(const Command &command, Executor &executor) {
 }
 
 void builtinRegAt(const Command &command, Executor &executor) {
-   piluint_t id = getNum(executor, command, 0, "reg-at");
+   pilint_t id = getNum(executor, command, 0, "reg-at");
    if (id < 0 || id >= executor.registers.size()) {
-      error(executor.diagnostics, command.file, command.line, "reg-at: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "reg-at: Index %ld is out of bounds", id);
       return;
    }
    storeInRegister(executor, command, executor.registers[id], "reg-at");
 }
 
 void builtinRegSet(const Command &command, Executor &executor) {
-   piluint_t id = getNum(executor, command, 0, "reg-set");
+   pilint_t id = getNum(executor, command, 0, "reg-set");
    if (id < 0 || id >= executor.registers.size()) {
-      error(executor.diagnostics, command.file, command.line, "reg-set: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "reg-set: Index %ld is out of bounds", id);
       return;
    }
-   Value reg {.type = VALUE_REGISTER, .reg = id};
+   Value reg {.type = VALUE_REGISTER, .reg = (piluint_t)id};
    storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "reg-set");
 }
 
@@ -545,21 +566,21 @@ void builtinReturnRegSize(const Command &command, Executor &executor) {
 }
 
 void builtinReturnRegAt(const Command &command, Executor &executor) {
-   piluint_t id = getNum(executor, command, 0, "return-reg-at");
+   pilint_t id = getNum(executor, command, 0, "return-reg-at");
    if (id < 0 || id >= executor.returnRegisters.size()) {
-      error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %ld is out of bounds", id);
       return;
    }
    storeInRegister(executor, command, executor.returnRegisters[id], "return-reg-at");
 }
 
 void builtinReturnRegSet(const Command &command, Executor &executor) {
-   piluint_t id = getNum(executor, command, 0, "return-reg-set");
+   pilint_t id = getNum(executor, command, 0, "return-reg-set");
    if (id < 0 || id >= executor.returnRegisters.size()) {
-      error(executor.diagnostics, command.file, command.line, "return-reg-set: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "return-reg-set: Index %ld is out of bounds", id);
       return;
    }
-   Value reg {.type = VALUE_RETURN_REGISTER, .reg = id};
+   Value reg {.type = VALUE_RETURN_REGISTER, .reg = (piluint_t)id};
    storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "return-reg-set");
 }
 
@@ -744,7 +765,7 @@ void builtinAt(const Command &command, Executor &executor) {
    if (value.type == VALUE_STRING) {
       const std::string *string;
       if (!constStringOrError(command, executor, "at", string)) return;
-      piluint_t id = getNum(executor, command, 1, "at");
+      pilint_t id = getNum(executor, command, 1, "at");
       if (id < 0 || id >= string->size()) {
          error(executor.diagnostics, command.file, command.line, "at: Index %zu for String is out of bounds", id);
          return;
@@ -756,7 +777,7 @@ void builtinAt(const Command &command, Executor &executor) {
    else if (value.type == VALUE_ARRAY) {
       std::vector<Value> *array;
       if (!arrayOrError(command, executor, "at", array, 0, true)) return;
-      piluint_t id = getNum(executor, command, 1, "at");
+      pilint_t id = getNum(executor, command, 1, "at");
       if (id < 0 || id >= array->size()) {
          error(executor.diagnostics, command.file, command.line, "at: Index %zu for Array is out of bounds", id);
          return;
@@ -787,7 +808,7 @@ void builtinStore(const Command &command, Executor &executor) {
    if (value.type == VALUE_STRING) {
       std::string *string;
       if (!stringOrError(command, executor, "store", string)) return;
-      piluint_t id = getNum(executor, command, 1, "store");
+      pilint_t id = getNum(executor, command, 1, "store");
       if (id < 0 || id >= string->size()) {
          error(executor.diagnostics, command.file, command.line, "store: Index %zu for String is out of bounds", id);
          return;
@@ -797,7 +818,7 @@ void builtinStore(const Command &command, Executor &executor) {
    else if (value.type == VALUE_ARRAY) {
       std::vector<Value> *array;
       if (!arrayOrError(command, executor, "store", array, 0, true)) return;
-      piluint_t id = getNum(executor, command, 1, "store");
+      pilint_t id = getNum(executor, command, 1, "store");
       if (id < 0 || id >= array->size()) {
          error(executor.diagnostics, command.file, command.line, "store: Index %zu for Array is out of bounds", id);
          return;

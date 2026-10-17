@@ -20,8 +20,8 @@ inline void stringCharFind(const Command &command, Executor &executor, const cha
    const std::string *string, *sfind = nullptr;
    const char *cfind = nullptr;
    if (!constStringOrError(command, executor, function, string) || !constStringOrCharOrError(command, executor, function, sfind, cfind, 1)) return;
-   size_t start = getNum(executor, command, 2, function);
-   if (start > string->size()) {
+   pilint_t start = getNum(executor, command, 2, function);
+   if (start < 0 || start > string->size()) {
       error(executor.diagnostics, command.file, command.line, "%s: Start position %zu is out of bounds", function, start);
       return;
    }
@@ -45,7 +45,12 @@ void builtinStringFormat(const Command &command, Executor &executor) {
 
 void builtinStringRepeat(const Command &command, Executor &executor) {
    std::string result;
-   piluint_t n = getNum(executor, command, 1, "string-repeat");
+   pilint_t n = getNum(executor, command, 1, "string-repeat");
+   if (n < 0) {
+      error(executor.diagnostics, command.file, command.line, "string-repeat: Repeat count (%ld) cannot be negative", n);
+      return;
+   }
+
    std::string fill = toString(executor, arg(executor, command, 2), "string-repeat", command.file, command.line);
    result.reserve(n * fill.size());
    for (piluint_t i = 0; i < n; ++i) {
@@ -100,9 +105,9 @@ void builtinStringResize(const Command &command, Executor &executor) {
 void builtinStringSet(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-set", string)) return;
-   piluint_t id = getNum(executor, command, 1, "string-set");
+   pilint_t id = getNum(executor, command, 1, "string-set");
    if (id < 0 || id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-set: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-set: Index %ld is out of bounds", id);
       return;
    }
    (*string)[id] = getChar(command, executor, "string-set", 2);
@@ -111,9 +116,9 @@ void builtinStringSet(const Command &command, Executor &executor) {
 void builtinStringAt(const Command &command, Executor &executor) {
    const std::string *string;
    if (!constStringOrError(command, executor, "string-at", string)) return;
-   piluint_t id = getNum(executor, command, 1, "string-at");
+   pilint_t id = getNum(executor, command, 1, "string-at");
    if (id < 0 || id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-at: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-at: Index %ld is out of bounds", id);
       return;
    }
    Value value {VALUE_CHARACTER};
@@ -154,9 +159,9 @@ void builtinStringPush(const Command &command, Executor &executor) {
 void builtinStringInsert(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-insert", string)) return;
-   piluint_t id = getNum(executor, command, 1, "string-insert");
+   pilint_t id = getNum(executor, command, 1, "string-insert");
    if (id < 0 || id > string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-insert: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-insert: Index %ld is out of bounds", id);
       return;
    }
    string->insert(string->begin() + id, getChar(command, executor, "string-insert", 2));
@@ -175,9 +180,9 @@ void builtinStringPop(const Command &command, Executor &executor) {
 void builtinStringErase(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-erase", string)) return;
-   piluint_t id = getNum(executor, command, 1, "string-erase");
+   pilint_t id = getNum(executor, command, 1, "string-erase");
    if (id < 0 || id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-erase: Index %zu is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-erase: Index %ld is out of bounds", id);
       return;
    }
    string->erase(string->begin() + id);
@@ -262,10 +267,10 @@ void builtinStringConcat(const Command &command, Executor &executor) {
 void builtinStringSubstr(const Command &command, Executor &executor) {
    const std::string *string;
    if (!constStringOrError(command, executor, "string-substr", string)) return;
-   size_t start = getNum(executor, command, 1, "string-substr");
-   size_t end = getNum(executor, command, 2, "string-substr");
+   pilint_t start = getNum(executor, command, 1, "string-substr");
+   pilint_t end = getNum(executor, command, 2, "string-substr");
    if (start < 0 || start >= string->size() || end < 0 || end > string->size() || start >= end) {
-      error(executor.diagnostics, command.file, command.line, "string-substr: Invalid substring range %zu-%zu", start, end);
+      error(executor.diagnostics, command.file, command.line, "string-substr: Invalid substring range %ld-%ld", start, end);
       return;
    }
    std::string substring = string->substr(start, end - start);
@@ -351,9 +356,9 @@ void builtinStringReplace(const Command &command, Executor &executor) {
    const std::string *sfind = nullptr, *sreplace = nullptr;
    const char *cfind = nullptr, *creplace = nullptr;
    if (!stringOrError(command, executor, "string-replace", string) || !constStringOrCharOrError(command, executor, "string-replace", sfind, cfind, 1) || !constStringOrCharOrError(command, executor, "string-replace", sreplace, creplace, 2)) return;
-   size_t start = getNum(executor, command, 3, "string-replace");
-   if (start > string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-replace: Start position %zu is out of bounds", start);
+   pilint_t start = getNum(executor, command, 3, "string-replace");
+   if (start < 0 || start > string->size()) {
+      error(executor.diagnostics, command.file, command.line, "string-replace: Start position %ld is out of bounds", start);
       return;
    }
 
