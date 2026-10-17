@@ -13,18 +13,27 @@ float measureEnd() {
 
 void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &tokens) {
    if (!debug) return;
-   printf("Tokens:\n");
+   puts("Tokens:\n");
+
    for (const Token &token: tokens) {
-      printf("%s:%-5zu %s: '%s'.\n", getLexeme(cache, token.file).c_str(), token.line, getTokenName(token.type), getLexeme(cache, token.lexeme).c_str());
+      const char *file = getLexeme(cache, token.file).c_str();
+      const char *lexeme = getLexeme(cache, token.lexeme).c_str();
+      const char *tokenName = getTokenName(token.type);
+      printf("%s:%-5zu %s: '%s'.\n", file, token.line, tokenName, lexeme);
    }
 }
 
 void debugBytecode(bool debug, Executor &executor) {
    if (!debug) return;
-   printf("\nBytecode:\n");
+   puts("\nBytecode:\n");
+
    for (Command &command: executor.code) {
-      printf("%s:%-5zu %s: ", getLexeme(executor.cache, command.file).c_str(), command.line, getLexeme(executor.cache, command.lexeme).c_str());
-      for (size_t i = command.argStart; i < command.argStart + command.argCount; ++i) {
+      const char *file = getLexeme(executor.cache, command.file).c_str();
+      const char *lexeme = getLexeme(executor.cache, command.lexeme).c_str();
+      printf("%s:%-5zu %s: ", file, command.line, lexeme);
+
+      size_t argEnd = command.argStart + command.argCount;
+      for (size_t i = command.argStart; i < argEnd; ++i) {
          printf("%s, ", getValueName(executor.arguments[i].type));
       }
       putchar('\n');

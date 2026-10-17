@@ -1,5 +1,6 @@
 #include "pil.hpp"
 
+// map keys can be any value except for arrays, maps and file handles
 size_t ValueHash::operator () (Value v) const {
    switch (v.type) {
    case VALUE_INTEGER: return std::hash<pilfloat_t>{}((pilfloat_t)v.integer);
@@ -25,9 +26,7 @@ bool ValueEqual::operator () (Value a, Value b) const {
       return a.character == b.character;
    }
    else if ((a.type == VALUE_STRING || a.type == VALUE_CSTRING) && (b.type == VALUE_STRING || b.type == VALUE_CSTRING)) {
-      const std::string &as = (a.type == VALUE_STRING ? getString(*executor, a.string, 0, 0) : getLexeme(executor->cache, a.string));
-      const std::string &bs = (b.type == VALUE_STRING ? getString(*executor, b.string, 0, 0) : getLexeme(executor->cache, b.string));
-      return as == bs;
+      return getString(*executor, a, 0, 0) == getString(*executor, b, 0, 0);
    }
    else if (a.type == VALUE_COUNT && b.type == VALUE_COUNT) {
       return true;
@@ -42,6 +41,17 @@ bool ValueEqual::operator () (Value a, Value b) const {
       return a.structure == b.structure;
    }
    return false;
+}
+
+const std::string &getString(Executor &executor, Value stringValue, size_t file, size_t line) {
+   if (stringValue.type == VALUE_CSTRING) {
+      return getLexeme(executor.cache, stringValue.string);
+   }
+   else if (stringValue.type == VALUE_STRING) {
+      return getString(executor, stringValue.string, file, line);
+   }
+   printf("PIL::getString: %s is not a string value.\n", getValueName(stringValue.type));
+   exit(EXIT_FAILURE);
 }
 
 std::string &getString(Executor &executor, size_t ID, size_t file, size_t line) {

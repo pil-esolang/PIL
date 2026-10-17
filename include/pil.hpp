@@ -132,6 +132,7 @@ void readCachedBytecode(Executor &executor, const std::string &in);
 Value evaluateMath(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants);
 
 // allocation
+const std::string &getString(Executor &executor, Value stringValue, size_t file, size_t line);
 std::string &getString(Executor &executor, size_t ID, size_t file, size_t line);
 PILArray &getArray(Executor &executor, size_t ID, size_t file, size_t line);
 PILMap &getMap(Executor &executor, size_t ID, size_t file, size_t line);

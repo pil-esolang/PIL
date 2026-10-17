@@ -16,15 +16,18 @@ void call(Executor &executor, const Command &command, Function &function, size_t
       trace.localStart = executor.locals.size();
       trace.localCount = function.localCount;
       trace.variadicCount = args - params;
-      executor.locals.resize(trace.localStart + trace.localCount + trace.variadicCount, NULL_VALUE);
+
+      size_t locals = trace.localCount + trace.variadicCount;
+      executor.locals.resize(trace.localStart + locals, NULL_VALUE);
 
       for (size_t i = 0; i < params; ++i) {
          Value value = resolveVariable(executor, executor.arguments[i + offset]);
          executor.locals[trace.localStart + i] = value;
       }
+
       if (function.variadic) {
          size_t defines = function.localCount - params;
-         for (size_t i = trace.localCount; i < trace.localCount + trace.variadicCount; ++i) {
+         for (size_t i = trace.localCount; i < locals; ++i) {
             Value value = resolveVariable(executor, executor.arguments[i + offset - defines]);
             executor.locals[trace.localStart + i] = value;
          }
@@ -33,7 +36,8 @@ void call(Executor &executor, const Command &command, Function &function, size_t
       executor.pointer = function.position - 1;
    }
    else {
-      error(executor.diagnostics, command.file, command.line, "Stray label '%s'", getLexeme(executor.cache, command.lexeme).c_str());
+      const char *lexeme = getLexeme(executor.cache, command.lexeme).c_str();
+      error(executor.diagnostics, command.file, command.line, "Stray label '%s'", lexeme);
    }
 }
 
@@ -52,7 +56,7 @@ void callMain(Executor &executor, ErrorSeverity stopSeverity) {
    executor.locals.resize(main.localCount, NULL_VALUE);
 
    executor.stackTrace = {};
-   executor.stackTrace.push(Trace(main.position, std::string::npos, std::string::npos));
+   executor.stackTrace.emplace(main.position, std::string::npos, std::string::npos);
    executor.stackTrace.top().localStart = 0;
    executor.stackTrace.top().localCount = main.localCount;
    executor.stackTrace.top().variadicCount = 0;

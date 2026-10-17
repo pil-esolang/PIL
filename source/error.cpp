@@ -94,88 +94,63 @@ void logStackTrace(Executor &executor, ErrorSeverity quitSeverity) {
       executor.stackTrace.pop();
    
       Command &command = executor.code[trace.position];
-      const char *functionLexeme = getLexeme(executor.cache, executor.code[trace.position].lexeme).c_str();
-      const char *fileLexeme = getLexeme(executor.cache, command.file).c_str();
-      printf("%s:%zu @ %s:%zu.\n", functionLexeme, trace.position, fileLexeme, command.line);
+      const char *function = getLexeme(executor.cache, executor.code[trace.position].lexeme).c_str();
+      const char *file = getLexeme(executor.cache, command.file).c_str();
+      printf("%s:%zu @ %s:%zu.\n", function, trace.position, file, command.line);
    }
    errorIfSevereEnough(severity, quitSeverity);
    clear(executor.diagnostics);
 }
 
-void logMemoryLeaks(Executor &executor) {
-   size_t strings = executor.strings.size();
-   size_t arrays = executor.arrays.size();
-   size_t maps = executor.maps.size();
-   size_t handles = executor.files.size();
-   if (executor.silenceLeaks || (strings == 0 && arrays == 0 && maps == 0 && handles == 0)) {
+template<typename Container, typename Print>
+static void logLeakGroup(const char *name, const Container &values, Print print) {
+   size_t size = values.size();
+   if (size == 0) {
       return;
    }
 
-   if (strings != 0) {
-      size_t size = std::min(strings, MAX_LEAK_TRACE);
-      size_t i = 0;
+   size_t shown = std::min(size, MAX_LEAK_TRACE);
+   printf(LEAKED_OBJECTS, size, name);
 
-      printf(LEAKED_OBJECTS, strings, "strings");
-      for (const auto &[id, string]: executor.strings) {
-         printf("%zu: '%s' with size %zu.\n", id, string.c_str(), string.size());
-         i += 1;
-         if (i >= size) break;
+   size_t i = 0;
+   for (const auto &[id, value]: values) {
+      if (i++ >= shown) {
+         break;
       }
-
-      if (size < strings) {
-         printf(AND_N_OTHERS, strings - size);
-      }
+      print(id, value);
    }
-   if (arrays != 0) {
-      size_t size = std::min(arrays, MAX_LEAK_TRACE);
-      size_t i = 0;
 
-      printf(LEAKED_OBJECTS, arrays, "arrays");
-      for (const auto &[id, array]: executor.arrays) {
-         if (array.structureId != 0) {
-            printf("%zu: Structure '%s' with size %zu.\n", id, getLexeme(executor.cache, executor.functions[array.structureId].lexeme).c_str(), array.array.size());
-         }
-         else {
-            printf("%zu: Array with size %zu.\n", id, array.array.size());
-         }
-         i += 1;
-         if (i >= size) break;
-      }
-
-      if (size < arrays) {
-         printf(AND_N_OTHERS, arrays - size);
-      }
+   if (shown < size) {
+      printf(AND_N_OTHERS, size - shown);
    }
-   if (maps != 0) {
-      size_t size = std::min(maps, MAX_LEAK_TRACE);
-      size_t i = 0;
+}
 
-      printf(LEAKED_OBJECTS, maps, "maps");
-      for (const auto &[id, map]: executor.maps) {
-         printf("%zu: Map with size %zu.\n", id, map.size());
-         i += 1;
-         if (i >= size) break;
-      }
-
-      if (size < maps) {
-         printf(AND_N_OTHERS, maps - size);
-      }
+void logMemoryLeaks(Executor &executor) {
+   if (executor.silenceLeaks) {
+      return;
    }
-   if (handles != 0) {
-      size_t size = std::min(handles, MAX_LEAK_TRACE);
-      size_t i = 0;
 
-      printf(LEAKED_OBJECTS, handles, "files");
-      for (const auto &[id, handle]: executor.files) {
-         printf("%zu: File handle %zu.\n", id, id);
-         i += 1;
-         if (i >= size) break;
-      }
+   logLeakGroup("strings", executor.strings, [](size_t id, const std::string &string) {
+      printf("%zu: '%s' with size %zu.\n", id, string.c_str(), string.size());
+   });
 
-      if (size < handles) {
-         printf(AND_N_OTHERS, handles - size);
+   logLeakGroup("arrays", executor.arrays, [&](size_t id, const PILArray &array) {
+      if (array.structureId != 0) {
+         size_t lexemeId = executor.functions[array.structureId].lexeme;
+         const char *lexeme = getLexeme(executor.cache, lexemeId).c_str();
+         printf("%zu: Structure '%s' with size %zu.\n", id, lexeme, array.array.size());
+      } else {
+         printf("%zu: Array with size %zu.\n", id, array.array.size());
       }
-   }
+   });
+
+   logLeakGroup("maps", executor.maps, [](size_t id, const PILMap &map) {
+      printf("%zu: Map with size %zu.\n", id, map.size());
+   });
+
+   logLeakGroup("files", executor.files, [](size_t id, const std::fstream &file) {
+      printf("%zu: File handle %zu.\n", id, id);
+   });
 }
 
 void logDiagnostic(LexemeCache &cache, Diagnostic &diagnostic, ErrorSeverity quitSeverity) {
