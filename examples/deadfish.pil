@@ -1,0 +1,49 @@
+# deadfish esolang implementation. https://esolangs.org/wiki/Deadfish
+# includes a 'p' command that prints the accumulator as ASCII
+
+main()
+   let code, accumulator, i, ch, n, condition;
+   print "Input code: ";
+   readln code;
+
+   string-size code, n;
+   set 0, i;
+   set 0, accumulator;
+
+main-loop-start:
+   greq i, n, condition;
+   jmp condition, main-loop-end;
+   string-at code, i, ch;
+   jmptable ch,
+      'i',  deadfish-increment,
+      'd',  deadfish-decrement,
+      's',  deadfish-square,
+      'o',  deadfish-output,
+      'p',  deadfish-print,
+      'h',  main-loop-end,
+            main-loop-continue;
+
+deadfish-increment:
+   incr accumulator;
+   floor-mod accumulator, 256, accumulator;
+   goto main-loop-continue;
+deadfish-decrement:
+   decr accumulator;
+   floor-mod accumulator, 256, accumulator;
+   goto main-loop-continue;
+deadfish-square:
+   mul accumulator, accumulator, accumulator;
+   floor-mod accumulator, 256, accumulator;
+   goto main-loop-continue;
+deadfish-output:
+   print accumulator;
+   goto main-loop-continue;
+deadfish-print:
+   to-char accumulator, ch;
+   printch ch;
+   goto main-loop-continue;
+main-loop-continue:
+   incr i;
+   goto main-loop-start;
+main-loop-end:
+   free code;
