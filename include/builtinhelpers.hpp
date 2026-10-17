@@ -520,7 +520,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
    case VALUE_STRUCT: printf("%s", getLexeme(executor.cache, executor.functions[a.structure].lexeme).c_str()); break;
    case VALUE_ARRAY: {
       if (!active.insert({a.array, a.type}).second) {
-         puts("...");
+         printf("...");
          break;
       }
       putchar('[');
@@ -536,7 +536,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
    }
    case VALUE_MAP: {
       if (!active.insert({a.map, a.type}).second) {
-         puts("...");
+         printf("...");
          break;
       }
       putchar('[');
@@ -553,7 +553,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
       break;
    }
    case VALUE_FILE: printf("(file handle %zu)", a.handle); break;
-   default: puts("(null)");
+   default: printf("(null)");
    }
 }
 

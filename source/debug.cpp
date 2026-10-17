@@ -13,7 +13,7 @@ float measureEnd() {
 
 void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &tokens) {
    if (!debug) return;
-   puts("Tokens:\n");
+   puts("\nTokens:");
 
    for (const Token &token: tokens) {
       const char *file = getLexeme(cache, token.file).c_str();
@@ -25,7 +25,7 @@ void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &token
 
 void debugBytecode(bool debug, Executor &executor) {
    if (!debug) return;
-   puts("\nBytecode:\n");
+   puts("\nBytecode:");
 
    for (Command &command: executor.code) {
       const char *file = getLexeme(executor.cache, command.file).c_str();
