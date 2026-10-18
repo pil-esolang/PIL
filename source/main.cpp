@@ -120,18 +120,23 @@ void compile(Executor &executor, const std::filesystem::path &file, float &readT
 
 void printHelp() {
    printf(
+      "PIL Interpreter %d.%d.%d\n"
+      "Documentation: https://pil-esolang.github.io/\n"
+      "Source: https://github.com/pil-esolang/PIL\n"
+      "Licensed under MIT License\n\n"
       "Usage:\n"
-      "\t./pil [FLAGS...] [COMMAND] [ARGS...]\n"
+      "\tpil [FLAGS...] [COMMAND] [ARGS...]\n"
       "Commands:\n"
       "\trun      [FILE/EXECUTABLE] run a file/executable\n"
       "\tcompile  [FILE] [OUTPUT]   compile a file into output\n"
       "Flags:\n"
-      "\t--debug-code      output bytecode and compile/runtime time\n"
+      "\t--debug-code      output bytecode after parsing\n"
       "\t--debug-tokens    output tokens after translation\n"
       "\t--time            show time of each compiler's operation\n"
       "\t--allow-fileio    allow file I/O built-ins\n"
       "\t--allow-env       allow OS environment variable built-ins\n"
       "\t--allow-exec      allow 'os-exec' built-in\n"
-      "\t--silence-leaks   silence all memory leaks\n"
+      "\t--silence-leaks   silence all memory leaks\n",
+      PIL_MAJOR, PIL_MINOR, PIL_PATCH
    );
 }

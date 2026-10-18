@@ -41,7 +41,7 @@ After, the executable will be located in `bsuild/pil`.
 
 You can also simply build using your favorite compiler:
 ```bash
-g++ -std=c++20 -Iinclude source/*.cpp -o pil
+g++ -std=c++20 -DPIL_MAJOR=0 -DPIL_MINOR=0 -DPIL_PATCH=0 -Iinclude source/*.cpp -o pil
 ```
 
 ## Installation
