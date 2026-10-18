@@ -50,7 +50,8 @@ static const std::unordered_map<std::string, MEEFunc> MEEFuncMap {
    {"pi", {.f0=[]{ return M_PI; }, .args=0, .flt=true}},
    {"tau", {.f0=[]{ return M_PI * 2.0; }, .args=0, .flt=true}},
    {"e", {.f0=[]{ return M_E; }, .args=0, .flt=true}},
-   {"hypot", {.f2=hypot, .args=2, .flt=true}},
+   {"hypot", {.f2=std::hypot, .args=2, .flt=true}},
+   {"hypot3", {.f3=std::hypot, .args=3, .flt=true}},
    {"gcd", {.f2=[](pilfloat_t a, pilfloat_t b) -> pilfloat_t { return std::gcd((pilint_t)a, (pilint_t)b); }, .args=2}},
    {"lcm", {.f2=[](pilfloat_t a, pilfloat_t b) -> pilfloat_t { return std::lcm((pilint_t)a, (pilint_t)b); }, .args=2}},
 };
@@ -74,8 +75,15 @@ pilfloat_t parseExpression(Executor &executor, std::vector<Token> &tokens, size_
       }
 
       std::vector<pilfloat_t> args;
-      for (i += 2; i < tokens.size() && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_R_PAREN;) {
+      for (i += 2; i < tokens.size() && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_R_PAREN; ++i) {
          args.push_back(parseOr(executor, tokens, i, constants, isFloating));
+         if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_R_PAREN) {
+            break;
+         }
+
+         if (tokens[i].type != TOKEN_COMMA) {
+            break;
+         }
       }
 
       if (tokens[i].type != TOKEN_R_PAREN) {

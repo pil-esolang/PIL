@@ -235,7 +235,9 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          executor.functions.push_back(function);
       }
       else if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == enumLexeme) {
-         i += 2; // skip it from treating enumerations as functions
+         i += 3; // skip it from treating enumerations as functions. there could be
+                 // an array keyword after it, but it's safe to skip it since there
+                 // must be closing parentheses
       }
       else if (tokens[i].type == TOKEN_IDENTIFIER && (tokens[i + 1].type == TOKEN_L_PAREN || tokens[i + 1].type == TOKEN_LABEL)) {
          size_t position = tokens[i].lexeme;
@@ -275,6 +277,12 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
       }
       // enumeration declarations
       else if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == enumLexeme) {
+         bool isArray = false;
+         if (tokens[i + 1].type == TOKEN_IDENTIFIER && tokens[i + 1].lexeme == arrayLexeme) {
+            isArray = true;
+            i += 1;
+         }
+
          i += 1;
          if (tokens[i].type != TOKEN_IDENTIFIER) {
             error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after enumeration declaration, got %s instead", getTokenName(tokens[i].type));
@@ -289,7 +297,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          i += 1;
 
          if (tokens[i].type != TOKEN_L_PAREN) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Left Parentheses after enumeration Identifier, got %d instead", getTokenName(tokens[i].type));
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Left Parentheses after enumeration Identifier, got %s instead", getTokenName(tokens[i].type));
             continue;
          }
 
@@ -306,13 +314,21 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                i += 1;
                Value value = internalParse(executor, tokens, i, {}, constants, enumerationMap);
                if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
-                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a Number after Assign, got %d instead", getTokenName(tokens[i].type));
+                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a Number after Assign, got %s instead", getTokenName(tokens[i].type));
                }
                else {
                   iota = (value.type == VALUE_INTEGER ? value.integer : value.floating);
                }
                i += 1;
             }
+
+            if (isArray) {
+               if (constants.find(enumerationLexeme) != constants.end()) {
+                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Array enumeration entry redefined symbol '%s'", getLexeme(executor.cache, enumerationLexeme).c_str());
+               }
+               constants[enumerationLexeme] = Value{.type = VALUE_INTEGER, .integer = iota};
+            }
+
             enumerationMap[{lexeme, enumerationLexeme}] = Value{.type = VALUE_INTEGER, .integer = iota};
             iota += 1;
             entryCount += 1;
@@ -437,6 +453,10 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                continue; // might be EOF
             }
 
+            if (constants.find(lexeme) != constants.end()) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Symbol '%s' redefined in constant/global declaration", getLexeme(executor.cache, lexeme).c_str());
+            }
+
             i += 1;
             if (tokens[i].type != TOKEN_ASSIGN && !constant) {
                constants[lexeme] = Value{.type = VALUE_GLOBAL, .global = executor.globals.size()};
@@ -454,10 +474,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             if (type == TOKEN_EOF || type == TOKEN_REGISTER || type == TOKEN_RETURN_REGISTER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a constant value in the constant/global declaration, got %s instead", getTokenName(tokens[i].type));
                continue;
-            }
-
-            if (constants.find(lexeme) != constants.end()) {
-               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Identifier '%s' redefined in constant/global declaration", getLexeme(executor.cache, lexeme).c_str());
             }
 
             if (constant) {
