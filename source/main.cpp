@@ -1,3 +1,9 @@
+#if !defined(PIL_MAJOR) || !defined(PIL_MINOR) || !defined(PIL_PATCH)
+#  define PIL_MAJOR 0
+#  define PIL_MINOR 0
+#  define PIL_PATCH 0
+#endif
+
 #include "pil.hpp"
 #include <cstring>
 #include <filesystem>
