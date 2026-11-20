@@ -2,14 +2,14 @@
 #include "pil.hpp"
 #include <cstdarg>
 
-constexpr const char *PROGRAM_EXITED = "\e[0;31mProgram exited with error code %d.\e[0m\n";
-constexpr const char *STACKTRACE_INFO = "\e[0;34mStack Trace\e[0m";
-constexpr const char *ERROR_TEXT = "\e[0;31mError\e[0m";
-constexpr const char *WARNING_TEXT = "\e[0;33mWarning\e[0m";
+static constexpr const char *PROGRAM_EXITED = "\e[0;31mProgram exited with error code %d.\e[0m\n";
+static constexpr const char *STACKTRACE_INFO = "\e[0;34mStack Trace\e[0m";
+static constexpr const char *ERROR_TEXT = "\e[0;31mError\e[0m";
+static constexpr const char *WARNING_TEXT = "\e[0;33mWarning\e[0m";
 
-constexpr const char *LEAKED_OBJECTS = "\e[0;31mProgram leaked %zu %s.\e[0m\n";
-constexpr const char *AND_N_OTHERS = "\e[0;34mAnd %zu others...\e[0m\n";
-constexpr size_t MAX_LEAK_TRACE = 5;
+static constexpr const char *LEAKED_OBJECTS = "\e[0;31mProgram leaked %zu %s.\e[0m\n";
+static constexpr const char *AND_N_OTHERS = "\e[0;34mAnd %zu others...\e[0m\n";
+static constexpr size_t MAX_LEAK_TRACE = 5;
 
 bool shouldError(Diagnostics &diagnostics, ErrorSeverity errorSeverity) {
    return diagnostics.severity >= errorSeverity;

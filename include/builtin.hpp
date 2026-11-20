@@ -255,7 +255,7 @@ void builtinIsconstantstring(const Command &command, Executor &executor);
 void builtinIsarray(const Command &command, Executor &executor);
 void builtinIsmap(const Command &command, Executor &executor);
 void builtinIsfilehandle(const Command &command, Executor &executor);
-void builtinIsreg(const Command &command, Executor &executor);
+void builtinIsvar(const Command &command, Executor &executor);
 void builtinIsfunction(const Command &command, Executor &executor);
 void builtinIslabel(const Command &command, Executor &executor);
 void builtinIsStruct(const Command &command, Executor &executor);
@@ -276,12 +276,7 @@ void builtinSwap(const Command &command, Executor &executor);
 void builtinSet(const Command &command, Executor &executor);
 void builtinValTable(const Command &command, Executor &executor);
 void builtinTableContains(const Command &command, Executor &executor);
-void builtinRegSize(const Command &command, Executor &executor);
-void builtinRegAt(const Command &command, Executor &executor);
-void builtinRegSet(const Command &command, Executor &executor);
-void builtinReturnRegSize(const Command &command, Executor &executor);
-void builtinReturnRegAt(const Command &command, Executor &executor);
-void builtinReturnRegSet(const Command &command, Executor &executor);
+void builtinReturnAt(const Command &command, Executor &executor);
 void builtinReturnCount(const Command &command, Executor &executor);
 void builtinFuncArity(const Command &command, Executor &executor);
 void builtinFuncVariadic(const Command &command, Executor &executor);
@@ -303,7 +298,7 @@ constexpr size_t arraySize(T (&)[N]) {
    return N;
 }
 
-constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
+static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    // string ops
    {"string-new", builtinStringNew, 1, VARIADIC},
    {"string-format", builtinStringFormat, 2, VARIADIC},
@@ -557,7 +552,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"is-array", builtinIsarray, 2},
    {"is-map", builtinIsmap, 2},
    {"is-file-handle", builtinIsfilehandle, 2},
-   {"is-reg", builtinIsreg, 2},
+   {"is-var", builtinIsvar, 2},
    {"is-function", builtinIsfunction, 2},
    {"is-label", builtinIslabel, 2},
    {"is-struct", builtinIsStruct, 2},
@@ -578,12 +573,7 @@ constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"set", builtinSet, 2},
    {"valtable", builtinValTable, 4, VARIADIC},
    {"table-contains", builtinTableContains, 3, VARIADIC},
-   {"reg-size", builtinRegSize, 1},
-   {"reg-at", builtinRegAt, 2},
-   {"reg-set", builtinRegSet, 2},
-   {"return-reg-size", builtinReturnRegSize, 1},
-   {"return-reg-at", builtinReturnRegAt, 2},
-   {"return-reg-set", builtinReturnRegSet, 2},
+   {"return-at", builtinReturnAt, 2},
    {"return-count", builtinReturnCount, 1},
    {"func-arity", builtinFuncArity, 2},
    {"func-variadic", builtinFuncVariadic, 2},

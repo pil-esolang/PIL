@@ -105,27 +105,6 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
    if (tokens[i].type == TOKEN_L_BRACKET) {
       return evaluateMath(executor, tokens, i, constants);
    }
-   else if (tokens[i].type == TOKEN_RETURN_REGISTER || tokens[i].type == TOKEN_REGISTER) {
-      Token treg = tokens[i];
-      Token tval = tokens[i + 1];
-      i += 1;
-
-      Value value = internalParse(executor, tokens, i, functionParamMap, constants, enumerationMap);
-      if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
-         error(executor.diagnostics, treg.file, treg.line, "Expected an Integer/Floating after register, got %s instead", getTokenName(tval.type));
-         return NULL_VALUE;
-      }
-
-      std::vector<Value> &container = (treg.type == TOKEN_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
-      size_t maxDefaultValue = (treg.type == TOKEN_RETURN_REGISTER ? DEFAULT_RETURN_REGISTER_COUNT : DEFAULT_REGISTER_COUNT);
-      size_t maxValue = (container.empty() ? maxDefaultValue : container.size());
-      size_t reg = (value.type == VALUE_INTEGER ? value.integer : value.floating);
-      if (reg >= maxValue) {
-         error(executor.diagnostics, treg.file, treg.line, "Register %s$%zu is out of bounds. Define '@%sreg-size %zu' directive to mitigate", treg.type == TOKEN_REGISTER ? "" : "R", reg, treg.type == TOKEN_REGISTER ? "" : "return-", reg + 1);
-         return NULL_VALUE;
-      }
-      return Value{.type = (treg.type == TOKEN_REGISTER ? VALUE_REGISTER : VALUE_RETURN_REGISTER), .reg = reg};
-   }
    else {
       // enumeration entries
       if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i + 1].type == TOKEN_DOT && tokens[i + 2].type == TOKEN_IDENTIFIER) {
@@ -184,7 +163,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
    size_t returnLexeme = cacheLexeme(executor.cache, "return");
    size_t returnId = constants[returnLexeme].function;
-   size_t returnRegisterCount = (executor.returnRegisters.empty() ? DEFAULT_RETURN_REGISTER_COUNT : executor.returnRegisters.size());
 
    size_t defineLexeme = cacheLexeme(executor.cache, "local");
    size_t callLexeme = cacheLexeme(executor.cache, "call");
@@ -471,7 +449,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
             i += 1;
             TokenType type = tokens[i].type;
-            if (type == TOKEN_EOF || type == TOKEN_REGISTER || type == TOKEN_RETURN_REGISTER) {
+            if (type == TOKEN_EOF) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a constant value in the constant/global declaration, got %s instead", getTokenName(tokens[i].type));
                continue;
             }
@@ -537,7 +515,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          executor.code.emplace_back(tokens[i].lexeme, tokens[i].file, tokens[i].line, executor.arguments.size(), 0, it->second.function);
          Command &command = executor.code.back();
          bool isCall = (tokens[i].lexeme == callLexeme);
-         bool isReturn = (tokens[i].lexeme == returnLexeme);
 
          for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON; ++i) {
             Value value = internalParse(executor, tokens, i, functionParamMap, constants, enumerationMap);
@@ -585,9 +562,6 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             if ((!variadic && args != params) || (variadic && args < params)) {
                error(executor.diagnostics, command.file, command.line, "call: Function '%s' expected %s%zu parameters, but received %zu arguments", getLexeme(executor.cache, function.lexeme).c_str(), (variadic ? ">" : ""), params, args);
             }
-         }
-         else if (isReturn && args > returnRegisterCount) {
-            error(executor.diagnostics, command.file, command.line, "return: Can return at maximum %zu values. Define '@return-reg-size %zu' directive to mitigate. Error", returnRegisterCount, args);
          }
       }
       // something we didn't expect

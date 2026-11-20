@@ -1,4 +1,4 @@
-@include "level.pil"
+include "level.pil"
 
 # game entry point
 main()

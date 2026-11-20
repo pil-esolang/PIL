@@ -9,17 +9,17 @@ typedef double pilfloat_t;
 
 enum ValueType: char {
    VALUE_INTEGER, VALUE_FLOATING, VALUE_CHARACTER, VALUE_CSTRING, VALUE_STRING, VALUE_FUNCTION,
-   VALUE_LABEL, VALUE_LOCAL, VALUE_REGISTER, VALUE_RETURN_REGISTER, VALUE_ARRAY, VALUE_MAP,
-   VALUE_FILE, VALUE_STRUCT, VALUE_STRUCT_ACCESS, VALUE_GLOBAL, VALUE_COUNT
+   VALUE_LABEL, VALUE_LOCAL, VALUE_ARRAY, VALUE_MAP, VALUE_FILE, VALUE_STRUCT, VALUE_STRUCT_ACCESS,
+   VALUE_GLOBAL, VALUE_COUNT
 };
 
-constexpr const char *valueTypeStrings[VALUE_COUNT + 1] = {
+static constexpr const char *valueTypeStrings[VALUE_COUNT + 1] = {
    "Integer", "Floating", "Character", "Constant String", "String", "Function", "Label",
-   "Local Variable", "Register", "Return Register", "Array", "Map", "File", "Structure",
-   "Structure Access", "Global Variable", "Invalid Value"
+   "Local Variable", "Array", "Map", "File", "Structure", "Structure Access",
+   "Global Variable", "Invalid Value"
 };
 
-constexpr const char *getValueName(ValueType value) {
+static constexpr const char *getValueName(ValueType value) {
    if (value < 0 || value >= VALUE_COUNT) {
       return valueTypeStrings[VALUE_COUNT];
    }
@@ -38,7 +38,6 @@ struct Value {
       size_t map;
       size_t identifier;
       size_t local;
-      size_t reg; // reused for registers and return registers
       size_t function;
       size_t label;
       size_t handle;
@@ -61,7 +60,7 @@ struct Function {
    size_t paramCount;
 };
 
-constexpr Value NULL_VALUE = {VALUE_COUNT};
+static constexpr Value NULL_VALUE = {VALUE_COUNT};
 
 enum BuiltinFlags {
    VARIADIC = 1 << 0,

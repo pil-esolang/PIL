@@ -1,7 +1,7 @@
 # Simple input-output application. Feel free to
 # add more things to read from the user.
 main()
-   local name, age-string, age;
+   local name, age-string, age, cond;
    print "Input your name: ";
    readln name;
    goto main-input-age;
@@ -14,8 +14,8 @@ main-input-age:
    readln age-string;
    to-int age-string, age;
    string-free age-string;
-   is-null age, $0;
-   jmp $0, main-input-age-error;
+   is-null age, cond;
+   jmp cond, main-input-age-error;
    incr age;
 
    printfln "Hello, {}! You will be {} next year!", name, age;

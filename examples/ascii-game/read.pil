@@ -1,4 +1,4 @@
-@include "tiles.pil"
+include "tiles.pil"
 
 # create a new level from file and return it
 create-level(path)

@@ -10,12 +10,7 @@ void writeToFile(Executor &executor, const std::string &out) {
       error(executor.diagnostics, 0, 0, "Cannot write to file '%s'", out.c_str());
       return;
    }
-   size_t regSize = (executor.registers.empty() ? DEFAULT_REGISTER_COUNT : executor.registers.size());
-   size_t returnRegSize = (executor.returnRegisters.empty() ? DEFAULT_RETURN_REGISTER_COUNT : executor.returnRegisters.size());
-
    file.write(reinterpret_cast<const char*>(&FILE_VERSION), sizeof(FILE_VERSION));
-   file.write(reinterpret_cast<const char*>(&regSize), sizeof(regSize));
-   file.write(reinterpret_cast<const char*>(&returnRegSize), sizeof(returnRegSize));
    file.write(reinterpret_cast<const char*>(&executor.main), sizeof(executor.main));
 
    size_t lexemeCount = executor.cache.lexemes.size();
@@ -56,16 +51,14 @@ void readCachedBytecode(Executor &executor, const std::string &in) {
       return;
    }
 
-   size_t version, regSize, returnRegSize;
+   size_t version;
    file.read(reinterpret_cast<char*>(&version), sizeof(version));
+   file.read(reinterpret_cast<char*>(&executor.main), sizeof(executor.main));
+
    if (version != FILE_VERSION) {
       error(executor.diagnostics, 0, 0, "File '%s' is using an outdated version %zu. The newest version is %zu. Recompile the project", in.c_str(), version, FILE_VERSION);
       return;
    }
-
-   file.read(reinterpret_cast<char*>(&regSize), sizeof(regSize));
-   file.read(reinterpret_cast<char*>(&returnRegSize), sizeof(returnRegSize));
-   file.read(reinterpret_cast<char*>(&executor.main), sizeof(executor.main));
 
    size_t lexemeCount;
    file.read(reinterpret_cast<char*>(&lexemeCount), sizeof(lexemeCount));

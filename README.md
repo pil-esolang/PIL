@@ -7,21 +7,22 @@ Here's a factorial example:
 ```txt
 # calculates the factorial of N
 factorial(n)
-   local result;                 # define a new variable
-   leeq n, 1, $0;                # check if N is smaller or equal to 1
-   jmp $0, factorial-end;        # if it is, jump to end, where we return 1
+   local result, cond, minus1;      # define new variables
+   leeq n, 1, cond;                 # check if N is smaller or equal to 1
+   jmp cond, factorial-end;         # if it is, jump to end, where we return 1
 
-   sub n, 1, $1;                 # calculate n-1
-   call result, factorial, $1;   # call factorial and store in result
-   mul result, n, result;        # calculate the factorial of N
-   return result;                # return the result
+   sub n, 1, minus1;                # calculate n-1
+   call result, factorial, minus1;  # call factorial and store in result
+   mul result, n, result;           # calculate the factorial of N
+   return result;                   # return the result
 
 factorial-end:
    return 1;
 
-main()                           # main is called on start
-   factorial 5.0;                # calculate 5!
-   println r$0;                  # 120
+main()                              # main is called on start
+   local result;                    # define a new variable
+   call result, factorial, 5.0;     # calculate 5!
+   println result;                  # 120
 ```
 Think of it like interpreted assembly with functions, returns and higher-level instructions. Documentation can be found [here](https://pil-esolang.github.io/).
 

@@ -155,10 +155,10 @@ void builtinReturn(const Command &command, Executor &executor) {
    Trace trace = executor.stackTrace.top();
    executor.pointer = trace.position;
    executor.returnCount = command.argCount;
+   executor.returns.clear();
 
    for (size_t i = 0; i < executor.returnCount; ++i) {
-      Value value = resolveVariable(executor, arg(executor, command, i));
-      executor.returnRegisters[i] = value;
+      executor.returns.push_back(resolveVariable(executor, arg(executor, command, i)));
    }
    executor.locals.resize(trace.localStart);
    executor.stackTrace.pop();
@@ -172,7 +172,7 @@ void builtinReturn(const Command &command, Executor &executor) {
       size_t count = std::min(executor.returnCount, trace.callArgCount);
       for (size_t i = 0; i < count; ++i) {
          Value reg = executor.arguments[trace.callArgStart + i];
-         storeInRegister(executor, command, reg, executor.returnRegisters[i], "call");
+         storeInRegister(executor, command, reg, executor.returns[i], "call");
       }
    }
 }
@@ -341,9 +341,9 @@ void builtinIsfilehandle(const Command &command, Executor &executor) {
    storeBoolean(executor, command, value.type == VALUE_FILE, "is-file-handle");
 }
 
-void builtinIsreg(const Command &command, Executor &executor) {
+void builtinIsvar(const Command &command, Executor &executor) {
    Value value = arg(executor, command, 0);
-   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_GLOBAL || value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER || value.type == VALUE_STRUCT_ACCESS, "is-reg");
+   storeBoolean(executor, command, value.type == VALUE_LOCAL || value.type == VALUE_GLOBAL || value.type == VALUE_STRUCT_ACCESS, "is-var");
 }
 
 void builtinIsfunction(const Command &command, Executor &executor) {
@@ -490,8 +490,8 @@ void builtinSwap(const Command &command, Executor &executor) {
    Value &arg0 = executor.arguments[command.argStart + 0];
    Value &arg1 = executor.arguments[command.argStart + 1];
 
-   bool arg0Valid = (arg0.type == VALUE_LOCAL || arg0.type == VALUE_REGISTER || arg0.type == VALUE_RETURN_REGISTER);
-   bool arg1Valid = (arg1.type == VALUE_LOCAL || arg1.type == VALUE_REGISTER || arg1.type == VALUE_RETURN_REGISTER);
+   bool arg0Valid = (arg0.type == VALUE_LOCAL || arg0.type == VALUE_GLOBAL || arg0.type == VALUE_STRUCT_ACCESS);
+   bool arg1Valid = (arg1.type == VALUE_LOCAL || arg1.type == VALUE_GLOBAL || arg1.type == VALUE_STRUCT_ACCESS);
    if (!arg0Valid) error(executor.diagnostics, command.file, command.line, "swap: Expected 1st argument to be a Register/Variable, got %s instead", getValueName(arg0.type));
    if (!arg1Valid) error(executor.diagnostics, command.file, command.line, "swap: Expected 2nd argument to be a Register/Variable, got %s instead", getValueName(arg1.type));
    if (!arg0Valid || !arg1Valid) return;
@@ -538,50 +538,13 @@ void builtinTableContains(const Command &command, Executor &executor) {
    storeInRegister(executor, command, dest, returnValue, "table-contains");
 }
 
-void builtinRegSize(const Command &command, Executor &executor) {
-   storeNumber(executor, command, executor.registers.size(), false, "reg-size");
-}
-
-void builtinRegAt(const Command &command, Executor &executor) {
-   pilint_t id = getNum(executor, command, 0, "reg-at");
-   if (id < 0 || (size_t)id >= executor.registers.size()) {
-      error(executor.diagnostics, command.file, command.line, "reg-at: Index %ld is out of bounds", id);
+void builtinReturnAt(const Command &command, Executor &executor) {
+   pilint_t id = getNum(executor, command, 0, "return-at");
+   if (id < 0 || (size_t)id >= executor.returnCount) {
+      error(executor.diagnostics, command.file, command.line, "return-at: Index %ld is out of bounds. There are %zu returns", id, executor.returnCount);
       return;
    }
-   storeInRegister(executor, command, executor.registers[id], "reg-at");
-}
-
-void builtinRegSet(const Command &command, Executor &executor) {
-   pilint_t id = getNum(executor, command, 0, "reg-set");
-   if (id < 0 || (size_t)id >= executor.registers.size()) {
-      error(executor.diagnostics, command.file, command.line, "reg-set: Index %ld is out of bounds", id);
-      return;
-   }
-   Value reg {.type = VALUE_REGISTER, .reg = (piluint_t)id};
-   storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "reg-set");
-}
-
-void builtinReturnRegSize(const Command &command, Executor &executor) {
-   storeNumber(executor, command, executor.returnRegisters.size(), false, "return-reg-size");
-}
-
-void builtinReturnRegAt(const Command &command, Executor &executor) {
-   pilint_t id = getNum(executor, command, 0, "return-reg-at");
-   if (id < 0 || (size_t)id >= executor.returnRegisters.size()) {
-      error(executor.diagnostics, command.file, command.line, "return-reg-at: Index %ld is out of bounds", id);
-      return;
-   }
-   storeInRegister(executor, command, executor.returnRegisters[id], "return-reg-at");
-}
-
-void builtinReturnRegSet(const Command &command, Executor &executor) {
-   pilint_t id = getNum(executor, command, 0, "return-reg-set");
-   if (id < 0 || (size_t)id >= executor.returnRegisters.size()) {
-      error(executor.diagnostics, command.file, command.line, "return-reg-set: Index %ld is out of bounds", id);
-      return;
-   }
-   Value reg {.type = VALUE_RETURN_REGISTER, .reg = (piluint_t)id};
-   storeInRegister(executor, command, reg, resolveVariable(executor, arg(executor, command, 1)), "return-reg-set");
+   storeInRegister(executor, command, executor.returns[id], "return-at");
 }
 
 void builtinReturnCount(const Command &command, Executor &executor) {

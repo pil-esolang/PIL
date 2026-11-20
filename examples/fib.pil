@@ -2,9 +2,9 @@
 # number implementations. fib-iterative is by
 # far the most efficient.
 fib(n)
-   local minus1, minus2, fib1, fib2, result;
-   leeq n, 1, $0;
-   jmp $0, fib-end;
+   local minus1, minus2, fib1, fib2, result, cond;
+   leeq n, 1, cond;
+   jmp cond, fib-end;
 
    sub n, 1, minus1;
    sub n, 2, minus2;
@@ -17,9 +17,9 @@ fib-end:
    return n;
 
 fib-iterative(n)
-   local prev1, prev2, curr, i;
-   leeq n, 1, $0;
-   jmp $0, fib-iterative-end;
+   local prev1, prev2, curr, i, cond;
+   leeq n, 1, cond;
+   jmp cond, fib-iterative-end;
 
    set n, i;
    set 1, prev1;
@@ -31,13 +31,14 @@ fib-iterative-loop:
    set prev1, prev2;
    set curr, prev1;
    decr i;
-   gr i, 1, $2;
-   jmp $2, fib-iterative-loop;
+   gr i, 1, cond;
+   jmp cond, fib-iterative-loop;
    return curr;
 fib-iterative-end:
    return n;
 
 # Test here.
 main()
-   fib 30;
-   println R$0;
+   local result;
+   call result, fib, 30;
+   println result;

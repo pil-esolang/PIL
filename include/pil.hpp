@@ -7,11 +7,8 @@
 #include <stack>
 #include <string>
 
-constexpr size_t DEFAULT_REGISTER_COUNT = 16;
-constexpr size_t DEFAULT_RETURN_REGISTER_COUNT = 4;
-constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
-
-constexpr size_t FILE_VERSION = 8;
+static constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
+static constexpr size_t FILE_VERSION = 9;
 
 // PIL parser
 struct PILFile {
@@ -78,8 +75,7 @@ struct Executor {
    LexemeCache cache;
 
    std::vector<Value> locals;
-   std::vector<Value> registers;
-   std::vector<Value> returnRegisters;
+   std::vector<Value> returns;
    std::stack<Trace, std::vector<Trace>> stackTrace;
 
    std::unordered_map<size_t, std::string> strings;

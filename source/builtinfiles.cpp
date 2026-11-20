@@ -377,13 +377,13 @@ void builtinDirListRecursive(const Command &command, Executor &executor) {
 
 void builtinOsName(const Command &command, Executor &executor) {
 #if defined(_WIN32)
-   constexpr const char *name = "windows";
+   static constexpr const char *name = "windows";
 #elif defined(__APPLE__)
-   constexpr const char *name = "macos";
+   static constexpr const char *name = "macos";
 #elif defined(__linux__)
-   constexpr const char *name = "linux";
+   static constexpr const char *name = "linux";
 #else
-   constexpr const char *name = "unknown";
+   static constexpr const char *name = "unknown";
 #endif
    storeString(executor, command, name, back(executor, command), "os-name");
 }

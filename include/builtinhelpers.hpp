@@ -19,10 +19,6 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
    else if (value.type == VALUE_GLOBAL) {
       return executor.globals[value.global];
    }
-   else if (value.type == VALUE_REGISTER || value.type == VALUE_RETURN_REGISTER) {
-      std::vector<Value> &registers = (value.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
-      return registers[value.reg];
-   }
    else if (value.type == VALUE_STRUCT_ACCESS) {
       StructChainLink &link = executor.structChains[value.chain];
       Value *v;
@@ -82,10 +78,6 @@ inline void storeInRegister(Executor &executor, const Command &command, Value re
    }
    else if (reg.type == VALUE_GLOBAL) {
       executor.globals[reg.global] = value;
-   }
-   else if (reg.type == VALUE_REGISTER || reg.type == VALUE_RETURN_REGISTER) {
-      std::vector<Value> &registers = (reg.type == VALUE_RETURN_REGISTER ? executor.returnRegisters : executor.registers);
-      registers[reg.reg] = value;
    }
    else if (reg.type == VALUE_STRUCT_ACCESS) {
       StructChainLink &link = executor.structChains[reg.chain];

@@ -29,8 +29,7 @@ imul-loop:
    eq c, 0, cond;
    jmp cond, imul-end;
    add sa, result, result;
-   move-to-zero c;
-   set r$0, c;
+   call c, move-to-zero, c;
    goto imul-loop;
 imul-end:
    return result;
@@ -39,11 +38,12 @@ imul-end:
 # so for formatting reasons we do the same for
 # non-negative numbers.
 main()
-   imul [ 9], [ 8];
-   println R$0;
-   imul [-2], [ 4];
-   println R$0;
-   imul [-4], [-5];
-   println R$0;
-   imul [ 4], [-2];
-   println R$0;
+   local result;
+   call result, imul, [ 9], [ 8];
+   println result;
+   call result, imul, [-2], [ 4];
+   println result;
+   call result, imul, [-4], [-5];
+   println result;
+   call result, imul, [ 4], [-2];
+   println result;

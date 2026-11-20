@@ -1,5 +1,5 @@
-@include "tiles.pil"
-@include "read.pil"
+include "tiles.pil"
+include "read.pil"
 
 # prints the level to the console
 print-level(level)

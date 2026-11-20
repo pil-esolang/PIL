@@ -3,20 +3,14 @@
 #include <unordered_set>
 
 // find all INCLUDE "FILE" statements and push their tokens if the files haven't been included yet. will erase all includes
-// after and doesn't have more than a single file open at a time. also handles some other misc. directives.
+// after and doesn't have more than a single file open at a time.
 void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens) {
    std::unordered_set<std::string> includedFiles;
    size_t size = tokens.size();
- 
    size_t includeLexeme = cacheLexeme(executor.cache, "include");
-   size_t registerLexeme = cacheLexeme(executor.cache, "reg-size");
-   size_t returnRegisterLexeme = cacheLexeme(executor.cache, "return-reg-size");
  
    for (size_t i = 0; i < size; ++i) {
-      if (tokens[i].type != TOKEN_DIRECTIVE) continue;
-      
-      // handle includes
-      if (tokens[i].lexeme == includeLexeme && i + 1 < size && tokens[i + 1].type == TOKEN_STRING) {
+      if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == includeLexeme && i + 1 < size && tokens[i + 1].type == TOKEN_STRING) {
          // destroy all after the loop
          tokens[i].parsed = true;
          tokens[i + 1].parsed = true;
@@ -35,24 +29,6 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
          tokens.insert(tokens.begin() + i + 2, newTokens.begin(), newTokens.end());
          i += 1;
          size = tokens.size();
-      }
-      // handle register config
-      else if ((tokens[i].lexeme == registerLexeme || tokens[i].lexeme == returnRegisterLexeme) && i + 1 < size && tokens[i + 1].type == TOKEN_INTEGER) {
-         tokens[i].parsed = true;
-         tokens[i + 1].parsed = true;
- 
-         Value value = parseToken(executor, tokens[i + 1], {}, {});
-         if (tokens[i].lexeme == registerLexeme) {
-            executor.registers.resize(value.integer);
-         }
-         else {
-            executor.returnRegisters.resize(value.integer);
-         }
-         i += 1;
-      }
-      // unknown directive
-      else {
-         error(executor.diagnostics, tokens[i].file, tokens[i].line, "Invalid directive '@%s'", getLexeme(executor.cache, tokens[i].lexeme).c_str());
       }
    }
    // erase all includes and EOFs

@@ -34,13 +34,6 @@ void call(Executor &executor, const Command &command, Function &function, size_t
 // callable functions.
 void callMain(Executor &executor, ErrorSeverity stopSeverity) {
    Function &main = executor.functions[executor.main];
-   if (executor.registers.empty()) {
-      executor.registers.resize(DEFAULT_REGISTER_COUNT, NULL_VALUE);
-   }
-
-   if (executor.returnRegisters.empty()) {
-      executor.returnRegisters.resize(DEFAULT_RETURN_REGISTER_COUNT, NULL_VALUE);
-   }
    executor.locals.reserve(DEFAULT_LOCAL_RESERVE);
    executor.locals.resize(main.localCount, NULL_VALUE);
 

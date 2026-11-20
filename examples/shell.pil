@@ -16,13 +16,13 @@ cat()
    file-read file, content;
    println content;
    file-close file;
-   string-free c, path;
+   string-free content, path;
 
 ls()
    local dir, entry, entries, i, n, condition;
    print "Input directory to list: ";
    read dir;
-   dir-list-recursive dir, entries;
+   dir-list dir, entries;
 
    array-size entries, n;
    set 0, i;
