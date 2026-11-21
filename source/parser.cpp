@@ -512,6 +512,12 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             continue;
          }
 
+         if (it->second.type != VALUE_FUNCTION) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Cannot call %s as it is not a function", getValueName(it->second.type));
+            while (i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON) i += 1;
+            continue;
+         }
+
          executor.code.emplace_back(tokens[i].lexeme, tokens[i].file, tokens[i].line, executor.arguments.size(), 0, it->second.function);
          Command &command = executor.code.back();
          bool isCall = (tokens[i].lexeme == callLexeme);
