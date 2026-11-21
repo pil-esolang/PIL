@@ -60,8 +60,6 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       case '(': tokens.emplace_back(TOKEN_L_PAREN, 0, file.lexeme, line); continue;
       case ')': tokens.emplace_back(TOKEN_R_PAREN, 0, file.lexeme, line); continue;
       case ':': tokens.emplace_back(TOKEN_LABEL, 0, file.lexeme, line); continue;
-      case '+': tokens.emplace_back(TOKEN_PLUS, 0, file.lexeme, line); continue;
-      case '-': tokens.emplace_back(TOKEN_MINUS, 0, file.lexeme, line); continue;
       case '/': tokens.emplace_back(TOKEN_SLASH, 0, file.lexeme, line); continue;
       case '%': tokens.emplace_back(TOKEN_PERCENT, 0, file.lexeme, line); continue;
       case '^': tokens.emplace_back(TOKEN_BXOR, 0, file.lexeme, line); continue;
@@ -179,7 +177,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          }
          tokens.emplace_back(TOKEN_STRING, pushLexeme(cache, string), file.lexeme, originalLine);
       }
-      else if (isDigit(ch)) {
+      else if (isDigit(ch) || ((ch == '-' || ch == '+') && i + 1 < size && isDigit(file.code[i+1]))) {
          size_t end = i;
          bool dot = false;
 
@@ -194,6 +192,12 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          }
          tokens.emplace_back(dot ? TOKEN_FLOATING : TOKEN_INTEGER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
          i = end - 1;
+      }
+      else if (ch == '-') {
+         tokens.emplace_back(TOKEN_MINUS, 0, file.lexeme, line);
+      }
+      else if (ch == '+') {
+         tokens.emplace_back(TOKEN_PLUS, 0, file.lexeme, line);
       }
       else if (ch == '_' || isAlpha(ch)) {
          size_t end = i;

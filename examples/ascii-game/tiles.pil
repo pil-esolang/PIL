@@ -20,7 +20,7 @@ struct Level (
 
 # map tiles. everything after coin kills you and everything after mine is an enemy
 enum Tile (
-   unknown = [-1],
+   unknown = -1,
    empty,
    player,
    block,
@@ -37,8 +37,8 @@ enum Tile (
 
 # utility functions
 get-random-dir(enemy)
-   randi-range [-1], [ 1], enemy.dirx;
-   randi-range [-1], [ 1], enemy.diry;
+   randi-range -1, 1, enemy.dirx;
+   randi-range -1, 1, enemy.diry;
 
 get-x-y(level, pos)
    local x, y;
@@ -52,9 +52,9 @@ get-dir(start, end)
    jmp cond, get-dir-le;
    gr start, end, cond;
    jmp cond, get-dir-gr;
-get-dir-eq: return [ 0];
-get-dir-le: return [ 1];
-get-dir-gr: return [-1];
+get-dir-eq: return 0;
+get-dir-le: return 1;
+get-dir-gr: return -1;
 
 int-distance(sx, sy, dx, dy)
    local rx1, rx2, ry1, ry2, x, y, distance;

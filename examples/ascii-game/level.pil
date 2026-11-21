@@ -120,16 +120,16 @@ play-level-start:
             play-level-input-end;
 
 play-level-left:
-   move-player level, [-1], [ 0];
+   move-player level, -1, 0;
    goto play-level-input-end;
 play-level-down:
-   move-player level, [ 0], [ 1];
+   move-player level, 0, 1;
    goto play-level-input-end;
 play-level-right:
-   move-player level, [ 1], [ 0];
+   move-player level, 1, 0;
    goto play-level-input-end;
 play-level-up:
-   move-player level, [ 0], [-1];
+   move-player level, 0, -1;
    goto play-level-input-end;
 play-level-exit:
    deep-free level;

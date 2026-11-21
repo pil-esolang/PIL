@@ -34,16 +34,14 @@ imul-loop:
 imul-end:
    return result;
 
-# Test here. Negative numbers have to be wrapped in []
-# so for formatting reasons we do the same for
-# non-negative numbers.
+# Test here.
 main()
    local result;
-   call result, imul, [ 9], [ 8];
+   call result, imul, +9, +8;
    println result;
-   call result, imul, [-2], [ 4];
+   call result, imul, -2, +4;
    println result;
-   call result, imul, [-4], [-5];
+   call result, imul, -4, -5;
    println result;
-   call result, imul, [ 4], [-2];
+   call result, imul, +4, -2;
    println result;
