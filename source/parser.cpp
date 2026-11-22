@@ -537,6 +537,11 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             if (tokens[i].type == TOKEN_SEMICOLON || tokens[i].type == TOKEN_EOF || tokens[i].type != TOKEN_COMMA) {
                break;
             }
+
+            // don't allow trailing commas before semicolon
+            if (tokens[i + 1].type == TOKEN_SEMICOLON) {
+               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Trailing commas before semicolons are not allowed");
+            }
          }
 
          if (tokens[i].type != TOKEN_SEMICOLON) {
