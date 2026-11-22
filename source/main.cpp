@@ -1,7 +1,17 @@
-#if !defined(PIL_MAJOR) || !defined(PIL_MINOR) || !defined(PIL_PATCH)
+#ifndef PIL_MAJOR
 #  define PIL_MAJOR 0
+#endif
+
+#ifndef PIL_MINOR
 #  define PIL_MINOR 0
-#  define PIL_PATCH 0
+#endif
+
+#ifndef PIL_PATCH
+#  define PIL_PIL_PATCH 0
+#endif
+
+#ifndef PIL_RELEASE_TYPE
+#  define PIL_RELEASE_TYPE "Dev build"
 #endif
 
 #include "pil.hpp"
@@ -126,7 +136,7 @@ void compile(Executor &executor, const std::filesystem::path &file, float &readT
 
 void printHelp() {
    printf(
-      "PIL Interpreter %d.%d.%d\n"
+      "PIL Interpreter %d.%d.%d %s\n"
       "Documentation: https://pil-esolang.github.io/\n"
       "Source: https://github.com/pil-esolang/PIL\n"
       "Licensed under MIT License\n\n"
@@ -143,6 +153,6 @@ void printHelp() {
       "\t--allow-env       allow OS environment variable built-ins\n"
       "\t--allow-exec      allow 'os-exec' built-in\n"
       "\t--silence-leaks   silence all memory leaks\n",
-      PIL_MAJOR, PIL_MINOR, PIL_PATCH
+      PIL_MAJOR, PIL_MINOR, PIL_PATCH, PIL_RELEASE_TYPE
    );
 }

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
-project(pil VERSION 1.0.0)
+project(pil VERSION 1.1.0)
+set(PIL_RELEASE_TYPE "Dev build")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,4 +15,5 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
    "PIL_MAJOR=${PROJECT_VERSION_MAJOR}"
    "PIL_MINOR=${PROJECT_VERSION_MINOR}"
    "PIL_PATCH=${PROJECT_VERSION_PATCH}"
+   "PIL_RELEASE_TYPE=\"${PIL_RELEASE_TYPE}\""
 )
