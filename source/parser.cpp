@@ -341,7 +341,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
          i += 2;
          if (tokens[i].type != TOKEN_L_PAREN) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Left Parentheses after structure Identifier, got %d instead", getTokenName(tokens[i].type));
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Left Parentheses after structure Identifier, got %s instead", getTokenName(tokens[i].type));
             continue;
          }
 

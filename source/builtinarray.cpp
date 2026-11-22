@@ -13,7 +13,7 @@ void builtinArrayNew(const Command &command, Executor &executor) {
 void builtinArrayFill(const Command &command, Executor &executor) {
    pilint_t count = getNum(executor, command, 1, "array-fill");
    if (count < 0) {
-      error(executor.diagnostics, command.file, command.line, "array-fill: Fill count (%ld) cannot be negative", count);
+      error(executor.diagnostics, command.file, command.line, "array-fill: Fill count (" LONG_FMT ") cannot be negative", count);
       return;
    }
    
@@ -25,7 +25,7 @@ void builtinArrayIota(const Command &command, Executor &executor) {
    pilint_t count = getNum(executor, command, 1, "array-iota");
    pilint_t start = getNum(executor, command, 2, "array-iota");
    if (count < 0) {
-      error(executor.diagnostics, command.file, command.line, "array-iota: Fill count (%ld) cannot be negative", count);
+      error(executor.diagnostics, command.file, command.line, "array-iota: Fill count (" LONG_FMT ") cannot be negative", count);
       return;
    }
 
@@ -85,7 +85,7 @@ void builtinArraySet(const Command &command, Executor &executor) {
    if (!arrayOrError(command, executor, "array-set", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-set");
    if (id < 0 || (size_t)id >= array->size()) {
-      error(executor.diagnostics, command.file, command.line, "array-set: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "array-set: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    (*array)[id] = resolveVariable(executor, arg(executor, command, 2));
@@ -96,7 +96,7 @@ void builtinArrayAt(const Command &command, Executor &executor) {
    if (!arrayOrError(command, executor, "array-at", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-at");
    if (id < 0 || (size_t)id >= array->size()) {
-      error(executor.diagnostics, command.file, command.line, "array-at: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "array-at: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    storeInRegister(executor, command, (*array)[id], "array-at");
@@ -133,7 +133,7 @@ void builtinArrayInsert(const Command &command, Executor &executor) {
    if (!arrayOrError(command, executor, "array-insert", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-insert");
    if (id < 0 || (size_t)id > array->size()) {
-      error(executor.diagnostics, command.file, command.line, "array-insert: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "array-insert: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    array->insert(array->begin() + id, resolveVariable(executor, arg(executor, command, 2)));
@@ -154,7 +154,7 @@ void builtinArrayErase(const Command &command, Executor &executor) {
    if (!arrayOrError(command, executor, "array-erase", array)) return;
    pilint_t id = getNum(executor, command, 1, "array-erase");
    if (id < 0 || (size_t)id >= array->size()) {
-      error(executor.diagnostics, command.file, command.line, "array-erase: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "array-erase: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    array->erase(array->begin() + id);
@@ -215,7 +215,7 @@ void builtinArraySlice(const Command &command, Executor &executor) {
    pilint_t start = getNum(executor, command, 1, "array-slice");
    pilint_t end = getNum(executor, command, 2, "array-slice");
    if (start < 0 || (size_t)start >= array->size() || end < 0 || (size_t)end > array->size() || start >= end) {
-      error(executor.diagnostics, command.file, command.line, "array-slice: Invalid slice range %ld-%ld", start, end);
+      error(executor.diagnostics, command.file, command.line, "array-slice: Invalid slice range " LONG_FMT "-" LONG_FMT, start, end);
       return;
    }
    std::vector<Value> copy (array->begin() + start, array->begin() + end);

@@ -41,6 +41,8 @@ void builtinStringEndsWith(const Command &command, Executor &executor);
 void builtinStringTrim(const Command &command, Executor &executor);
 void builtinStringTolower(const Command &command, Executor &executor);
 void builtinStringToupper(const Command &command, Executor &executor);
+void builtinStringPadLeft(const Command &command, Executor &executor);
+void builtinStringPadRight(const Command &command, Executor &executor);
 void builtinStringCopy(const Command &command, Executor &executor);
 
 // array ops
@@ -202,6 +204,7 @@ void builtinOsExec(const Command &command, Executor &executor);
 void builtinOsExitCode(const Command &command, Executor &executor);
 
 // input/output
+void builtinStdinEof(const Command &command, Executor &executor);
 void builtinFlush(const Command &command, Executor &executor);
 void builtinPrintch(const Command &command, Executor &executor);
 void builtinPrint(const Command &command, Executor &executor);
@@ -339,6 +342,8 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"string-trim", builtinStringTrim, 1},
    {"string-to-lower", builtinStringTolower, 1},
    {"string-to-upper", builtinStringToupper, 1},
+   {"string-pad-left", builtinStringPadLeft, 3},
+   {"string-pad-right", builtinStringPadRight, 3},
    {"string-copy", builtinStringCopy, 2},
 
    // array ops
@@ -500,6 +505,7 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"os-exit-code", builtinOsExitCode, 1},
 
    // input/output
+   {"stdin-eof", builtinStdinEof, 1},
    {"flush", builtinFlush, 0},
    {"printch", builtinPrintch, 1},
    {"print", builtinPrint, 1, VARIADIC},

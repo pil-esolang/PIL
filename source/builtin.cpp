@@ -4,7 +4,11 @@
 #include <iostream>
 #include <thread>
 
-// output
+// input/output
+void builtinStdinEof(const Command &command, Executor &executor) {
+   storeBoolean(executor, command, std::cin.eof(), "stdin-eof");
+}
+
 void builtinFlush(const Command &command, Executor &executor) {
    std::cout << std::flush;
 }
@@ -220,7 +224,7 @@ void builtinAssert(const Command &command, Executor &executor) {
          error(executor.diagnostics, command.file, command.line, "assert: Expected String as the 2nd argument, got %s instead", getValueName(value.type));
          return;
       }
-      error(executor.diagnostics, 0, 0, format(command, executor, "assert", 1).c_str());
+      error(executor.diagnostics, 0, 0, "%s", format(command, executor, "assert", 1).c_str());
    }
 }
 
@@ -230,7 +234,7 @@ void builtinWarn(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "warn: Expected String as the 1st argument, got %s instead", getValueName(value.type));
       return;
    }
-   warn(executor.diagnostics, 0, 0, format(command, executor, "warn", 0).c_str());
+   warn(executor.diagnostics, 0, 0, "%s", format(command, executor, "warn", 0).c_str());
 }
 
 void builtinError(const Command &command, Executor &executor) {
@@ -239,7 +243,7 @@ void builtinError(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "error: Expected String as the 1st argument, got %s instead", getValueName(value.type));
       return;
    }
-   error(executor.diagnostics, 0, 0, format(command, executor, "error", 0).c_str());
+   error(executor.diagnostics, 0, 0, "%s", format(command, executor, "error", 0).c_str());
 }
 
 void builtinExit(const Command &command, Executor &executor) {
@@ -541,7 +545,7 @@ void builtinTableContains(const Command &command, Executor &executor) {
 void builtinReturnAt(const Command &command, Executor &executor) {
    pilint_t id = getNum(executor, command, 0, "return-at");
    if (id < 0 || (size_t)id >= executor.returnCount) {
-      error(executor.diagnostics, command.file, command.line, "return-at: Index %ld is out of bounds. There are %zu returns", id, executor.returnCount);
+      error(executor.diagnostics, command.file, command.line, "return-at: Index " LONG_FMT " is out of bounds. There are %zu returns", id, executor.returnCount);
       return;
    }
    storeInRegister(executor, command, executor.returns[id], "return-at");

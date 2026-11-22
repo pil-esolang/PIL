@@ -47,7 +47,7 @@ void builtinStringRepeat(const Command &command, Executor &executor) {
    std::string result;
    pilint_t n = getNum(executor, command, 1, "string-repeat");
    if (n < 0) {
-      error(executor.diagnostics, command.file, command.line, "string-repeat: Repeat count (%ld) cannot be negative", n);
+      error(executor.diagnostics, command.file, command.line, "string-repeat: Repeat count (" LONG_FMT ") cannot be negative", n);
       return;
    }
 
@@ -107,7 +107,7 @@ void builtinStringSet(const Command &command, Executor &executor) {
    if (!stringOrError(command, executor, "string-set", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-set");
    if (id < 0 || (size_t)id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-set: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-set: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    (*string)[id] = getChar(command, executor, "string-set", 2);
@@ -118,7 +118,7 @@ void builtinStringAt(const Command &command, Executor &executor) {
    if (!constStringOrError(command, executor, "string-at", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-at");
    if (id < 0 || (size_t)id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-at: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-at: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    Value value {VALUE_CHARACTER};
@@ -161,7 +161,7 @@ void builtinStringInsert(const Command &command, Executor &executor) {
    if (!stringOrError(command, executor, "string-insert", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-insert");
    if (id < 0 || (size_t)id > string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-insert: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-insert: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    string->insert(string->begin() + id, getChar(command, executor, "string-insert", 2));
@@ -182,7 +182,7 @@ void builtinStringErase(const Command &command, Executor &executor) {
    if (!stringOrError(command, executor, "string-erase", string)) return;
    pilint_t id = getNum(executor, command, 1, "string-erase");
    if (id < 0 || (size_t)id >= string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-erase: Index %ld is out of bounds", id);
+      error(executor.diagnostics, command.file, command.line, "string-erase: Index " LONG_FMT " is out of bounds", id);
       return;
    }
    string->erase(string->begin() + id);
@@ -270,7 +270,7 @@ void builtinStringSubstr(const Command &command, Executor &executor) {
    pilint_t start = getNum(executor, command, 1, "string-substr");
    pilint_t end = getNum(executor, command, 2, "string-substr");
    if (start < 0 || (size_t)start >= string->size() || end < 0 || (size_t)end > string->size() || start >= end) {
-      error(executor.diagnostics, command.file, command.line, "string-substr: Invalid substring range %ld-%ld", start, end);
+      error(executor.diagnostics, command.file, command.line, "string-substr: Invalid substring range " LONG_FMT "-" LONG_FMT, start, end);
       return;
    }
    std::string substring = string->substr(start, end - start);
@@ -358,7 +358,7 @@ void builtinStringReplace(const Command &command, Executor &executor) {
    if (!stringOrError(command, executor, "string-replace", string) || !constStringOrCharOrError(command, executor, "string-replace", sfind, cfind, 1) || !constStringOrCharOrError(command, executor, "string-replace", sreplace, creplace, 2)) return;
    pilint_t start = getNum(executor, command, 3, "string-replace");
    if (start < 0 || (size_t)start > string->size()) {
-      error(executor.diagnostics, command.file, command.line, "string-replace: Start position %ld is out of bounds", start);
+      error(executor.diagnostics, command.file, command.line, "string-replace: Start position " LONG_FMT " is out of bounds", start);
       return;
    }
 
@@ -447,6 +447,38 @@ void builtinStringToupper(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-to-upper", string)) return;
    std::transform(string->begin(), string->end(), string->begin(), toUpper);
+}
+
+void builtinStringPadLeft(const Command &command, Executor &executor) {
+   std::string *string;
+   if (!stringOrError(command, executor, "string-pad-left", string)) return;
+   pilint_t n = getNum(executor, command, 1, "string-pad-left");
+   if (n <= 0) {
+      error(executor.diagnostics, command.file, command.line, "string-pad-left: Padding (" LONG_FMT ") cannot be zero or negative", n);
+      return;
+   }
+
+   if (string->size() < (size_t)n) {
+      char ch = getChar(command, executor, "string-pad-left", 2);
+      size_t add = n - string->size();
+      *string = std::string(add, ch) + *string;
+   }
+}
+
+void builtinStringPadRight(const Command &command, Executor &executor) {
+   std::string *string;
+   if (!stringOrError(command, executor, "string-pad-right", string)) return;
+   pilint_t n = getNum(executor, command, 1, "string-pad-right");
+   if (n <= 0) {
+      error(executor.diagnostics, command.file, command.line, "string-pad-right: Padding (" LONG_FMT ") cannot be zero or negative", n);
+      return;
+   }
+
+   if (string->size() < (size_t)n) {
+      char ch = getChar(command, executor, "string-pad-right", 2);
+      size_t add = n - string->size();
+      *string = *string + std::string(add, ch);
+   }
 }
 
 void builtinStringCopy(const Command &command, Executor &executor) {

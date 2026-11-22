@@ -1,6 +1,24 @@
 #pragma once
 #include <vector>
 
+#ifdef _WIN32
+#  define LONG_FMT "%lld"
+#else
+#  define LONG_FMT "%ld"
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+  #define PRINTF_ATTR(fmt_idx, arg_idx) __attribute__((format(printf, fmt_idx, arg_idx)))
+  #define PRINTF_FMT_PARAM
+#elif defined(_MSC_VER)
+  #include <sal.h>
+  #define PRINTF_ATTR(fmt_idx, arg_idx)
+  #define PRINTF_FMT_PARAM _Printf_format_string_
+#else
+  #define PRINTF_ATTR(fmt_idx, arg_idx)
+  #define PRINTF_FMT_PARAM
+#endif
+
 enum ErrorSeverity: char {
    SEVERITY_NONE, SEVERITY_WARNING, SEVERITY_ERROR, SEVERITY_IGNORE
 };
@@ -25,8 +43,8 @@ struct Executor;
 
 bool shouldError(Diagnostics &diagnostics, ErrorSeverity errorSeverity);
 
-void warn(Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...);
-void error(Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...);
+void warn(PRINTF_FMT_PARAM Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...) PRINTF_ATTR(4, 5);
+void error(PRINTF_FMT_PARAM Diagnostics &diagnostics, size_t file, size_t line, const char *msg, ...) PRINTF_ATTR(4, 5);
 void clear(Diagnostics &diagnostics);
 
 void log(Executor &executor, ErrorSeverity quitSeverity);

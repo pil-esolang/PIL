@@ -173,7 +173,7 @@ void builtinClamp(const Command &command, Executor &executor) {
    pilfloat_t lo = getNum(executor, command, 1, "clamp", &floating);
    pilfloat_t hi = getNum(executor, command, 2, "clamp", &floating);
    if (lo > hi) {
-      error(executor.diagnostics, command.file, command.line, "clamp: Min %ld is greater than Max %ld. Flip the arguments", lo, hi);
+      error(executor.diagnostics, command.file, command.line, "clamp: Min %f is greater than Max %f. Flip the arguments", lo, hi);
       return;
    }
    storeNumber(executor, command, std::clamp(x, lo, hi), floating, "clamp");
@@ -259,7 +259,7 @@ void builtinRandiRange(const Command &command, Executor &executor) {
    pilint_t min = getNum(executor, command, 0, "randi-range");
    pilint_t max = getNum(executor, command, 1, "randi-range");
    if (min > max) {
-      error(executor.diagnostics, command.file, command.line, "randi-range: Min %ld is greater than Max %ld. Flip the arguments", min, max);
+      error(executor.diagnostics, command.file, command.line, "randi-range: Min " LONG_FMT " is greater than Max " LONG_FMT ". Flip the arguments", min, max);
       return;
    }
    pilfloat_t r = std::uniform_int_distribution<pilint_t>{min, max}(RNG());
