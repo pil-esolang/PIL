@@ -473,7 +473,8 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
       }
       // variable declaration
       else if (lastFunction && tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == defineLexeme) {
-         for (++i; i < size && tokens[i].type != TOKEN_EOF && tokens[i].type != TOKEN_SEMICOLON; ++i) {
+         do {
+            i += 1;
             if (tokens[i].type != TOKEN_IDENTIFIER) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected unique Identifier, got %s instead", getTokenName(tokens[i].type));
                continue;
@@ -484,18 +485,16 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                continue;
             }
             functionParamMap[tokens[i].lexeme] = functionParamMap.size();
-
             i += 1;
-            if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_SEMICOLON) {
-               break;
-            }
-
-            if (tokens[i].type != TOKEN_COMMA) {
-               error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Comma after Identifier, got %s instead", getTokenName(tokens[i].type));
-               i -= 1;
-            }
          }
+         while (tokens[i].type == TOKEN_COMMA);
+
          lastFunction->localCount = functionParamMap.size();
+         if (tokens[i].type != TOKEN_SEMICOLON) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a semicolon after local declaration, got %s instead", getTokenName(tokens[i].type));
+            i -= 1;
+            continue;
+         }
       }
       // function calls
       else if (tokens[i].type == TOKEN_IDENTIFIER) {
