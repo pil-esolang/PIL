@@ -1,6 +1,6 @@
 #include "builtinhelpers.hpp"
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN // even this doesn't help
 #include <windows.h>
 #include <conio.h>
 #else

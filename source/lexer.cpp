@@ -1,5 +1,8 @@
 #include "pil.hpp"
+#include <algorithm>
+#include <filesystem>
 #include <fstream>
+#include <unordered_set>
 
 // helpers
 
@@ -209,5 +212,47 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          error(diagnostics, file.lexeme, line, "Unexpected character '%c'", ch);
       }
    }
-   tokens.emplace_back(TOKEN_EOF, cacheLexeme(cache, "EOF"), file.lexeme, line);
+   tokens.emplace_back(TOKEN_EOF, 0, file.lexeme, line);
+}
+
+// find all INCLUDE "FILE" statements and push their tokens if the files haven't been included yet. will erase all includes
+// after and doesn't have more than a single file open at a time.
+void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens) {
+   std::unordered_set<std::filesystem::path> includedFiles;
+   size_t size = tokens.size();
+   size_t includeLexeme = cacheLexeme(executor.cache, "include");
+ 
+   for (size_t i = 0; i < size; ++i) {
+      if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i].lexeme == includeLexeme && i + 1 < size && tokens[i + 1].type == TOKEN_STRING) {
+         // destroy all after the loop
+         tokens[i].parsed = true;
+         tokens[i + 1].parsed = true;
+ 
+         std::string &filename = getLexeme(executor.cache, tokens[i + 1].lexeme);
+         std::error_code ec;
+         std::filesystem::path path = std::filesystem::canonical(filename, ec);
+
+         if (ec.value()) {
+            error(executor.diagnostics, tokens[i].file, tokens[i].line, "File '%s' cannot be included as it does not exist", filename.c_str());
+            continue;
+         }
+
+         if (!includedFiles.insert(path).second) {
+            continue;
+         }
+
+         PILFile newFile;
+         std::vector<Token> newTokens;
+ 
+         readPIL(executor.diagnostics, executor.cache, filename, newFile, tokens[i + 1].file, tokens[i + 1].line);
+         lexPILFile(executor.diagnostics, executor.cache, newFile, newTokens);
+         tokens.insert(tokens.begin() + i + 2, newTokens.begin(), newTokens.end());
+         i += 1;
+         size = tokens.size();
+      }
+   }
+   // erase all includes and EOFs
+   tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const Token &t) { return t.parsed || t.type == TOKEN_EOF; }), tokens.end());
+   size_t EOFline = (tokens.empty() ? 1 : tokens.back().line);
+   tokens.emplace_back(TOKEN_EOF, 0, fileLexeme, EOFline);
 }
