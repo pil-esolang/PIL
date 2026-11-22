@@ -495,6 +495,7 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"os-set-cwd", builtinOsSetCwd, 1, FILE_LOCK},
    {"os-env-get", builtinOsEnvGet, 2, ENV_LOCK},
    {"os-env-set", builtinOsEnvSet, 2, ENV_LOCK},
+   {"os-args", builtinOsArgs, 1},
    {"os-exec", builtinOsExec, 2, EXEC_LOCK},
    {"os-exit-code", builtinOsExitCode, 1},
 

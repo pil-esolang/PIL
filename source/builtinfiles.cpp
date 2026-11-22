@@ -432,6 +432,15 @@ void builtinOsEnvSet(const Command &command, Executor &executor) {
 #endif
 }
 
+void builtinOsArgs(const Command &command, Executor &executor) {
+   std::vector<Value> args;
+   for (int i = 0; i < executor.argc; ++i) {
+      Value value = {.type = VALUE_STRING, .string = allocateString(executor, executor.argv[i])};
+      args.push_back(value);
+   }
+   storeArray(executor, command, args, arg(executor, command, 0), "os-args");
+}
+
 void builtinOsExec(const Command &command, Executor &executor) {
    const std::string *cmd;
    if (!hasPermission(command, executor, "os-exec", EXEC_LOCK) || !constStringOrError(command, executor, "os-exec", cmd)) return;

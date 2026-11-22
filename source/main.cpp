@@ -26,7 +26,8 @@ int main(int argc, char *argv[]) {
    bool time = false;
    bool debugCode = false;
    bool debugLexer = false;
-   
+   int originalArgc = argc;
+
    for (int i = 1; i < argc; ++i) {
       if (strcmp(argv[i], "--time") == 0) time = true;
       else if (strcmp(argv[i], "--debug-code") == 0) debugCode = true;
@@ -42,13 +43,14 @@ int main(int argc, char *argv[]) {
       }
    }
 
-   if (argc == 2 && strcmp(argv[0], "run") == 0) {
+   if (argc >= 2 && strcmp(argv[0], "run") == 0) {
       std::filesystem::path path (argv[1]);
       if (path.has_extension() && path.extension() == ".pil") {
          float readTime, lexTime, parseTime;
          compile(executor, path, readTime, lexTime, parseTime, debugLexer, debugCode);
 
          measure();
+         setupOSArgs(executor, originalArgc, argc, argv);
          callMain(executor, SEVERITY_ERROR);
          float runtime = measureEnd();
 
@@ -63,6 +65,7 @@ int main(int argc, char *argv[]) {
          float readTime = measureEnd();
 
          measure();
+         setupOSArgs(executor, originalArgc, argc, argv);
          callMain(executor, SEVERITY_ERROR);
          float runtime = measureEnd();
 
@@ -143,8 +146,8 @@ void printHelp() {
       "Usage:\n"
       "\tpil [FLAGS...] [COMMAND] [ARGS...]\n"
       "Commands:\n"
-      "\trun      [FILE/EXECUTABLE] run a file/executable\n"
-      "\tcompile  [FILE] [OUTPUT]   compile a file into output\n"
+      "\trun      [FILE/EXECUTABLE] [ARGS...]   run a file/executable with given arguments\n"
+      "\tcompile  [FILE] [OUTPUT]               compile a file into output\n"
       "Flags:\n"
       "\t--debug-code      output bytecode after parsing\n"
       "\t--debug-tokens    output tokens after translation\n"

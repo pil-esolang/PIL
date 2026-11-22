@@ -59,3 +59,9 @@ void callMain(Executor &executor, ErrorSeverity stopSeverity) {
    executor.locals.resize(0);
    executor.stackTrace.pop();
 }
+
+// setup arguments for os-args
+void setupOSArgs(Executor &executor, int originalArgc, int argc, char **argv) {
+   executor.argc = argc - 2;
+   executor.argv = (executor.argc == 0 ? nullptr : &argv[originalArgc - argc - 1]);
+}

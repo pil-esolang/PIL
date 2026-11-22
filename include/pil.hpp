@@ -108,6 +108,9 @@ struct Executor {
    bool fileioErrored = false;
    bool envErrored = false;
    bool execErrored = false;
+
+   char **argv;
+   int argc;
 };
 
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &file, size_t fileLexeme, size_t line);
@@ -119,6 +122,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens);
 
 void call(Executor &executor, const Command &command, Function &function, size_t functionPos, size_t returnCount, size_t argCount);
 void callMain(Executor &executor, ErrorSeverity stopSeverity);
+void setupOSArgs(Executor &executor, int originalArgc, int argc, char **argv);
 
 void writeToFile(Executor &executor, const std::string &out);
 void readCachedBytecode(Executor &executor, const std::string &in);
