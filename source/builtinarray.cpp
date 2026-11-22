@@ -5,7 +5,7 @@
 void builtinArrayNew(const Command &command, Executor &executor) {
    std::vector<Value> values (command.argCount - 1);
    for (size_t i = 1; i < command.argCount; ++i) {
-      values[i-1] = resolveVariable(executor, arg(executor, command, i));
+      values[i-1] = resolveArg(executor, command, i);
    }
    storeArray(executor, command, values, arg(executor, command, 0), "array-new");
 }
@@ -17,7 +17,7 @@ void builtinArrayFill(const Command &command, Executor &executor) {
       return;
    }
    
-   std::vector<Value> values (count, resolveVariable(executor, arg(executor, command, 2)));
+   std::vector<Value> values (count, resolveArg(executor, command, 2));
    storeArray(executor, command, values, arg(executor, command, 0), "array-fill");
 }
 
@@ -77,7 +77,7 @@ void builtinArrayReserve(const Command &command, Executor &executor) {
 void builtinArrayResize(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-resize", array)) return;
-   array->resize(getNum(executor, command, 1, "array-resize"), resolveVariable(executor, arg(executor, command, 2)));
+   array->resize(getNum(executor, command, 1, "array-resize"), resolveArg(executor, command, 2));
 }
 
 void builtinArraySet(const Command &command, Executor &executor) {
@@ -88,7 +88,7 @@ void builtinArraySet(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "array-set: Index " LONG_FMT " is out of bounds", id);
       return;
    }
-   (*array)[id] = resolveVariable(executor, arg(executor, command, 2));
+   (*array)[id] = resolveArg(executor, command, 2);
 }
 
 void builtinArrayAt(const Command &command, Executor &executor) {
@@ -125,7 +125,7 @@ void builtinArrayFront(const Command &command, Executor &executor) {
 void builtinArrayPush(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-push", array)) return;
-   array->push_back(resolveVariable(executor, arg(executor, command, 1)));
+   array->push_back(resolveArg(executor, command, 1));
 }
 
 void builtinArrayInsert(const Command &command, Executor &executor) {
@@ -136,7 +136,7 @@ void builtinArrayInsert(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "array-insert: Index " LONG_FMT " is out of bounds", id);
       return;
    }
-   array->insert(array->begin() + id, resolveVariable(executor, arg(executor, command, 2)));
+   array->insert(array->begin() + id, resolveArg(executor, command, 2));
 }
 
 void builtinArrayPop(const Command &command, Executor &executor) {
@@ -241,7 +241,7 @@ void builtinArraySort(const Command &command, Executor &executor) {
 void builtinArrayCount(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-count", array)) return;
-   Value target = resolveVariable(executor, arg(executor, command, 1));
+   Value target = resolveArg(executor, command, 1);
    uint64_t count = 0;
    for (Value &v : *array) count += valuesEqual(executor, command, v, target, "array-count");
    storeNumber(executor, command, count, false, "array-count");
@@ -256,7 +256,7 @@ void builtinArrayReverse(const Command &command, Executor &executor) {
 void builtinArrayFind(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-find", array)) return;
-   Value target = resolveVariable(executor, arg(executor, command, 1));
+   Value target = resolveArg(executor, command, 1);
    for (size_t i = 0; i < array->size(); ++i) {
       if (valuesEqual(executor, command, (*array)[i], target, "array-find")) {
          storeNumber(executor, command, i, false, "array-find");
@@ -269,7 +269,7 @@ void builtinArrayFind(const Command &command, Executor &executor) {
 void builtinArrayContains(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-contains", array)) return;
-   Value target = resolveVariable(executor, arg(executor, command, 1));
+   Value target = resolveArg(executor, command, 1);
    for (size_t i = 0; i < array->size(); ++i) {
       if (valuesEqual(executor, command, (*array)[i], target, "array-contains")) {
          storeBoolean(executor, command, true, "array-contains");
@@ -282,7 +282,7 @@ void builtinArrayContains(const Command &command, Executor &executor) {
 void builtinArrayEraseAll(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-erase-all", array)) return;
-   Value target = resolveVariable(executor, arg(executor, command, 1));
+   Value target = resolveArg(executor, command, 1);
    array->erase(std::remove_if(array->begin(), array->end(), [&](const Value &v){ return valuesEqual(executor, command, v, target, "array-erase-all"); }), array->end());
 }
 
@@ -293,7 +293,7 @@ void builtinArrayShallowCopy(const Command &command, Executor &executor) {
 }
 
 void builtinArrayDeepCopy(const Command &command, Executor &executor) {
-   Value array = resolveVariable(executor, arg(executor, command, 0));
+   Value array = resolveArg(executor, command, 0);
    if (array.type != VALUE_ARRAY) {
       error(executor.diagnostics, command.file, command.line, "array-deep-copy: Expected Array, got %s instead", getValueName(array.type));
       return;
@@ -303,7 +303,6 @@ void builtinArrayDeepCopy(const Command &command, Executor &executor) {
       return;
    }
    std::map<std::pair<size_t, ValueType>, size_t> copied;
-   Value result {VALUE_ARRAY};
-   result.array = deepCopy(command, executor, array.array, array.type, copied);
+   Value result {.type = VALUE_ARRAY, .array = deepCopy(command, executor, array.array, array.type, copied)};
    storeInRegister(executor, command, back(executor, command), result, "array-deep-copy");
 }

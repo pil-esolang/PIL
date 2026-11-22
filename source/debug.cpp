@@ -27,7 +27,7 @@ void debugBytecode(bool debug, Executor &executor) {
    if (!debug) return;
    puts("\nBytecode:");
 
-   for (Command &command: executor.code) {
+   for (const Command &command: executor.code) {
       const char *file = getLexeme(executor.cache, command.file).c_str();
       const char *lexeme = getLexeme(executor.cache, command.lexeme).c_str();
       printf("%s:%-5zu %s: ", file, command.line, lexeme);

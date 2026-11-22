@@ -1,6 +1,5 @@
 #include "cache.hpp"
 
-// lexeme cache
 size_t pushLexeme(LexemeCache &cache, const std::string &lexeme) {
    size_t id = cache.lexemes.size();
    cache.lexemes.push_back(lexeme);
@@ -24,8 +23,4 @@ std::string &getLexeme(LexemeCache &cache, size_t id) {
       exit(EXIT_FAILURE);
    }
    return cache.lexemes[id];
-}
-
-size_t getLexemeCount(LexemeCache &cache) {
-   return cache.lexemes.size();
 }

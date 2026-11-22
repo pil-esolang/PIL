@@ -2,15 +2,6 @@
 #include "pil.hpp"
 #include <cstdarg>
 
-static constexpr const char *PROGRAM_EXITED = "\e[0;31mProgram exited with error code %d.\e[0m\n";
-static constexpr const char *STACKTRACE_INFO = "\e[0;34mStack Trace\e[0m";
-static constexpr const char *ERROR_TEXT = "\e[0;31mError\e[0m";
-static constexpr const char *WARNING_TEXT = "\e[0;33mWarning\e[0m";
-
-static constexpr const char *LEAKED_OBJECTS = "\e[0;31mProgram leaked %zu %s.\e[0m\n";
-static constexpr const char *AND_N_OTHERS = "\e[0;34mAnd %zu others...\e[0m\n";
-static constexpr size_t MAX_LEAK_TRACE = 5;
-
 bool shouldError(Diagnostics &diagnostics, ErrorSeverity errorSeverity) {
    return diagnostics.severity >= errorSeverity;
 }
@@ -53,7 +44,7 @@ void clear(Diagnostics &diagnostics) {
 }
 
 void printDiagnostic(LexemeCache &cache, Diagnostic &diagnostic) {
-   const char *type = (diagnostic.severity == SEVERITY_ERROR ? ERROR_TEXT : WARNING_TEXT);
+   const char *type = (diagnostic.severity == SEVERITY_ERROR ? "\e[0;31mError\e[0m" : "\e[0;33mWarning\e[0m");
    const char *message = diagnostic.message;
 
    if (diagnostic.file == 0 && diagnostic.line == 0) {
@@ -68,7 +59,7 @@ void printDiagnostic(LexemeCache &cache, Diagnostic &diagnostic) {
 void errorIfSevereEnough(ErrorSeverity severity, ErrorSeverity quitSeverity) {
    if (severity >= quitSeverity) {
       int exitCode = EXIT_FAILURE;
-      printf(PROGRAM_EXITED, exitCode);
+      printf("\e[0;31mProgram exited with error code %d.\e[0m\n", exitCode);
       exit(exitCode);
    }
 }
@@ -86,7 +77,7 @@ void logStackTrace(Executor &executor, ErrorSeverity quitSeverity) {
    log(executor, SEVERITY_IGNORE);
 
    if (executor.stackTrace.size() > 1) {
-      printf("%s (newest first):\n", STACKTRACE_INFO);
+      printf("\e[0;34mStack Trace\e[0m (newest first):\n");
    }
 
    while (executor.stackTrace.size() > 1) {
@@ -109,19 +100,17 @@ static void logLeakGroup(const char *name, const Container &values, Print print)
       return;
    }
 
-   size_t shown = std::min(size, MAX_LEAK_TRACE);
-   printf(LEAKED_OBJECTS, size, name);
-
+   printf("\e[0;31mProgram leaked %zu %s.\e[0m\n", size, name);
+   size_t shown = std::min(size, 5ul);
    size_t i = 0;
+
    for (const auto &[id, value]: values) {
-      if (i++ >= shown) {
-         break;
-      }
+      if (i++ >= shown) break;
       print(id, value);
    }
 
    if (shown < size) {
-      printf(AND_N_OTHERS, size - shown);
+      printf("\e[0;34mAnd %zu others...\e[0m\n", size - shown);
    }
 }
 

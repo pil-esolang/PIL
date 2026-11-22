@@ -1,9 +1,9 @@
 #ifndef PIL_MAJOR
-#  define PIL_MAJOR 0
+#  define PIL_MAJOR 1
 #endif
 
 #ifndef PIL_MINOR
-#  define PIL_MINOR 0
+#  define PIL_MINOR 1
 #endif
 
 #ifndef PIL_PATCH

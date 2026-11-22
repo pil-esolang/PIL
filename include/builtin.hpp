@@ -295,12 +295,13 @@ void builtinSize(const Command &command, Executor &executor);
 void builtinAt(const Command &command, Executor &executor);
 void builtinStore(const Command &command, Executor &executor);
 
-// def table
+// returns the size of a C array without having to keep track of it manually
 template <typename T, size_t N>
 constexpr size_t arraySize(T (&)[N]) {
    return N;
 }
 
+// built-in definition table
 static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    // string ops
    {"string-new", builtinStringNew, 1, VARIADIC},

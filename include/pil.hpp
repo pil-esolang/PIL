@@ -116,8 +116,6 @@ struct Executor {
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &file, size_t fileLexeme, size_t line);
 void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std::vector<Token> &tokens);
 void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens);
-
-Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants);
 void parsePIL(Executor &executor, std::vector<Token> &tokens);
 
 void call(Executor &executor, const Command &command, Function &function, size_t functionPos, size_t returnCount, size_t argCount);
@@ -128,6 +126,7 @@ void writeToFile(Executor &executor, const std::string &out);
 void readCachedBytecode(Executor &executor, const std::string &in);
 
 // mathematical expression evaluator
+Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants);
 Value evaluateMath(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, Value> &constants);
 
 // allocation

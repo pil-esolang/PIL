@@ -26,6 +26,17 @@ inline char handleEscapeCode(Diagnostics &diagnostics, LexemeCache &cache, PILFi
    return ch;
 }
 
+inline void twoOpLexeme(TokenType def, char next, TokenType nextType, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
+   if (i + 1 < size && file.code[i + 1] == next) { def = nextType; i += 1; }
+   tokens.emplace_back(def, 0, file.lexeme, line);
+}
+
+inline void threeOpLexeme(TokenType def, char next1, TokenType nextType1, char next2, TokenType nextType2, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
+   if (i + 1 < size && file.code[i + 1] == next1) { def = nextType1; i += 1; }
+   else if (i + 1 < size && file.code[i + 1] == next2) { def = nextType2; i += 1; }
+   tokens.emplace_back(def, 0, file.lexeme, line);
+}
+
 constexpr bool isDigit(char c) { return c >= '0' && c <= '9'; }
 constexpr bool isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 constexpr bool isAlnum(char c) { return isDigit(c) || isAlpha(c); }
@@ -72,77 +83,13 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       case '.': tokens.emplace_back(TOKEN_DOT, 0, file.lexeme, line); continue;
       case ',': tokens.emplace_back(TOKEN_COMMA, 0, file.lexeme, line); continue;
       case ';': tokens.emplace_back(TOKEN_SEMICOLON, 0, file.lexeme, line); continue;
-      case '*':
-         if (i + 1 < size && file.code[i + 1] == '*') {
-            tokens.emplace_back(TOKEN_STAR_STAR, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_STAR, 0, file.lexeme, line);
-         }
-         continue;
-      case '&':
-         if (i + 1 < size && file.code[i + 1] == '&') {
-            tokens.emplace_back(TOKEN_LAND, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_BAND, 0, file.lexeme, line);
-         }
-         continue;
-      case '|':
-         if (i + 1 < size && file.code[i + 1] == '|') {
-            tokens.emplace_back(TOKEN_LOR, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_BOR, 0, file.lexeme, line);
-         }
-         continue;
-      case '=':
-         if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_EQUAL, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_ASSIGN, 0, file.lexeme, line);
-         }
-         continue;
-      case '!':
-         if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_INEQUAL, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_LNOT, 0, file.lexeme, line);
-         }
-         continue;
-      case '<':
-         if (i + 1 < size && file.code[i + 1] == '<') {
-            tokens.emplace_back(TOKEN_BSHL, 0, file.lexeme, line);
-            i += 1;
-         }
-         else if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_LESSER_EQUAL, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_LESSER, 0, file.lexeme, line);
-         }
-         continue;
-      case '>':
-         if (i + 1 < size && file.code[i + 1] == '>') {
-            tokens.emplace_back(TOKEN_BSHR, 0, file.lexeme, line);
-            i += 1;
-         }
-         else if (i + 1 < size && file.code[i + 1] == '=') {
-            tokens.emplace_back(TOKEN_GREATER_EQUAL, 0, file.lexeme, line);
-            i += 1;
-         }
-         else {
-            tokens.emplace_back(TOKEN_GREATER, 0, file.lexeme, line);
-         }
-         continue;
+      case '*': twoOpLexeme(TOKEN_STAR, '*', TOKEN_STAR_STAR, i, tokens, file, size, line); continue;
+      case '&': twoOpLexeme(TOKEN_BAND, '&', TOKEN_LAND, i, tokens, file, size, line); continue;
+      case '|': twoOpLexeme(TOKEN_BOR, '|', TOKEN_LOR, i, tokens, file, size, line); continue;
+      case '=': twoOpLexeme(TOKEN_ASSIGN, '=', TOKEN_EQUAL, i, tokens,  file, size, line); continue;
+      case '!': twoOpLexeme(TOKEN_LNOT, '=', TOKEN_INEQUAL, i, tokens, file, size, line); continue;
+      case '<': threeOpLexeme(TOKEN_LESSER, '=', TOKEN_LESSER_EQUAL, '<', TOKEN_BSHL, i, tokens, file, size, line); continue;
+      case '>': threeOpLexeme(TOKEN_GREATER, '=', TOKEN_GREATER_EQUAL, '>', TOKEN_BSHR, i, tokens, file, size, line); continue;
       }
 
       if (ch == '#') {

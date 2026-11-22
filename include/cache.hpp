@@ -3,8 +3,9 @@
 #include <vector>
 #include <unordered_map>
 
-// lexeme cache
-struct LexemeCache {      
+struct LexemeCache {
+   // what this does is make it so that not only strings can be hashed, but
+   // also string views, which makes the lexeme cache blazingly fast
    struct TransparentHash {
       using is_transparent = void;
       size_t operator () (std::string_view sv) const { return std::hash<std::string_view>{}(sv); }
@@ -19,7 +20,7 @@ struct LexemeCache {
    std::unordered_map<std::string, size_t, TransparentHash, TransparentEq> lexemeCache;
 };
 
+// lexeme class methods
 size_t pushLexeme(LexemeCache &cache, const std::string &lexeme);
 size_t cacheLexeme(LexemeCache &cache, std::string_view sv);
 std::string &getLexeme(LexemeCache &cache, size_t id);
-size_t getLexemeCount(LexemeCache &cache);

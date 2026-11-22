@@ -28,9 +28,6 @@ bool ValueEqual::operator () (Value a, Value b) const {
    else if ((a.type == VALUE_STRING || a.type == VALUE_CSTRING) && (b.type == VALUE_STRING || b.type == VALUE_CSTRING)) {
       return getString(*executor, a, 0, 0) == getString(*executor, b, 0, 0);
    }
-   else if (a.type == VALUE_COUNT && b.type == VALUE_COUNT) {
-      return true;
-   }
    else if (a.type == VALUE_FUNCTION && b.type == VALUE_FUNCTION) {
       return a.function == b.function;
    }
@@ -40,7 +37,7 @@ bool ValueEqual::operator () (Value a, Value b) const {
    else if (a.type == VALUE_STRUCT && b.type == VALUE_STRUCT) {
       return a.structure == b.structure;
    }
-   return false;
+   return a.type == VALUE_COUNT && b.type == VALUE_COUNT;
 }
 
 const std::string &getString(Executor &executor, Value stringValue, size_t file, size_t line) {

@@ -34,7 +34,7 @@ inline void stringCharFind(const Command &command, Executor &executor, const cha
 void builtinStringNew(const Command &command, Executor &executor) {
    std::string result;
    for (size_t i = 1; i < command.argCount; ++i) {
-      result += toString(executor, arg(executor, command, i), "string-new", command.file, command.line);
+      result += toString(executor, resolveArg(executor, command, i), "string-new", command.file, command.line);
    }
    storeString(executor, command, result, arg(executor, command, 0), "string-new");
 }
@@ -51,7 +51,7 @@ void builtinStringRepeat(const Command &command, Executor &executor) {
       return;
    }
 
-   std::string fill = toString(executor, arg(executor, command, 2), "string-repeat", command.file, command.line);
+   std::string fill = toString(executor, resolveArg(executor, command, 2), "string-repeat", command.file, command.line);
    result.reserve(n * fill.size());
    for (pilint_t i = 0; i < n; ++i) {
       result += fill;
@@ -121,8 +121,7 @@ void builtinStringAt(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "string-at: Index " LONG_FMT " is out of bounds", id);
       return;
    }
-   Value value {VALUE_CHARACTER};
-   value.character = (*string)[id];
+   Value value {.type = VALUE_CHARACTER, .character = (*string)[id]};
    storeInRegister(executor, command, value, "string-at");
 }
 
@@ -133,8 +132,7 @@ void builtinStringBack(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "string-back: Cannot get the back character of string since the string is empty");
       return;
    }
-   Value value {VALUE_CHARACTER};
-   value.character = string->back();
+   Value value {.type = VALUE_CHARACTER, .character = string->back()};
    storeInRegister(executor, command, value, "string-back");
 }
 
@@ -145,8 +143,7 @@ void builtinStringFront(const Command &command, Executor &executor) {
       error(executor.diagnostics, command.file, command.line, "string-front: Cannot get the front character of string since the string is empty");
       return;
    }
-   Value value {VALUE_CHARACTER};
-   value.character = string->front();
+   Value value {.type = VALUE_CHARACTER, .character = string->front()};
    storeInRegister(executor, command, value, "string-front");
 }
 

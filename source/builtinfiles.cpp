@@ -7,12 +7,12 @@
 #include <chrono>
 
 #ifdef _WIN32
-#define PIL_POPEN _popen
-#define PIL_PCLOSE _pclose
+#  define PIL_POPEN _popen
+#  define PIL_PCLOSE _pclose
 #else
-#include <sys/wait.h>
-#define PIL_POPEN popen
-#define PIL_PCLOSE pclose
+#  include <sys/wait.h>
+#  define PIL_POPEN popen
+#  define PIL_PCLOSE pclose
 #endif
 
 void builtinFileOpen(const Command &command, Executor &executor) {
@@ -46,8 +46,7 @@ void builtinFileOpen(const Command &command, Executor &executor) {
 
 void builtinFileClose(const Command &command, Executor &executor) {
    if (!hasPermission(command, executor, "file-close", FILE_LOCK)) return;
-   Value a = arg(executor, command, 0);
-   Value &handle = resolveVariableByRef(executor, a);
+   Value &handle = resolveArgByRef(executor, command, 0);
    if (handle.type != VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "file-close: Expected File, got %s instead", getValueName(handle.type));
       return;
@@ -343,8 +342,7 @@ void builtinDirList(const Command &command, Executor &executor) {
    std::filesystem::directory_iterator end;
    for (; it != end; it.increment(ec)) {
       if (ec) break;
-      Value v {VALUE_STRING};
-      v.string = allocateString(executor, it->path().filename().string());
+      Value v {.type = VALUE_STRING, .string = allocateString(executor, it->path().filename().string())};
       entries.push_back(v);
    }
    storeArray(executor, command, entries, back(executor, command), "dir-list");

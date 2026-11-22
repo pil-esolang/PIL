@@ -7,9 +7,26 @@
 #include <random>
 #include <unordered_set>
 
-enum Comparison: char {
-   COMPARISON_LESS, COMPARISON_GREATER, COMPARISON_EQUAL, COMPARISON_NOT_EQUAL
-};
+// types
+inline bool isValueString(Value value) {
+   return value.type == VALUE_STRING || value.type == VALUE_CSTRING;
+}
+
+inline bool isValueNumber(Value value) {
+   return value.type == VALUE_INTEGER || value.type == VALUE_FLOATING;
+}
+
+inline bool isValueContainer(Value value) {
+   return value.type == VALUE_LOCAL || value.type == VALUE_GLOBAL || value.type == VALUE_STRUCT_ACCESS;
+}
+
+inline bool isValueNonComparable(Value value) {
+   return value.type == VALUE_MAP || value.type == VALUE_FILE;
+}
+
+inline bool isValueNonHashable(Value value) {
+   return value.type == VALUE_MAP || value.type == VALUE_FILE || value.type == VALUE_ARRAY;
+}
 
 // generic helpers
 inline Value &resolveVariableByRef(Executor &executor, Value &value) {
@@ -72,6 +89,18 @@ inline Value back(const Executor &executor, const Command &command) {
    return executor.arguments[command.argStart + command.argCount - 1];
 }
 
+inline Value &resolveArgByRef(Executor &executor, const Command &command, size_t i) {
+   return resolveVariableByRef(executor, executor.arguments[command.argStart + i]);
+}
+
+inline Value resolveArg(Executor &executor, const Command &command, size_t i) {
+   return resolveVariable(executor, executor.arguments[command.argStart + i]);
+}
+
+inline Value resolveBack(Executor &executor, const Command &command) {
+   return resolveVariable(executor, executor.arguments[command.argStart + command.argCount - 1]);
+}
+
 inline void storeInRegister(Executor &executor, const Command &command, Value reg, Value value, const char *function) {
    if (reg.type == VALUE_LOCAL) {
       executor.locals[executor.stackTrace.top().localStart + reg.local] = value;
@@ -126,8 +155,8 @@ inline void storeInRegister(Executor &executor, const Command &command, Value va
 
 // getters
 inline pilfloat_t getNum(Executor &executor, const Command &command, size_t i, const char *function, bool *floating = nullptr) {
-   Value value = resolveVariable(executor, arg(executor, command, i));
-   if (value.type != VALUE_INTEGER && value.type != VALUE_FLOATING) {
+   Value value = resolveArg(executor, command, i);
+   if (!isValueNumber(value)) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Number, got %s instead", function, getValueName(value.type));
       return 0.0;
    }
@@ -136,7 +165,7 @@ inline pilfloat_t getNum(Executor &executor, const Command &command, size_t i, c
 }
 
 inline bool getBool(Executor &executor, const Command &command, size_t i) {
-   Value v = resolveVariable(executor, arg(executor, command, i));
+   Value v = resolveArg(executor, command, i);
    switch (v.type) {
    case VALUE_INTEGER: return v.integer != 0;
    case VALUE_FLOATING: return v.floating != 0.0;
@@ -157,7 +186,7 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
 }
 
 inline char getChar(const Command &command, Executor &executor, const char *function, size_t i) {
-   Value value = resolveVariable(executor, arg(executor, command, i));
+   Value value = resolveArg(executor, command, i);
    if (value.type != VALUE_CHARACTER) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Character, got %s instead", function, getValueName(value.type));
       return char{};
@@ -166,7 +195,7 @@ inline char getChar(const Command &command, Executor &executor, const char *func
 }
 
 inline bool stringOrError(const Command &command, Executor &executor, const char *function, std::string *&out, size_t i = 0) {
-   Value string = resolveVariable(executor, arg(executor, command, i));
+   Value string = resolveArg(executor, command, i);
    if (string.type != VALUE_STRING) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected String, got %s instead", function, getValueName(string.type));
       return false;
@@ -180,7 +209,7 @@ inline bool stringOrError(const Command &command, Executor &executor, const char
 }
 
 inline bool constStringOrError(const Command &command, Executor &executor, const char *function, const std::string *&stringOut, size_t i = 0) {
-   Value value = resolveVariable(executor, arg(executor, command, i));
+   Value value = resolveArg(executor, command, i);
    if (value.type == VALUE_CSTRING) {
       stringOut = &getLexeme(executor.cache, value.string);
       return true;
@@ -225,7 +254,7 @@ inline bool constStringOrCharOrError(const Command &command, Executor &executor,
 }
 
 inline bool arrayOrError(const Command &command, Executor &executor, const char *function, std::vector<Value> *&out, size_t i = 0, bool allowStructs = false) {
-   Value array = resolveVariable(executor, arg(executor, command, i));
+   Value array = resolveArg(executor, command, i);
    if (array.type != VALUE_ARRAY) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Array, got %s instead", function, getValueName(array.type));
       return false;
@@ -244,7 +273,7 @@ inline bool arrayOrError(const Command &command, Executor &executor, const char 
 }
 
 inline bool mapOrError(const Command &command, Executor &executor, const char *function, PILMap *&out, size_t i = 0) {
-   Value map = resolveVariable(executor, arg(executor, command, i));
+   Value map = resolveArg(executor, command, i);
    if (map.type != VALUE_MAP) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Map, got %s instead", function, getValueName(map.type));
       return false;
@@ -258,7 +287,7 @@ inline bool mapOrError(const Command &command, Executor &executor, const char *f
 }
 
 inline bool fileHandleOrError(const Command &command, Executor &executor, const char *function, std::fstream *&out, size_t i = 0) {
-   Value handle = resolveVariable(executor, arg(executor, command, i));
+   Value handle = resolveArg(executor, command, i);
    if (handle.type != VALUE_FILE) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected File, got %s instead", function, getValueName(handle.type));
       return false;
@@ -280,26 +309,27 @@ inline void storeNumber(Executor &executor, const Command &command, pilfloat_t n
 }
 
 inline void storeBoolean(Executor &executor, const Command &command, bool result, const char *function) {
-   Value value {VALUE_INTEGER};
-   value.integer = (result ? 1 : 0);
+   Value value {.type = VALUE_INTEGER, .integer = (result ? 1 : 0)};
    storeInRegister(executor, command, value, function);
 }
 
+inline void storeBoolean(Executor &executor, const Command &command, Value &reg, bool result, const char *function) {
+   Value value {.type = VALUE_INTEGER, .integer = (result ? 1 : 0)};
+   storeInRegister(executor, command, reg, value, function);
+}
+
 inline void storeString(Executor &executor, const Command &command, const std::string &string, Value reg, const char *function) {
-   Value value {VALUE_STRING};
-   value.string = allocateString(executor, string);
+   Value value {.type = VALUE_STRING, .string = allocateString(executor, string)};
    storeInRegister(executor, command, reg, value, function);
 }
 
 inline void storeArray(Executor &executor, const Command &command, const std::vector<Value> &array, Value reg, const char *function) {
-   Value value {VALUE_ARRAY};
-   value.array = allocateArray(executor, array);
+   Value value {.type = VALUE_ARRAY, .array = allocateArray(executor, array)};
    storeInRegister(executor, command, reg, value, function);
 }
 
 inline void storeMap(Executor &executor, const Command &command, const PILMap &map, Value reg, const char *function) {
-   Value value {VALUE_MAP};
-   value.map = allocateMap(executor, map);
+   Value value {.type = VALUE_MAP, .map = allocateMap(executor, map)};
    storeInRegister(executor, command, reg, value, function);
 }
 
@@ -315,12 +345,10 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
    for (size_t i = 0; i < array1.size(); ++i) {
       Value v1 = array1[i];
       Value v2 = array2[i];
-      if ((v1.type == VALUE_STRING || v1.type == VALUE_CSTRING) && (v2.type == VALUE_STRING || v2.type == VALUE_CSTRING)) {
-         const std::string &s1 = (v1.type == VALUE_STRING ? getString(executor, v1.string, file, line) : getLexeme(executor.cache, v1.string));
-         const std::string &s2 = (v2.type == VALUE_STRING ? getString(executor, v2.string, file, line) : getLexeme(executor.cache, v2.string));
-         if (s1 != s2) return false;
+      if (isValueString(v1) && isValueString(v2) && getString(executor, v1, file, line) != getString(executor, v2, file, line)) {
+         return false;
       }
-      else if (v1.type == VALUE_MAP || v2.type == VALUE_MAP || v1.type == VALUE_FILE || v2.type == VALUE_FILE) {
+      else if (isValueNonComparable(v1) || isValueNonComparable(v2)) {
          error(executor.diagnostics, file, line, "%s: Cannot compare %s to %s", function, getValueName(v1.type), getValueName(v2.type));
          return false;
       }
@@ -334,8 +362,12 @@ inline bool arraysEqual(Executor &executor, Value arr1, Value arr2, size_t file,
    return true;
 }
 
+enum Comparison: char {
+   COMPARISON_LESS, COMPARISON_GREATER, COMPARISON_EQUAL, COMPARISON_NOT_EQUAL
+};
+
 inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t file, size_t line, bool softie, const char *function) {
-   if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_FLOATING)) {
+   if (isValueNumber(a) && isValueNumber(b)) {
       pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
       pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return (x < y ? COMPARISON_LESS : x > y ? COMPARISON_GREATER : COMPARISON_EQUAL);
@@ -343,10 +375,8 @@ inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t 
    else if (a.type == VALUE_CHARACTER && b.type == VALUE_CHARACTER) {
       return (a.character < b.character ? COMPARISON_LESS : a.character > b.character ? COMPARISON_GREATER : COMPARISON_EQUAL);
    }
-   else if ((a.type == VALUE_STRING || a.type == VALUE_CSTRING) && (b.type == VALUE_STRING || b.type == VALUE_CSTRING)) {
-      const std::string &as = (a.type == VALUE_STRING ? getString(executor, a.string, file, line) : getLexeme(executor.cache, a.string));
-      const std::string &bs = (b.type == VALUE_STRING ? getString(executor, b.string, file, line) : getLexeme(executor.cache, b.string));
-      int c = as.compare(bs);
+   else if (isValueString(a) && isValueString(b)) {
+      int c = getString(executor, a, file, line).compare(getString(executor, b, file, line));
       return (c < 0 ? COMPARISON_LESS : c > 0 ? COMPARISON_GREATER : COMPARISON_EQUAL);
    }
    // only check equality for following types
@@ -356,6 +386,9 @@ inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t 
    }
    else if (a.type == VALUE_COUNT && b.type == VALUE_COUNT && softie) {
       return COMPARISON_EQUAL;
+   }
+   else if ((a.type == VALUE_COUNT || b.type == VALUE_COUNT) && softie) {
+      return COMPARISON_NOT_EQUAL;
    }
    else if (a.type == VALUE_FUNCTION && b.type == VALUE_FUNCTION && softie) {
       return (a.function == b.function ? COMPARISON_EQUAL : COMPARISON_NOT_EQUAL);
@@ -370,21 +403,16 @@ inline Comparison compareTwoValues(Executor &executor, Value a, Value b, size_t 
       error(executor.diagnostics, file, line, "%s: Cannot compare %s to %s", function, getValueName(a.type), getValueName(b.type));
       return COMPARISON_NOT_EQUAL;
    }
-   else {
-      return COMPARISON_NOT_EQUAL;
-   }
    return COMPARISON_NOT_EQUAL;
 }
 
 inline void comparisonBuiltin(Executor &executor, const Command &command, const char *function, Comparison expected, bool reverse, bool softie) {
-   Value a = resolveVariable(executor, arg(executor, command, 0));
-   Value b = resolveVariable(executor, arg(executor, command, 1));
-   Comparison result = compareTwoValues(executor, a, b, command.file, command.line, softie, function);
+   Comparison result = compareTwoValues(executor, resolveArg(executor, command, 0), resolveArg(executor, command, 1), command.file, command.line, softie, function);
    storeBoolean(executor, command, (result == expected) != reverse, function);
 }
 
 inline bool valuesEqual(Executor &executor, const Command &command, Value a, Value b, const char *function) {
-   if ((a.type == VALUE_INTEGER || a.type == VALUE_FLOATING) && (b.type == VALUE_INTEGER || b.type == VALUE_INTEGER)) {
+   if (isValueNumber(a) && isValueNumber(b)) {
       pilfloat_t x = (a.type == VALUE_INTEGER) ? (pilfloat_t)a.integer : a.floating;
       pilfloat_t y = (b.type == VALUE_INTEGER) ? (pilfloat_t)b.integer : b.floating;
       return x == y;
@@ -392,17 +420,12 @@ inline bool valuesEqual(Executor &executor, const Command &command, Value a, Val
    else if (a.type == VALUE_CHARACTER && b.type == VALUE_CHARACTER) {
       return a.character == b.character;
    }
-   else if ((a.type == VALUE_STRING || a.type == VALUE_CSTRING) && (b.type == VALUE_STRING || b.type == VALUE_CSTRING)) {
-      const std::string &as = (a.type == VALUE_STRING ? getString(executor, a.string, command.file, command.line) : getLexeme(executor.cache, a.string));
-      const std::string &bs = (b.type == VALUE_STRING ? getString(executor, b.string, command.file, command.line) : getLexeme(executor.cache, b.string));
-      return as == bs;
+   else if (isValueString(a) && isValueString(b)) {
+      return getString(executor, a, command.file, command.line) == getString(executor, b, command.file, command.line);
    }
    else if (a.type == VALUE_ARRAY && b.type == VALUE_ARRAY) {
       std::set<std::pair<size_t, size_t>> active;
       return arraysEqual(executor, a, b, command.file, command.line, function, active);
-   }
-   else if (a.type == VALUE_COUNT && b.type == VALUE_COUNT) {
-      return true;
    }
    else if (a.type == VALUE_FUNCTION && b.type == VALUE_FUNCTION) {
       return a.function == b.function;
@@ -413,17 +436,17 @@ inline bool valuesEqual(Executor &executor, const Command &command, Value a, Val
    else if (a.type == VALUE_STRUCT && b.type == VALUE_STRUCT) {
       return a.structure == b.structure;
    }
-   else if (a.type == VALUE_MAP || b.type == VALUE_MAP || a.type == VALUE_FILE || b.type == VALUE_FILE) {
+   else if (isValueNonComparable(a) || isValueNonComparable(b)) {
       error(executor.diagnostics, command.file, command.line, "%s: Cannot compare %s to %s", function, getValueName(a.type), getValueName(b.type));
       return false;
    }
-   return false;
+   return a.type == VALUE_COUNT && b.type == VALUE_COUNT;
 }
 
 // domain specific helpers
-inline void jumpToLabel(Executor &executor, Value value, const char *function, const char *argument, size_t file, size_t line, bool condition) {
+inline void jumpToLabel(Executor &executor, Value value, const char *function, size_t file, size_t line, bool condition) {
    if (value.type != VALUE_LABEL) {
-      error(executor.diagnostics, file, line, "%s: Expected Label for the %s argument, got %s instead", function, argument, getValueName(value.type));
+      error(executor.diagnostics, file, line, "%s: Expected Label to jump to, got %s instead", function, getValueName(value.type));
       return;
    }
    if (condition) {
@@ -469,11 +492,8 @@ inline std::string toStringImpl(Executor &executor, Value value, const char *fun
       active.erase(value.array);
       return result;
    }
-   case VALUE_MAP:
-      error(executor.diagnostics, file, line, "%s: Cannot convert Map to String", function);
-      return "(null)";
-   case VALUE_FILE:
-      error(executor.diagnostics, file, line, "%s: Cannot convert File to String", function);
+   case VALUE_MAP: case VALUE_FILE:
+      error(executor.diagnostics, file, line, "%s: Cannot convert %s to String", getValueName(value.type), function);
       return "(null)";
    default: return "(null)";
    }
@@ -485,8 +505,8 @@ inline std::string toString(Executor &executor, Value value, const char *functio
 }
 
 inline std::string format(const Command &command, Executor &executor, const char *function, size_t offset) {
-   Value string = resolveVariable(executor, arg(executor, command, offset));
-   if (string.type != VALUE_CSTRING && string.type != VALUE_STRING) {
+   Value string = resolveArg(executor, command, offset);
+   if (!isValueString(string)) {
       error(executor.diagnostics, command.file, command.line, "%s: Expected String for the 1st argument, got %s instead", function, getValueName(string.type));
       return "";
    }
@@ -552,7 +572,7 @@ inline void printValue(Executor &executor, Value a, size_t file, size_t line, st
 inline void print(const Command &command, Executor &executor, const char *function, size_t file, size_t line) {
    std::set<std::pair<size_t, ValueType>> active;
    for (size_t i = 0; i < command.argCount; ++i) {
-      Value a = resolveVariable(executor, arg(executor, command, i));
+      Value a = resolveArg(executor, command, i);
       active.clear();
       printValue(executor, a, file, line, active);
    }

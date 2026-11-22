@@ -8,17 +8,19 @@
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-  #define PRINTF_ATTR(fmt_idx, arg_idx) __attribute__((format(printf, fmt_idx, arg_idx)))
-  #define PRINTF_FMT_PARAM
+#  define PRINTF_ATTR(fmt_idx, arg_idx) __attribute__((format(printf, fmt_idx, arg_idx)))
+#  define PRINTF_FMT_PARAM
 #elif defined(_MSC_VER)
-  #include <sal.h>
-  #define PRINTF_ATTR(fmt_idx, arg_idx)
-  #define PRINTF_FMT_PARAM _Printf_format_string_
+#  include <sal.h>
+#  define PRINTF_ATTR(fmt_idx, arg_idx)
+#  define PRINTF_FMT_PARAM _Printf_format_string_
 #else
-  #define PRINTF_ATTR(fmt_idx, arg_idx)
-  #define PRINTF_FMT_PARAM
+#  define PRINTF_ATTR(fmt_idx, arg_idx)
+#  define PRINTF_FMT_PARAM
 #endif
 
+// none - there are no errors. warning - there are only warnings present.
+// error - there are critical errors. ignore - ignore all diagnostics.
 enum ErrorSeverity: char {
    SEVERITY_NONE, SEVERITY_WARNING, SEVERITY_ERROR, SEVERITY_IGNORE
 };

@@ -22,8 +22,10 @@ void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unord
       function.paramCount = def.params;
       executor.functions.push_back(function);
       constants[cached] = value;
+      return;
    }
-   else if (auto it = executor.cache.lexemeCache.find(def.name); it != executor.cache.lexemeCache.end()) {
+
+   if (auto it = executor.cache.lexemeCache.find(def.name); it != executor.cache.lexemeCache.end()) {
       if (!executor.allowFileio && (def.flags & FILE_LOCK)) {
          if (executor.fileioErrored) return;
          executor.fileioErrored = true;
@@ -105,40 +107,38 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
    if (tokens[i].type == TOKEN_L_BRACKET) {
       return evaluateMath(executor, tokens, i, constants);
    }
-   else {
-      // enumeration entries
-      if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i + 1].type == TOKEN_DOT && tokens[i + 2].type == TOKEN_IDENTIFIER) {
-         if (auto it = enumerationMap.find({tokens[i].lexeme, tokens[i + 2].lexeme}); it != enumerationMap.end()) {
-            i += 2;
-            return it->second;
-         }
-      }
-
-      // regular values and structure access
-      Value value = parseToken(executor, tokens[i], functionParamMap, constants);
-      while ((value.type == VALUE_LOCAL || value.type == VALUE_STRUCT_ACCESS) && tokens[i + 1].type == TOKEN_DOT) {
+   // enumeration entries
+   if (tokens[i].type == TOKEN_IDENTIFIER && tokens[i + 1].type == TOKEN_DOT && tokens[i + 2].type == TOKEN_IDENTIFIER) {
+      if (auto it = enumerationMap.find({tokens[i].lexeme, tokens[i + 2].lexeme}); it != enumerationMap.end()) {
          i += 2;
-         if (tokens[i].type != TOKEN_IDENTIFIER) {
-            error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after structure field access, got %s instead", getTokenName(tokens[i].type));
-            return value;
-         }
-         StructChainLink link;
-         if (value.type == VALUE_LOCAL) {
-            link.parentIsChain = false;
-            link.parent = value.local;
-         }
-         else {
-            link.parentIsChain = true;
-            link.parent = value.chain;
-         }
-         link.field = tokens[i].lexeme;
-
-         size_t index = executor.structChains.size();
-         executor.structChains.push_back(link);
-         value = Value{.type = VALUE_STRUCT_ACCESS, .chain = index};
+         return it->second;
       }
-      return value;
    }
+
+   // regular values and structure access
+   Value value = parseToken(executor, tokens[i], functionParamMap, constants);
+   while ((value.type == VALUE_LOCAL || value.type == VALUE_STRUCT_ACCESS) && tokens[i + 1].type == TOKEN_DOT) {
+      i += 2;
+      if (tokens[i].type != TOKEN_IDENTIFIER) {
+         error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after structure field access, got %s instead", getTokenName(tokens[i].type));
+         return value;
+      }
+      StructChainLink link;
+      if (value.type == VALUE_LOCAL) {
+         link.parentIsChain = false;
+         link.parent = value.local;
+      }
+      else {
+         link.parentIsChain = true;
+         link.parent = value.chain;
+      }
+      link.field = tokens[i].lexeme;
+
+      size_t index = executor.structChains.size();
+      executor.structChains.push_back(link);
+      value = Value{.type = VALUE_STRUCT_ACCESS, .chain = index};
+   }
+   return value;
 }
 
 // take the tokens and turn them into executable function blocks and commands. we have 3 levels here: file -> functions ->
@@ -149,20 +149,17 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
    // estimate code size. some rough estimates
    size_t size = tokens.size();
-   executor.code.reserve(size / 3);
-   executor.arguments.reserve(size / 4);
-   executor.functions.reserve(size / 16 + 4); // I don't remember why I put it as this anymore
+   executor.code.reserve(size / 8);
+   executor.arguments.reserve(size / 8);
+   executor.functions.reserve(size / 64 + 4);
 
-   for (size_t i = 0; i < arraySize(BUILTIN_DEFINITIONS); ++i) {
+   size_t builtinCount = arraySize(BUILTIN_DEFINITIONS);
+   for (size_t i = 0; i < builtinCount; ++i) {
       pushBuiltin(executor, BUILTIN_DEFINITIONS[i], i, constants);
    }
 
-   // function name and label prepass
    std::unordered_map<size_t, size_t> functionParamMap;
    std::map<std::pair<size_t, size_t>, Value> enumerationMap;
-
-   size_t returnLexeme = cacheLexeme(executor.cache, "return");
-   size_t returnId = constants[returnLexeme].function;
 
    size_t defineLexeme = cacheLexeme(executor.cache, "local");
    size_t callLexeme = cacheLexeme(executor.cache, "call");
@@ -172,9 +169,13 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
    size_t structLexeme = cacheLexeme(executor.cache, "struct");
    size_t arrayLexeme = cacheLexeme(executor.cache, "array");
    size_t enumLexeme = cacheLexeme(executor.cache, "enum");
+   size_t returnLexeme = cacheLexeme(executor.cache, "return");
+   size_t returnId = constants[returnLexeme].function;
 
    bool isConstantEvaluator = false;
 
+   // function name and label prepass. just let the rest of the parser know
+   // what structures we'll have and what are their properties and stuff
    for (size_t i = 0; i < size; ++i) {
       if (tokens[i].type == TOKEN_L_BRACKET) isConstantEvaluator = true;
       if (tokens[i].type == TOKEN_R_BRACKET) isConstantEvaluator = false;

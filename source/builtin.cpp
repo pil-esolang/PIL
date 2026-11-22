@@ -98,30 +98,30 @@ void builtinNot(const Command &command, Executor &executor) {
 }
 
 void builtinGoto(const Command &command, Executor &executor) {
-   jumpToLabel(executor, resolveVariable(executor, arg(executor, command, 0)), "goto", "1st", command.file, command.line, true);
+   jumpToLabel(executor, resolveArg(executor, command, 0), "goto", command.file, command.line, true);
 }
 
 void builtinJmp(const Command &command, Executor &executor) {
-   jumpToLabel(executor, resolveVariable(executor, arg(executor, command, 1)), "jmp", "2nd", command.file, command.line, getBool(executor, command, 0));
+   jumpToLabel(executor, resolveArg(executor, command, 1), "jmp", command.file, command.line, getBool(executor, command, 0));
 }
 
 void builtinJmpn(const Command &command, Executor &executor) {
-   jumpToLabel(executor, resolveVariable(executor, arg(executor, command, 1)), "jmpn", "2nd", command.file, command.line, !getBool(executor, command, 0));
+   jumpToLabel(executor, resolveArg(executor, command, 1), "jmpn", command.file, command.line, !getBool(executor, command, 0));
 }
 
 void builtinJmptable(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    bool hasDefault = (command.argCount % 2 == 0);
 
    for (size_t i = 1; i < command.argCount - hasDefault; i += 2) {
-      Value result = resolveVariable(executor, arg(executor, command, i));
+      Value result = resolveArg(executor, command, i);
       if (valuesEqual(executor, command, value, result, "jmptable")) {
-         jumpToLabel(executor, resolveVariable(executor, arg(executor, command, i + 1)), "jmptable", "destination", command.file, command.line, true);
+         jumpToLabel(executor, resolveArg(executor, command, i + 1), "jmptable", command.file, command.line, true);
          return;
       }
    }
    if (hasDefault) {
-      jumpToLabel(executor, resolveVariable(executor, back(executor, command)), "jmptable", "destination", command.file, command.line, true);
+      jumpToLabel(executor, resolveBack(executor, command), "jmptable", command.file, command.line, true);
    }
 }
 
@@ -131,7 +131,7 @@ void builtinCall(const Command &command, Executor &executor) {
 }
 
 void builtinFunccall(const Command &command, Executor &executor) {
-   Value f = resolveVariable(executor, arg(executor, command, 0));
+   Value f = resolveArg(executor, command, 0);
    if (f.type != VALUE_FUNCTION) {
       error(executor.diagnostics, command.file, command.line, "func-call: Expected function to call for the 1st argument, got %s instead", getValueName(f.type));
       return;
@@ -162,7 +162,7 @@ void builtinReturn(const Command &command, Executor &executor) {
    executor.returns.clear();
 
    for (size_t i = 0; i < executor.returnCount; ++i) {
-      executor.returns.push_back(resolveVariable(executor, arg(executor, command, i)));
+      executor.returns.push_back(resolveArg(executor, command, i));
    }
    executor.locals.resize(trace.localStart);
    executor.stackTrace.pop();
@@ -183,7 +183,7 @@ void builtinReturn(const Command &command, Executor &executor) {
 
 // error handling
 void builtinCatch(const Command &command, Executor &executor) {
-   Value f = resolveVariable(executor, arg(executor, command, 1));
+   Value f = resolveArg(executor, command, 1);
    if (f.type != VALUE_FUNCTION) {
       error(executor.diagnostics, command.file, command.line, "catch: Expected function to call for the 2nd argument, got %s instead", getValueName(f.type));
       return;
@@ -218,19 +218,18 @@ void builtinCatch(const Command &command, Executor &executor) {
 }
 
 void builtinAssert(const Command &command, Executor &executor) {
-   if (!getBool(executor, command, 0)) {
-      Value value = resolveVariable(executor, arg(executor, command, 1));
-      if (value.type != VALUE_STRING && value.type != VALUE_CSTRING) {
-         error(executor.diagnostics, command.file, command.line, "assert: Expected String as the 2nd argument, got %s instead", getValueName(value.type));
-         return;
-      }
-      error(executor.diagnostics, 0, 0, "%s", format(command, executor, "assert", 1).c_str());
+   if (getBool(executor, command, 0)) return;
+   Value value = resolveArg(executor, command, 1);
+   if (!isValueString(value)) {
+      error(executor.diagnostics, command.file, command.line, "assert: Expected String as the 2nd argument, got %s instead", getValueName(value.type));
+      return;
    }
+   error(executor.diagnostics, 0, 0, "%s", format(command, executor, "assert", 1).c_str());
 }
 
 void builtinWarn(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   if (value.type != VALUE_STRING && value.type != VALUE_CSTRING) {
+   Value value = resolveArg(executor, command, 0);
+   if (!isValueString(value)) {
       error(executor.diagnostics, command.file, command.line, "warn: Expected String as the 1st argument, got %s instead", getValueName(value.type));
       return;
    }
@@ -238,8 +237,8 @@ void builtinWarn(const Command &command, Executor &executor) {
 }
 
 void builtinError(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   if (value.type != VALUE_STRING && value.type != VALUE_CSTRING) {
+   Value value = resolveArg(executor, command, 0);
+   if (!isValueString(value)) {
       error(executor.diagnostics, command.file, command.line, "error: Expected String as the 1st argument, got %s instead", getValueName(value.type));
       return;
    }
@@ -274,7 +273,7 @@ void builtinStacktrace(const Command &command, Executor &executor) {
 
 // types
 void builtinTypeof(const Command &command, Executor &executor) {
-   ValueType type = resolveVariable(executor, arg(executor, command, 0)).type;
+   ValueType type = resolveArg(executor, command, 0).type;
    const char *string;
    switch (type) {
    case VALUE_INTEGER: string = "int"; break;
@@ -296,53 +295,45 @@ void builtinTypeof(const Command &command, Executor &executor) {
 }
 
 void builtinIsnum(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    storeBoolean(executor, command, value.type == VALUE_INTEGER || value.type == VALUE_FLOATING, "is-num");
 }
 
 void builtinIsfloat(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_FLOATING, "is-float");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_FLOATING, "is-float");
 }
 
 void builtinIsint(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_INTEGER, "is-int");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_INTEGER, "is-int");
 }
 
 void builtinIschar(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_CHARACTER, "is-char");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_CHARACTER, "is-char");
 }
 
 void builtinIsstring(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    storeBoolean(executor, command, value.type == VALUE_STRING || value.type == VALUE_CSTRING, "is-string");
 }
 
 void builtinIsdynamicstring(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_STRING, "is-dynamic-string");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_STRING, "is-dynamic-string");
 }
 
 void builtinIsconstantstring(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_CSTRING, "is-constant-string");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_CSTRING, "is-constant-string");
 }
 
 void builtinIsarray(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_ARRAY, "is-array");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_ARRAY, "is-array");
 }
 
 void builtinIsmap(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_MAP, "is-map");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_MAP, "is-map");
 }
 
 void builtinIsfilehandle(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_FILE, "is-file-handle");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_FILE, "is-file-handle");
 }
 
 void builtinIsvar(const Command &command, Executor &executor) {
@@ -351,22 +342,19 @@ void builtinIsvar(const Command &command, Executor &executor) {
 }
 
 void builtinIsfunction(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_FUNCTION, "is-function");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_FUNCTION, "is-function");
 }
 
 void builtinIslabel(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_LABEL, "is-label");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_LABEL, "is-label");
 }
 
 void builtinIsStruct(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_LABEL, "is-struct");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_LABEL, "is-struct");
 }
 
 void builtinIsOfStruct(const Command &command, Executor &executor) {
-   Value arrayValue = resolveVariable(executor, arg(executor, command, 0));
+   Value arrayValue = resolveArg(executor, command, 0);
    if (arrayValue.type != VALUE_ARRAY) {
       error(executor.diagnostics, command.file, command.line, "is-of-struct: Expected Array for the 1st argument, got %s instead", getValueName(arrayValue.type));
       return;
@@ -378,7 +366,7 @@ void builtinIsOfStruct(const Command &command, Executor &executor) {
       return;
    }
 
-   Value structValue = resolveVariable(executor, arg(executor, command, 1));
+   Value structValue = resolveArg(executor, command, 1);
    if (structValue.type != VALUE_STRUCT) {
       error(executor.diagnostics, command.file, command.line, "is-of-struct: Expected Struct for the 2nd argument, got %s instead", getValueName(structValue.type));
       return;
@@ -387,29 +375,28 @@ void builtinIsOfStruct(const Command &command, Executor &executor) {
 }
 
 void builtinIsnull(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
-   storeBoolean(executor, command, value.type == VALUE_COUNT, "is-null");
+   storeBoolean(executor, command, resolveArg(executor, command, 0).type == VALUE_COUNT, "is-null");
 }
 
 void builtinIsinf(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    storeBoolean(executor, command, value.type == VALUE_FLOATING && std::isinf(value.floating), "is-inf");
 }
 
 void builtinIsnan(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    storeBoolean(executor, command, value.type == VALUE_FLOATING && std::isnan(value.floating), "is-nan");
 }
 
 void builtinToint(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    Value integer {VALUE_INTEGER};
    switch (value.type) {
    case VALUE_INTEGER: integer.integer = value.integer; break;
    case VALUE_FLOATING: integer.integer = value.floating; break;
    case VALUE_CHARACTER: integer.integer = value.character; break;
    case VALUE_STRING: case VALUE_CSTRING: {
-      const std::string &str = (value.type == VALUE_STRING ? getString(executor, value.string, command.file, command.line) : getLexeme(executor.cache, value.string));
+      const std::string &str = getString(executor, value, command.file, command.line);
       try {
          size_t pos = 0;
          pilint_t result = std::stoll(str, &pos);
@@ -425,14 +412,14 @@ void builtinToint(const Command &command, Executor &executor) {
 }
 
 void builtinTofloat(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    Value floating {VALUE_FLOATING};
    switch (value.type) {
    case VALUE_INTEGER: floating.floating = value.integer; break;
    case VALUE_FLOATING: floating.floating = value.floating; break;
    case VALUE_CHARACTER: floating.floating = value.character; break;
    case VALUE_STRING: case VALUE_CSTRING: {
-      const std::string &str = (value.type == VALUE_STRING ? getString(executor, value.string, command.file, command.line) : getLexeme(executor.cache, value.string));
+      const std::string &str = getString(executor, value, command.file, command.line);
       try {
          size_t pos = 0;
          pilfloat_t result = std::stod(str, &pos);
@@ -448,7 +435,7 @@ void builtinTofloat(const Command &command, Executor &executor) {
 }
 
 void builtinTochar(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    Value character {VALUE_CHARACTER};
    switch (value.type) {
    case VALUE_INTEGER: character.character = value.integer; break;
@@ -472,12 +459,12 @@ void builtinUnixTime(const Command &command, Executor &executor) {
 }
 
 void builtinDate(const Command &command, Executor &executor) {
-   Value string = resolveVariable(executor, arg(executor, command, 0));
-   if (string.type != VALUE_CSTRING && string.type != VALUE_STRING) {
+   Value string = resolveArg(executor, command, 0);
+   if (!isValueString(string)) {
       error(executor.diagnostics, command.file, command.line, "date: Expected String for the 1st argument, got %s instead", getValueName(string.type));
       return;
    }
-   std::string &str = (string.type == VALUE_CSTRING ? getLexeme(executor.cache, string.string) : getString(executor, string.string, command.file, command.line));
+   const std::string &str = getString(executor, string, command.file, command.line);
    time_t t = std::time(nullptr);
    tm lt = *std::localtime(&t);
    std::ostringstream stream;
@@ -506,40 +493,36 @@ void builtinSwap(const Command &command, Executor &executor) {
 }
 
 void builtinSet(const Command &command, Executor &executor) {
-   storeInRegister(executor, command, resolveVariable(executor, arg(executor, command, 0)), "set");
+   storeInRegister(executor, command, resolveArg(executor, command, 0), "set");
 }
 
 void builtinValTable(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    Value dest = arg(executor, command, 1);
    bool hasDefault = (command.argCount % 2 == 1);
 
    for (size_t i = 2; i < command.argCount - hasDefault; i += 2) {
-      Value result = resolveVariable(executor, arg(executor, command, i));
+      Value result = resolveArg(executor, command, i);
       if (valuesEqual(executor, command, value, result, "valtable")) {
-         storeInRegister(executor, command, dest, resolveVariable(executor, arg(executor, command, i+1)), "valtable");
+         storeInRegister(executor, command, dest, resolveArg(executor, command, i + 1), "valtable");
          return;
       }
    }
-   Value defaultValue = (hasDefault ? resolveVariable(executor, back(executor, command)) : NULL_VALUE);
+   Value defaultValue = (hasDefault ? resolveBack(executor, command) : NULL_VALUE);
    storeInRegister(executor, command, dest, defaultValue, "valtable");
 }
 
 void builtinTableContains(const Command &command, Executor &executor) {
-   Value value = resolveVariable(executor, arg(executor, command, 0));
+   Value value = resolveArg(executor, command, 0);
    Value dest = arg(executor, command, 1);
    for (size_t i = 2; i < command.argCount; ++i) {
-      Value result = resolveVariable(executor, arg(executor, command, i));
+      Value result = resolveArg(executor, command, i);
       if (valuesEqual(executor, command, value, result, "table-contains")) {
-         Value value {VALUE_INTEGER};
-         value.integer = 1;
-         storeInRegister(executor, command, dest, value, "table-contains");
+         storeBoolean(executor, command, dest, true, "table-contains");
          return;
       }
    }
-   Value returnValue {VALUE_INTEGER};
-   returnValue.integer = 0;
-   storeInRegister(executor, command, dest, returnValue, "table-contains");
+   storeBoolean(executor, command, dest, false, "table-contains");
 }
 
 void builtinReturnAt(const Command &command, Executor &executor) {
@@ -755,7 +738,7 @@ void builtinAt(const Command &command, Executor &executor) {
       PILMap *map;
       if (!mapOrError(command, executor, "at", map)) return;
       Value key = resolveVariable(executor, arg(executor, command, 1));
-      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+      if (isValueNonHashable(key)) {
          error(executor.diagnostics, command.file, command.line, "at: %s cannot be used as a key in a Map", getValueName(key.type));
          return;
       }
@@ -796,7 +779,7 @@ void builtinStore(const Command &command, Executor &executor) {
       PILMap *map;
       if (!mapOrError(command, executor, "store", map)) return;
       Value key = resolveVariable(executor, arg(executor, command, 1));
-      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+      if (isValueNonHashable(key)) {
          error(executor.diagnostics, command.file, command.line, "store: %s cannot be used as a key in a Map", getValueName(key.type));
          return;
       }

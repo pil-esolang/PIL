@@ -8,9 +8,9 @@ void builtinMapNew(const Command &command, Executor &executor) {
    }
    PILMap map ((command.argCount-1) / 2, ValueHash{&executor}, ValueEqual{&executor});
    for (size_t i = 1; i < command.argCount; i += 2) {
-      Value key = resolveVariable(executor, arg(executor, command, i));
-      Value value = resolveVariable(executor, arg(executor, command, i + 1));
-      if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+      Value key = resolveArg(executor, command, i);
+      Value value = resolveArg(executor, command, i + 1);
+      if (isValueNonHashable(key)) {
          error(executor.diagnostics, command.file, command.line, "map-new: %s cannot be used as a key in a Map", getValueName(key.type));
          return;
       }
@@ -22,8 +22,8 @@ void builtinMapNew(const Command &command, Executor &executor) {
 void builtinMapErase(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-erase", map)) return;
-   Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+   Value key = resolveArg(executor, command, 1);
+   if (isValueNonHashable(key)) {
       error(executor.diagnostics, command.file, command.line, "map-erase: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -33,19 +33,19 @@ void builtinMapErase(const Command &command, Executor &executor) {
 void builtinMapSet(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-set", map)) return;
-   Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+   Value key = resolveArg(executor, command, 1);
+   if (isValueNonHashable(key)) {
       error(executor.diagnostics, command.file, command.line, "map-set: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
-   (*map)[key] = resolveVariable(executor, arg(executor, command, 2));
+   (*map)[key] = resolveArg(executor, command, 2);
 }
 
 void builtinMapAt(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-at", map)) return;
-   Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+   Value key = resolveArg(executor, command, 1);
+   if (isValueNonHashable(key)) {
       error(executor.diagnostics, command.file, command.line, "map-at: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -59,8 +59,8 @@ void builtinMapAt(const Command &command, Executor &executor) {
 void builtinMapAtOr(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-at-or", map)) return;
-   Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+   Value key = resolveArg(executor, command, 1);
+   if (isValueNonHashable(key)) {
       error(executor.diagnostics, command.file, command.line, "map-at-or: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -69,7 +69,7 @@ void builtinMapAtOr(const Command &command, Executor &executor) {
       storeInRegister(executor, command, it->second, "map-at-or");
    }
    else {
-      Value defaultValue = resolveVariable(executor, arg(executor, command, 2));
+      Value defaultValue = resolveArg(executor, command, 2);
       storeInRegister(executor, command, (*map)[key] = defaultValue, "map-at-or");
    }
 }
@@ -77,8 +77,8 @@ void builtinMapAtOr(const Command &command, Executor &executor) {
 void builtinMapContains(const Command &command, Executor &executor) {
    PILMap *map;
    if (!mapOrError(command, executor, "map-contains", map)) return;
-   Value key = resolveVariable(executor, arg(executor, command, 1));
-   if (key.type == VALUE_ARRAY || key.type == VALUE_MAP || key.type == VALUE_FILE) {
+   Value key = resolveArg(executor, command, 1);
+   if (isValueNonHashable(key)) {
       error(executor.diagnostics, command.file, command.line, "map-contains: %s cannot be used as a key in a Map", getValueName(key.type));
       return;
    }
@@ -108,7 +108,7 @@ void builtinMapKeys(const Command &command, Executor &executor) {
    if (!mapOrError(command, executor, "map-keys", map)) return;
    std::vector<Value> keys;
    keys.reserve(map->size());
-   for (auto &[key, _]: *map) keys.push_back(key);
+   for (const auto &[key, _]: *map) keys.push_back(key);
    storeArray(executor, command, keys, back(executor, command), "map-keys");
 }
 
@@ -117,7 +117,7 @@ void builtinMapValues(const Command &command, Executor &executor) {
    if (!mapOrError(command, executor, "map-values", map)) return;
    std::vector<Value> values;
    values.reserve(map->size());
-   for (auto &[_, value]: *map) values.push_back(value);
+   for (const auto &[_, value]: *map) values.push_back(value);
    storeArray(executor, command, values, back(executor, command), "map-values");
 }
 
@@ -125,8 +125,8 @@ void builtinMapMerge(const Command &command, Executor &executor) {
    PILMap *map1, *map2;
    if (!mapOrError(command, executor, "map-merge", map1) || !mapOrError(command, executor, "map-merge", map2, 1)) return;
    PILMap result {std::max(map1->size(), map2->size()), ValueHash{&executor}, ValueEqual{&executor}};
-   for (auto &[key, value]: *map1) result[key] = value;
-   for (auto &[key, value]: *map2) result[key] = value;
+   for (const auto &[key, value]: *map1) result[key] = value;
+   for (const auto &[key, value]: *map2) result[key] = value;
    storeMap(executor, command, result, back(executor, command), "map-merge");
 }
 
@@ -164,7 +164,7 @@ void builtinMapShallowCopy(const Command &command, Executor &executor) {
 }
 
 void builtinMapDeepCopy(const Command &command, Executor &executor) {
-   Value map = resolveVariable(executor, arg(executor, command, 0));
+   Value map = resolveArg(executor, command, 0);
    if (map.type != VALUE_MAP) {
       error(executor.diagnostics, command.file, command.line, "map-deep-copy: Expected Map, got %s instead", getValueName(map.type));
       return;
@@ -174,7 +174,6 @@ void builtinMapDeepCopy(const Command &command, Executor &executor) {
       return;
    }
    std::map<std::pair<size_t, ValueType>, size_t> copied;
-   Value result {VALUE_MAP};
-   result.map = deepCopy(command, executor, map.map, map.type, copied);
+   Value result {.type = VALUE_MAP, .map = deepCopy(command, executor, map.map, map.type, copied)};
    storeInRegister(executor, command, back(executor, command), result, "map-deep-copy");
 }
