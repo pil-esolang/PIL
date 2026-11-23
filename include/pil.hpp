@@ -99,6 +99,7 @@ struct Executor {
    size_t pointer = 0;
    size_t returnCount = 0;
    int lastExecExitCode = 0;
+   ErrorSeverity stopSeverity;
    bool exitCalled = false;
 
    bool silenceLeaks = false;
@@ -118,6 +119,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
 void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tokens);
 void parsePIL(Executor &executor, std::vector<Token> &tokens);
 
+bool callback(Executor &executor, Function &function, const Value *values);
 void call(Executor &executor, const Command &command, Function &function, size_t functionPos, size_t returnCount, size_t argCount);
 void callMain(Executor &executor, ErrorSeverity stopSeverity);
 void setupOSArgs(Executor &executor, int originalArgc, int argc, char **argv);

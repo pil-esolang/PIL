@@ -71,11 +71,16 @@ void builtinArrayConcat(const Command &command, Executor &executor);
 void builtinArraySlice(const Command &command, Executor &executor);
 void builtinArrayShuffle(const Command &command, Executor &executor);
 void builtinArraySort(const Command &command, Executor &executor);
+void builtinArraySortAsc(const Command &command, Executor &executor);
+void builtinArraySortDesc(const Command &command, Executor &executor);
 void builtinArrayCount(const Command &command, Executor &executor);
 void builtinArrayReverse(const Command &command, Executor &executor);
 void builtinArrayFind(const Command &command, Executor &executor);
 void builtinArrayContains(const Command &command, Executor &executor);
-void builtinArrayEraseAll(const Command &command, Executor &executor);
+void builtinArrayEraseIf(const Command &command, Executor &executor);
+void builtinArrayMap(const Command &command, Executor &executor);
+void builtinArrayFilter(const Command &command, Executor &executor);
+void builtinArrayReduce(const Command &command, Executor &executor);
 void builtinArrayShallowCopy(const Command &command, Executor &executor);
 void builtinArrayDeepCopy(const Command &command, Executor &executor);
 
@@ -373,11 +378,16 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"array-slice", builtinArraySlice, 4},
    {"array-shuffle", builtinArrayShuffle, 1},
    {"array-sort", builtinArraySort, 2},
+   {"array-sort-asc", builtinArraySortAsc, 1},
+   {"array-sort-desc", builtinArraySortDesc, 1},
    {"array-count", builtinArrayCount, 3},
    {"array-reverse", builtinArrayReverse, 1},
    {"array-find", builtinArrayFind, 3},
    {"array-contains", builtinArrayContains, 3},
-   {"array-erase-all", builtinArrayEraseAll, 2},
+   {"array-erase-if", builtinArrayEraseIf, 2},
+   {"array-map", builtinArrayMap, 2},
+   {"array-filter", builtinArrayFilter, 3},
+   {"array-reduce", builtinArrayReduce, 3},
    {"array-copy", builtinArrayShallowCopy, 2},
    {"array-deep-copy", builtinArrayDeepCopy, 2},
 

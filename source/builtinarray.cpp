@@ -231,10 +231,36 @@ void builtinArrayShuffle(const Command &command, Executor &executor) {
 void builtinArraySort(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-sort", array)) return;
-   bool ascending = getBool(executor, command, 1);
+   Function *f = nullptr;
+   if (!validateCallbackFunction(executor, command, 1, "array-sort", 2, f)) return;
+
+   std::stable_sort(array->begin(), array->end(), [&](const Value &a, const Value &b) {
+      Value args[2] = {a, b};
+      if (!callback(executor, *f, args)) {
+         return false;
+      }
+
+      if (executor.returnCount != 1) {
+         error(executor.diagnostics, command.file, command.line, "array-sort: Expected one return value from input function, got %zu instead", executor.returnCount);
+         return false;
+      }
+      return isTruthy(executor, command, executor.returns.front());
+   });
+}
+
+void builtinArraySortAsc(const Command &command, Executor &executor) {
+   std::vector<Value> *array;
+   if (!arrayOrError(command, executor, "array-sort-asc", array)) return;
    std::sort(array->begin(), array->end(), [&](const Value &a, const Value &b) {
-      Comparison c = compareTwoValues(executor, a, b, command.file, command.line, false, "array-sort");
-      return ascending ? c == COMPARISON_LESS : c == COMPARISON_GREATER;
+      return compareTwoValues(executor, a, b, command.file, command.line, false, "array-sort-asc") == COMPARISON_LESS;
+   });
+}
+
+void builtinArraySortDesc(const Command &command, Executor &executor) {
+   std::vector<Value> *array;
+   if (!arrayOrError(command, executor, "array-sort-desc", array)) return;
+   std::sort(array->begin(), array->end(), [&](const Value &a, const Value &b) {
+      return compareTwoValues(executor, a, b, command.file, command.line, false, "array-sort-desc") == COMPARISON_GREATER;
    });
 }
 
@@ -279,11 +305,95 @@ void builtinArrayContains(const Command &command, Executor &executor) {
    storeBoolean(executor, command, false, "array-contains");
 }
 
-void builtinArrayEraseAll(const Command &command, Executor &executor) {
+void builtinArrayEraseIf(const Command &command, Executor &executor) {
    std::vector<Value> *array;
-   if (!arrayOrError(command, executor, "array-erase-all", array)) return;
-   Value target = resolveArg(executor, command, 1);
-   array->erase(std::remove_if(array->begin(), array->end(), [&](const Value &v){ return valuesEqual(executor, command, v, target, "array-erase-all"); }), array->end());
+   if (!arrayOrError(command, executor, "array-erase-if", array)) return;
+   Function *f = nullptr;
+   if (!validateCallbackFunction(executor, command, 1, "array-erase-if", 1, f)) return;
+
+   std::erase_if(*array, [&](Value &v) {
+      if (!callback(executor, *f, &v)) {
+         return false;
+      }
+
+      if (executor.returnCount != 1) {
+         error(executor.diagnostics, command.file, command.line, "array-erase-if: Expected one return value from input function, got %zu instead", executor.returnCount);
+         return false;
+      }
+      return isTruthy(executor, command, executor.returns.front());
+   });
+}
+
+void builtinArrayMap(const Command &command, Executor &executor) {
+   std::vector<Value> *array;
+   if (!arrayOrError(command, executor, "array-map", array)) return;
+   Function *f = nullptr;
+   if (!validateCallbackFunction(executor, command, 1, "array-map", 1, f)) return;
+
+   for (Value &value: *array) {
+      if (!callback(executor, *f, &value)) {
+         return;
+      }
+
+      if (executor.returnCount != 1) {
+         error(executor.diagnostics, command.file, command.line, "array-map: Expected one return value from input function, got %zu instead", executor.returnCount);
+         return;
+      }
+      value = executor.returns.front();
+   }
+}
+
+void builtinArrayFilter(const Command &command, Executor &executor) {
+   std::vector<Value> *array;
+   if (!arrayOrError(command, executor, "array-filter", array)) return;
+   Function *f = nullptr;
+   if (!validateCallbackFunction(executor, command, 1, "array-filter", 1, f)) return;
+
+   std::vector<Value> filter;
+   for (const Value &value: *array) {
+      if (!callback(executor, *f, &value)) {
+         return;
+      }
+
+      if (executor.returnCount != 1) {
+         error(executor.diagnostics, command.file, command.line, "array-filter: Expected one return value from input function, got %zu instead", executor.returnCount);
+         return;
+      }
+
+      if (isTruthy(executor, command, executor.returns.front())) {
+         filter.push_back(value);
+      }
+   }
+   storeArray(executor, command, filter, arg(executor, command, 2), "array-filter");
+}
+
+void builtinArrayReduce(const Command &command, Executor &executor) {
+   std::vector<Value> *array;
+   if (!arrayOrError(command, executor, "array-reduce", array)) return;
+   Function *f = nullptr;
+   if (!validateCallbackFunction(executor, command, 1, "array-reduce", 2, f)) return;
+
+   if (array->empty()) {
+      storeInRegister(executor, command, NULL_VALUE, "array-reduce");
+      return;
+   }
+
+   Value accumulator = array->front();
+   size_t size = array->size();
+
+   for (size_t i = 1; i < size; ++i) {
+      Value args[2] = {accumulator, (*array)[i]};
+      if (!callback(executor, *f, args)) {
+         return;
+      }
+
+      if (executor.returnCount != 1) {
+         error(executor.diagnostics, command.file, command.line, "array-reduce: Expected one return value from input function, got %zu instead", executor.returnCount);
+         return;
+      }
+      accumulator = executor.returns.front();
+   }
+   storeInRegister(executor, command, accumulator, "array-reduce");
 }
 
 void builtinArrayShallowCopy(const Command &command, Executor &executor) {

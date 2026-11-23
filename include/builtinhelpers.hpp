@@ -164,8 +164,7 @@ inline pilfloat_t getNum(Executor &executor, const Command &command, size_t i, c
    return (value.type == VALUE_INTEGER ? (pilfloat_t)value.integer : value.floating);
 }
 
-inline bool getBool(Executor &executor, const Command &command, size_t i) {
-   Value v = resolveArg(executor, command, i);
+inline bool isTruthy(Executor &executor, const Command &command, Value v) {
    switch (v.type) {
    case VALUE_INTEGER: return v.integer != 0;
    case VALUE_FLOATING: return v.floating != 0.0;
@@ -183,6 +182,10 @@ inline bool getBool(Executor &executor, const Command &command, size_t i) {
       printf("PIL::isTruthy: Value %s cannot be checked for truthiness.\n", getValueName(v.type));
       exit(EXIT_FAILURE);
    }
+}
+
+inline bool getBool(Executor &executor, const Command &command, size_t i) {
+   return isTruthy(executor, command, resolveArg(executor, command, i));
 }
 
 inline char getChar(const Command &command, Executor &executor, const char *function, size_t i) {
@@ -444,6 +447,21 @@ inline bool valuesEqual(Executor &executor, const Command &command, Value a, Val
 }
 
 // domain specific helpers
+inline bool validateCallbackFunction(Executor &executor, const Command &command, size_t i, const char *function, size_t argCount, Function *&f) {
+   Value value = resolveArg(executor, command, i);
+   if (value.type != VALUE_FUNCTION) {
+      error(executor.diagnostics, command.file, command.line, "%s: Expected Function, got %s instead", function, getValueName(value.type));
+      return false;
+   }
+
+   f = &executor.functions[value.function];
+   if (f->variadic || f->paramCount != argCount) {
+      error(executor.diagnostics, command.file, command.line, "%s: Expected input function to take in exactly %zu parameters and to not be variadic", function, argCount);
+      return false;
+   }
+   return true;
+}
+
 inline void jumpToLabel(Executor &executor, Value value, const char *function, size_t file, size_t line, bool condition) {
    if (value.type != VALUE_LABEL) {
       error(executor.diagnostics, file, line, "%s: Expected Label to jump to, got %s instead", function, getValueName(value.type));
