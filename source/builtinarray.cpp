@@ -71,13 +71,23 @@ void builtinArrayCapacity(const Command &command, Executor &executor) {
 void builtinArrayReserve(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-reserve", array)) return;
-   array->reserve(getNum(executor, command, 1, "array-reserve"));
+   pilint_t reserve = getNum(executor, command, 1, "array-reserve");
+   if (reserve < 0) {
+      error(executor.diagnostics, command.file, command.line, "array-reserve: Cannot reserve less than 0 elements");
+      return;
+   }
+   array->reserve(reserve);
 }
 
 void builtinArrayResize(const Command &command, Executor &executor) {
    std::vector<Value> *array;
    if (!arrayOrError(command, executor, "array-resize", array)) return;
-   array->resize(getNum(executor, command, 1, "array-resize"), resolveArg(executor, command, 2));
+   pilint_t size = getNum(executor, command, 1, "array-resize");
+   if (size < 0) {
+      error(executor.diagnostics, command.file, command.line, "array-resize: Cannot resize to negative size");
+      return;
+   }
+   array->resize(size, resolveArg(executor, command, 2));
 }
 
 void builtinArraySet(const Command &command, Executor &executor) {

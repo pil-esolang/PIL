@@ -18,15 +18,15 @@
 void builtinFileOpen(const Command &command, Executor &executor) {
    const std::string *path;
    if (!hasPermission(command, executor, "file-open", FILE_LOCK) || !constStringOrError(command, executor, "file-open", path, 0)) return;
-
+   char mode = getChar(command, executor, "file-open", 1);
    std::error_code ec;
-   if (!std::filesystem::is_regular_file(*path, ec)) {
+
+   if ((mode == 'r' || mode == 'R') && !std::filesystem::is_regular_file(*path, ec)) {
       storeInRegister(executor, command, NULL_VALUE, "file-open");
       return;
    }
-   char mode = getChar(command, executor, "file-open", 1);
-   std::fstream file;
 
+   std::fstream file;
    if (mode == 'r' || mode == 'R') file.open(path->c_str(), std::ios::in);
    else if (mode == 'w' || mode == 'W') file.open(path->c_str(), std::ios::out);
    else if (mode == 'a' || mode == 'A') file.open(path->c_str(), std::ios::out | std::ios::app);

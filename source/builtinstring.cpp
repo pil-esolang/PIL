@@ -93,13 +93,23 @@ void builtinStringCapacity(const Command &command, Executor &executor) {
 void builtinStringReserve(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-reserve", string)) return;
-   string->reserve(getNum(executor, command, 1, "string-reserve"));
+   pilint_t reserve = getNum(executor, command, 1, "string-reserve");
+   if (reserve < 0) {
+      error(executor.diagnostics, command.file, command.line, "string-reserve: Cannot reserve less than 0 elements");
+      return;
+   }
+   string->reserve(reserve);
 }
 
 void builtinStringResize(const Command &command, Executor &executor) {
    std::string *string;
    if (!stringOrError(command, executor, "string-resize", string)) return;
-   string->resize(getNum(executor, command, 1, "string-resize"), getChar(command, executor, "string-resize", 2));
+   pilint_t size = getNum(executor, command, 1, "string-resize");
+   if (size < 0) {
+      error(executor.diagnostics, command.file, command.line, "string-resize: Cannot resize to negative size");
+      return;
+   }
+   string->resize(size, getChar(command, executor, "string-resize", 2));
 }
 
 void builtinStringSet(const Command &command, Executor &executor) {
@@ -284,7 +294,7 @@ void builtinStringCount(const Command &command, Executor &executor) {
       // https://www.geeksforgeeks.org/dsa/frequency-substring-string/#expected-approach-using-kmp-algorithm-os1-s2-time-and-os2-space
       size_t m = scount->size();
       size_t n = string->size();
-      if (n < m) {
+      if (n < m || m == 0) {
          storeNumber(executor, command, 0, false, "string-count");
          return;
       }

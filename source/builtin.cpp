@@ -127,7 +127,20 @@ void builtinJmptable(const Command &command, Executor &executor) {
 
 void builtinCall(const Command &command, Executor &executor) {
    Function &function = executor.functions[arg(executor, command, command.callee).function];
-   call(executor, command, function, command.callee, command.callee, command.argCount - command.callee - 1);
+   if (function.native) {
+      if (command.callee != 0) {
+         error(executor.diagnostics, command.file, command.line, "call: Native functions cannot return values. Remove returns or use 'func-call' instead");
+         return;
+      }
+
+      Command copy = command;
+      copy.argStart += 1;
+      copy.argCount -= 1;
+      call(executor, copy, function, -1, std::string::npos, copy.argCount);
+   }
+   else {
+      call(executor, command, function, command.callee, command.callee, command.argCount - command.callee - 1);
+   }
 }
 
 void builtinFunccall(const Command &command, Executor &executor) {

@@ -455,8 +455,13 @@ inline bool validateCallbackFunction(Executor &executor, const Command &command,
    }
 
    f = &executor.functions[value.function];
+   if (f->native) {
+      error(executor.diagnostics, command.file, command.line, "%s: Cannot use a native function as a callback", function);
+      return false;
+   }
+
    if (f->variadic || f->paramCount != argCount) {
-      error(executor.diagnostics, command.file, command.line, "%s: Expected input function to take in exactly %zu parameters and to not be variadic", function, argCount);
+      error(executor.diagnostics, command.file, command.line, "%s: Expected input function to take in exactly %zu parameters", function, argCount);
       return false;
    }
    return true;

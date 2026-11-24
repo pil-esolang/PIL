@@ -173,6 +173,9 @@ pilfloat_t parseShifts(Executor &executor, std::vector<Token> &tokens, size_t &i
       TokenType type = tokens[i].type;
       i += 1;
       pilfloat_t right = parseAdditive(executor, tokens, i, constants, isFloating);
+      if ((pilint_t)right < 0 || (piluint_t)right >= sizeof(piluint_t) * 8) {
+         error(executor.diagnostics, tokens[i].file, tokens[i].line, "Shift position " LONG_FMT " is out of bounds. It should be in range [0;%zu)", (pilint_t)right, sizeof(piluint_t) * 8);
+      }
       left = (type == TOKEN_BSHL ? (piluint_t)left << (piluint_t)right : (piluint_t)left >> (piluint_t)right);
    }
    return left;

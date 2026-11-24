@@ -175,7 +175,9 @@ void translatePIL(Executor &executor, size_t fileLexeme, std::vector<Token> &tok
          tokens[i].parsed = true;
          tokens[i + 1].parsed = true;
  
-         std::string &filename = getLexeme(executor.cache, tokens[i + 1].lexeme);
+         // copy. do not get reference here. It might get invalidated in readPIL, which
+         // pushes another lexeme into the vector.
+         std::string filename = getLexeme(executor.cache, tokens[i + 1].lexeme);
          std::error_code ec;
          std::filesystem::path path = std::filesystem::canonical(filename, ec);
 

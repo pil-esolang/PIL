@@ -316,7 +316,7 @@ void builtinBitshl(const Command &command, Executor &executor) {
    piluint_t a = getNum(executor, command, 0, "bit-shl");
    piluint_t b = getNum(executor, command, 1, "bit-shl");
    if (b >= sizeof(piluint_t) * 8) {
-      error(executor.diagnostics, command.file, command.line, "bit-shl: Shift position %lu is out of range", b);
+      error(executor.diagnostics, command.file, command.line, "bit-shl: Shift position %zu is out of range", b);
       return;
    }
    storeNumber(executor, command, a << b, false, "bit-shl");
@@ -326,7 +326,7 @@ void builtinBitshr(const Command &command, Executor &executor) {
    piluint_t a = getNum(executor, command, 0, "bit-shr");
    piluint_t b = getNum(executor, command, 1, "bit-shr");
    if (b >= sizeof(piluint_t) * 8) {
-      error(executor.diagnostics, command.file, command.line, "bit-shr: Shift position %lu is out of range", b);
+      error(executor.diagnostics, command.file, command.line, "bit-shr: Shift position %zu is out of range", b);
       return;
    }
    storeNumber(executor, command, a >> b, false, "bit-shr");
