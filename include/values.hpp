@@ -53,11 +53,11 @@ struct Function {
    bool isLabel = false;
    bool isStructure = false;
    bool isStructureArray = false;
-   size_t position;
-   size_t lexeme;
-   size_t localCount;
-   size_t nativeFn;
-   size_t paramCount;
+   size_t position = 0;
+   size_t lexeme = 0;
+   size_t localCount = 0;
+   size_t nativeFn = 0;
+   size_t paramCount = 0;
 };
 
 static constexpr Value NULL_VALUE = {VALUE_COUNT};

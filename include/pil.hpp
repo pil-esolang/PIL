@@ -109,6 +109,9 @@ struct Executor {
    bool fileioErrored = false;
    bool envErrored = false;
    bool execErrored = false;
+   bool time = false;
+   bool debugCode = false;
+   bool debugLexer = false;
 
    char **argv;
    int argc;
@@ -147,8 +150,8 @@ size_t allocateFile(Executor &executor, std::fstream &&file);
 void measure();
 float measureEnd();
 
-void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &tokens);
-void debugBytecode(bool debug, Executor &executor);
+void debugTokens(Executor &executor, const std::vector<Token> &tokens);
+void debugBytecode(Executor &executor);
 void debugExecutionTime(bool debug, float file, float lexer, float parser, float runtime);
 void debugCompilationTime(bool debug, float file, float lexer, float parser, float writing);
 void debugCacheExecutionTime(bool debug, float file, float runtime);

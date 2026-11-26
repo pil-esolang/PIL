@@ -214,6 +214,7 @@ void builtinFlush(const Command &command, Executor &executor);
 void builtinPrintch(const Command &command, Executor &executor);
 void builtinPrint(const Command &command, Executor &executor);
 void builtinPrintln(const Command &command, Executor &executor);
+void builtinPrintLines(const Command &command, Executor &executor);
 void builtinPrintf(const Command &command, Executor &executor);
 void builtinPrintfln(const Command &command, Executor &executor);
 void builtinRead(const Command &command, Executor &executor);
@@ -521,6 +522,7 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
    {"printch", builtinPrintch, 1},
    {"print", builtinPrint, 1, VARIADIC},
    {"println", builtinPrintln, 1, VARIADIC},
+   {"print-lines", builtinPrintLines, 1, VARIADIC},
    {"printf", builtinPrintf, 1, VARIADIC},
    {"printfln", builtinPrintfln, 1, VARIADIC},
    {"read", builtinRead, 1},

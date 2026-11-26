@@ -29,6 +29,47 @@ inline bool isValueNonHashable(Value value) {
 }
 
 // generic helpers
+inline Value &resolveVariableByRef(Executor &executor, Value &value);
+
+static inline Value *findStructField(Executor &executor, const StructChainLink &link) {
+   Value *parent;
+   if (link.parentIsChain) {
+      Value chain {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
+      parent = &resolveVariableByRef(executor, chain);
+   }
+   else {
+      parent = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
+   }
+
+   const Command &command = executor.code[executor.pointer];
+   if (parent->type != VALUE_ARRAY) {
+      error(executor.diagnostics, command.file, command.line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(parent->type));
+      return nullptr;
+   }
+
+   auto it = executor.arrays.find(parent->array);
+   if (it == executor.arrays.end()) {
+      error(executor.diagnostics, command.file, command.line, "Structure use after free");
+      return nullptr;
+   }
+
+   PILArray &structArray = it->second;
+   if (structArray.structureId == 0) {
+      error(executor.diagnostics, command.file, command.line, "Tried to access regular Array instead of structure Array using dot operator");
+      return nullptr;
+   }
+
+   const Function &structure = executor.functions[structArray.structureId];
+   for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
+      const StructData &data = executor.structData[i];
+      if (link.field == data.lexeme) {
+         return &structArray.array[data.physicalId];
+      }
+   }
+   error(executor.diagnostics, command.file, command.line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, structure.lexeme).c_str());
+   return nullptr;
+}
+
 inline Value &resolveVariableByRef(Executor &executor, Value &value) {
    if (value.type == VALUE_LOCAL) {
       return executor.locals[executor.stackTrace.top().localStart + value.local];
@@ -37,44 +78,11 @@ inline Value &resolveVariableByRef(Executor &executor, Value &value) {
       return executor.globals[value.global];
    }
    else if (value.type == VALUE_STRUCT_ACCESS) {
-      StructChainLink &link = executor.structChains[value.chain];
-      Value *v;
-      if (link.parentIsChain) {
-         Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
-         v = &resolveVariableByRef(executor, parent);
-      }
-      else {
-         v = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
-      }
-
-      if (v->type != VALUE_ARRAY) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v->type));
-         return *v;
-      }
-      auto it = executor.arrays.find(v->array);
-      if (it == executor.arrays.end()) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
-         return *v;
-      }
-
-      if (it->second.structureId == 0) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access regular Array instead of structure Array using dot operator");
-         return *v;
-      }
-
-      const Function &structure = executor.functions[it->second.structureId];
-      for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
-         const StructData &data = executor.structData[i];
-         if (link.field == data.lexeme && it->second.structureId == data.structId) {
-            return it->second.array[data.physicalId];
-         }
-      }
-      error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
-      return *v;
+      const StructChainLink &link = executor.structChains[value.chain];
+      Value *field = findStructField(executor, link);
+      return (field ? *field : value);
    }
-   else {
-      return value;
-   }
+   return value;
 }
 
 inline Value resolveVariable(Executor &executor, Value value) {
@@ -109,40 +117,9 @@ inline void storeInRegister(Executor &executor, const Command &command, Value re
       executor.globals[reg.global] = value;
    }
    else if (reg.type == VALUE_STRUCT_ACCESS) {
-      StructChainLink &link = executor.structChains[reg.chain];
-      Value *v;
-      if (link.parentIsChain) {
-         Value parent {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
-         v = &resolveVariableByRef(executor, parent);
-      }
-      else {
-         v = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
-      }
-
-      if (v->type != VALUE_ARRAY) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access field of non-struct type. Expected Array, got %s instead", getValueName(v->type));
-         return;
-      }
-      auto it = executor.arrays.find(v->array);
-      if (it == executor.arrays.end()) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Structure use after free");
-         return;
-      }
-
-      if (it->second.structureId == 0) {
-         error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "Tried to access regular Array instead of structure Array using dot operator");
-         return;
-      }
-
-      const Function &structure = executor.functions[it->second.structureId];
-      for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
-         const StructData &data = executor.structData[i];
-         if (link.field == data.lexeme && it->second.structureId == data.structId) {
-            it->second.array[data.physicalId] = value;
-            return;
-         }
-      }
-      error(executor.diagnostics, executor.code[executor.pointer].file, executor.code[executor.pointer].line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, executor.functions[it->second.structureId].lexeme).c_str());
+      const StructChainLink &link = executor.structChains[reg.chain];
+      Value *field = findStructField(executor, link);
+      if (field) *field = value;
    }
    else {
       error(executor.diagnostics, command.file, command.line, "%s: Expected Register/Variable for the destination argument, got %s instead", function, getValueName(reg.type));

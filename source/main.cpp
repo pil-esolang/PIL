@@ -19,19 +19,16 @@
 #include <filesystem>
 
 void printHelp();
-void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime, bool debugLexer, bool debugCode);
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime);
 
 int main(int argc, char *argv[]) {
    Executor executor;
-   bool time = false;
-   bool debugCode = false;
-   bool debugLexer = false;
    int originalArgc = argc;
 
    for (int i = 1; i < argc; ++i) {
-      if (strcmp(argv[i], "--time") == 0) time = true;
-      else if (strcmp(argv[i], "--debug-code") == 0) debugCode = true;
-      else if (strcmp(argv[i], "--debug-tokens") == 0) debugLexer = true;
+      if (strcmp(argv[i], "--time") == 0) executor.time = true;
+      else if (strcmp(argv[i], "--debug-code") == 0) executor.debugCode = true;
+      else if (strcmp(argv[i], "--debug-tokens") == 0) executor.debugLexer = true;
       else if (strcmp(argv[i], "--allow-fileio") == 0) executor.allowFileio = true;
       else if (strcmp(argv[i], "--allow-env") == 0) executor.allowEnv = true;
       else if (strcmp(argv[i], "--allow-exec") == 0) executor.allowExec = true;
@@ -47,7 +44,7 @@ int main(int argc, char *argv[]) {
       std::filesystem::path path (argv[1]);
       if (path.has_extension() && path.extension() == ".pil") {
          float readTime, lexTime, parseTime;
-         compile(executor, path, readTime, lexTime, parseTime, debugLexer, debugCode);
+         compile(executor, path, readTime, lexTime, parseTime);
 
          measure();
          setupOSArgs(executor, originalArgc, argc, argv);
@@ -56,7 +53,7 @@ int main(int argc, char *argv[]) {
 
          logStackTrace(executor, SEVERITY_ERROR);
          logMemoryLeaks(executor);
-         debugExecutionTime(time, readTime, lexTime, parseTime, runtime);
+         debugExecutionTime(executor.time, readTime, lexTime, parseTime, runtime);
       }
       else if (path.has_extension() && path.extension() == ".pilo") {
          measure();
@@ -71,7 +68,7 @@ int main(int argc, char *argv[]) {
 
          logStackTrace(executor, SEVERITY_ERROR);
          logMemoryLeaks(executor);
-         debugCacheExecutionTime(time, readTime, runtime);
+         debugCacheExecutionTime(executor.time, readTime, runtime);
       }
       else {
          printf("PIL::run: Expected second argument to be either a '.pil' or .'pilo' file.\n");
@@ -88,7 +85,7 @@ int main(int argc, char *argv[]) {
          exit(EXIT_FAILURE);
       }
       float readTime, lexTime, parseTime;
-      compile(executor, in, readTime, lexTime, parseTime, debugLexer, debugCode);
+      compile(executor, in, readTime, lexTime, parseTime);
 
       printf("Writing to '%s'...\n", out.string().c_str());
       measure();
@@ -97,14 +94,14 @@ int main(int argc, char *argv[]) {
 
       log(executor, SEVERITY_ERROR);
       printf("Wrote %zuB to '%s'.\n", std::filesystem::file_size(out), out.string().c_str());
-      debugCompilationTime(time, readTime, lexTime, parseTime, writeTime);
+      debugCompilationTime(executor.time, readTime, lexTime, parseTime, writeTime);
    }
    else {
       printHelp();
    }
 }
 
-void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime, bool debugLexer, bool debugCode) {
+void compile(Executor &executor, const std::filesystem::path &file, float &readTime, float &lexTime, float &parseTime) {
    std::vector<Token> tokens;
    PILFile fileData;
 
@@ -125,7 +122,7 @@ void compile(Executor &executor, const std::filesystem::path &file, float &readT
    log(executor, SEVERITY_ERROR);
    readTime += measureEnd();
 
-   debugTokens(debugLexer, executor.cache, tokens);
+   debugTokens(executor, tokens);
 
    measure();
    parsePIL(executor, tokens);
@@ -134,7 +131,7 @@ void compile(Executor &executor, const std::filesystem::path &file, float &readT
    tokens.shrink_to_fit();
    parseTime = measureEnd();
 
-   debugBytecode(debugCode, executor);
+   debugBytecode(executor);
 }
 
 void printHelp() {

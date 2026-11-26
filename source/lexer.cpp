@@ -5,42 +5,34 @@
 #include <unordered_set>
 
 // helpers
-
 static const std::unordered_map<char, char> escapeCodeMap {
    {'a', '\a'}, {'b', '\b'}, {'t', '\t'}, {'n', '\n'}, {'v', '\v'}, {'f', '\f'}, {'r', '\r'},
    {'e', '\e'}, {'\\', '\\'}, {'\'', '\''}, {'"', '"'}, {'{', '{'},
 };
 
-inline char handleEscapeCode(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, size_t &i, size_t tokenLine) {
+static char handleEscapeCode(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, size_t &i, size_t tokenLine) {
    char ch = file.code[i];
-   if (ch != '\\') {
-      return ch;
-   }
-
-   i += 1;
-   ch = file.code[i];
-   if (auto it = escapeCodeMap.find(ch); it != escapeCodeMap.end()) {
-      return it->second;
-   }
+   if (ch != '\\') return ch;
+   ch = file.code[++i];
+   if (auto it = escapeCodeMap.find(ch); it != escapeCodeMap.end()) return it->second;
    warn(diagnostics, file.lexeme, tokenLine, "Unknown escape code '\\%c'", ch);
    return ch;
 }
 
-inline void twoOpLexeme(TokenType def, char next, TokenType nextType, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
+static void twoOpLexeme(TokenType def, char next, TokenType nextType, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
    if (i + 1 < size && file.code[i + 1] == next) { def = nextType; i += 1; }
    tokens.emplace_back(def, 0, file.lexeme, line);
 }
 
-inline void threeOpLexeme(TokenType def, char next1, TokenType nextType1, char next2, TokenType nextType2, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
+static void threeOpLexeme(TokenType def, char next1, TokenType nextType1, char next2, TokenType nextType2, size_t &i, std::vector<Token> &tokens, const PILFile &file, size_t size, size_t line) {
    if (i + 1 < size && file.code[i + 1] == next1) { def = nextType1; i += 1; }
    else if (i + 1 < size && file.code[i + 1] == next2) { def = nextType2; i += 1; }
    tokens.emplace_back(def, 0, file.lexeme, line);
 }
 
-constexpr bool isDigit(char c) { return c >= '0' && c <= '9'; }
-constexpr bool isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
-constexpr bool isAlnum(char c) { return isDigit(c) || isAlpha(c); }
-constexpr char toLower(char c) { return (c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c); }
+static constexpr bool isDigit(char c) { return c >= '0' && c <= '9'; }
+static constexpr bool isAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+static constexpr bool isAlnum(char c) { return isDigit(c) || isAlpha(c); }
 
 // file reader
 void readPIL(Diagnostics &diagnostics, LexemeCache &cache, const std::string &path, PILFile &pilFile, size_t parentFile, size_t line) {
@@ -67,13 +59,32 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
 
    for (size_t i = 0; i < size; ++i) {
       char ch = file.code[i];
+      if (isDigit(ch) || ((ch == '-' || ch == '+') && i + 1 < size && isDigit(file.code[i+1]))) {
+         size_t end = i;
+         bool dot = false;
+
+         for (++end; end < size && (file.code[end] == '.' || isDigit(file.code[end])); ++end) {
+            if (file.code[end] == '.' && dot) {
+               error(diagnostics, file.lexeme, line, "Number '%s' contains multiple decimal points", std::string(&file.code[i], end - i).c_str());
+               break;
+            }
+            dot = dot || (!dot && file.code[end] == '.');
+         }
+         size_t lexeme = cacheLexeme(cache, std::string_view(&file.code[i], end - i));
+         tokens.emplace_back(dot ? TOKEN_FLOATING : TOKEN_INTEGER, lexeme, file.lexeme, line);
+         i = end - 1;
+         continue;
+      }
 
       switch (ch) {
       case ' ': case '\t': case '\r': case '\f': case '\v': continue;
       case '\n': line += 1; continue;
+      case '#': while (i < size && file.code[i] != '\n') i += 1; line += 1; continue;
       case '(': tokens.emplace_back(TOKEN_L_PAREN, 0, file.lexeme, line); continue;
       case ')': tokens.emplace_back(TOKEN_R_PAREN, 0, file.lexeme, line); continue;
       case ':': tokens.emplace_back(TOKEN_LABEL, 0, file.lexeme, line); continue;
+      case '+': tokens.emplace_back(TOKEN_PLUS, 0, file.lexeme, line); continue;
+      case '-': tokens.emplace_back(TOKEN_MINUS, 0, file.lexeme, line); continue;
       case '/': tokens.emplace_back(TOKEN_SLASH, 0, file.lexeme, line); continue;
       case '%': tokens.emplace_back(TOKEN_PERCENT, 0, file.lexeme, line); continue;
       case '^': tokens.emplace_back(TOKEN_BXOR, 0, file.lexeme, line); continue;
@@ -92,11 +103,7 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
       case '>': threeOpLexeme(TOKEN_GREATER, '=', TOKEN_GREATER_EQUAL, '>', TOKEN_BSHR, i, tokens, file, size, line); continue;
       }
 
-      if (ch == '#') {
-         while (i < size && file.code[i] != '\n') i += 1;
-         line += 1;
-      }
-      else if (ch == '\'') {
+      if (ch == '\'') {
          if (i + 1 >= size || file.code[i + 1] == '\n') {
             error(diagnostics, file.lexeme, line, "Unterminated character");
             continue;
@@ -127,32 +134,11 @@ void lexPILFile(Diagnostics &diagnostics, LexemeCache &cache, PILFile &file, std
          }
          tokens.emplace_back(TOKEN_STRING, pushLexeme(cache, string), file.lexeme, originalLine);
       }
-      else if (isDigit(ch) || ((ch == '-' || ch == '+') && i + 1 < size && isDigit(file.code[i+1]))) {
-         size_t end = i;
-         bool dot = false;
-
-         for (++end; end < size && (file.code[end] == '.' || isDigit(file.code[end])); ++end) {
-            if (file.code[end] == '.') {
-               if (dot) {
-                  error(diagnostics, file.lexeme, line, "Number '%s' contains multiple decimal points", std::string(&file.code[i], end - i).c_str());
-                  break;
-               }
-               dot = true;
-            }
-         }
-         tokens.emplace_back(dot ? TOKEN_FLOATING : TOKEN_INTEGER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
-         i = end - 1;
-      }
-      else if (ch == '-') {
-         tokens.emplace_back(TOKEN_MINUS, 0, file.lexeme, line);
-      }
-      else if (ch == '+') {
-         tokens.emplace_back(TOKEN_PLUS, 0, file.lexeme, line);
-      }
       else if (ch == '_' || isAlpha(ch)) {
          size_t end = i;
          for (++end; end < size && (file.code[end] == '_' || file.code[end] == '-' || isAlnum(file.code[end])); ++end);
-         tokens.emplace_back(TOKEN_IDENTIFIER, cacheLexeme(cache, std::string_view(&file.code[i], end - i)), file.lexeme, line);
+         size_t lexeme = cacheLexeme(cache, std::string_view(&file.code[i], end - i));
+         tokens.emplace_back(TOKEN_IDENTIFIER, lexeme, file.lexeme, line);
          i = end - 1;
       }
       else {

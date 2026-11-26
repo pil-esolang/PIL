@@ -26,6 +26,15 @@ void builtinPrintln(const Command &command, Executor &executor) {
    putchar('\n');
 }
 
+void builtinPrintLines(const Command &command, Executor &executor) {
+   std::set<std::pair<size_t, ValueType>> active;
+   for (size_t i = 0; i < command.argCount; ++i) {
+      active.clear();
+      printValue(executor, resolveArg(executor, command, i), command.file, command.line, active);
+      putchar('\n');
+   }
+}
+
 void builtinPrintf(const Command &command, Executor &executor) {
    printf("%s", format(command, executor, "printf", 0).c_str());
 }

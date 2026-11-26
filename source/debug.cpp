@@ -11,20 +11,20 @@ float measureEnd() {
    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - point).count() / 1000.0f;
 }
 
-void debugTokens(bool debug, LexemeCache &cache, const std::vector<Token> &tokens) {
-   if (!debug) return;
+void debugTokens(Executor &executor, const std::vector<Token> &tokens) {
+   if (!executor.debugLexer) return;
    puts("\nTokens:");
 
    for (const Token &token: tokens) {
-      const char *file = getLexeme(cache, token.file).c_str();
-      const char *lexeme = getLexeme(cache, token.lexeme).c_str();
+      const char *file = getLexeme(executor.cache, token.file).c_str();
+      const char *lexeme = getLexeme(executor.cache, token.lexeme).c_str();
       const char *tokenName = getTokenName(token.type);
       printf("%s:%-5zu %s: '%s'.\n", file, token.line, tokenName, lexeme);
    }
 }
 
-void debugBytecode(bool debug, Executor &executor) {
-   if (!debug) return;
+void debugBytecode(Executor &executor) {
+   if (!executor.debugCode) return;
    puts("\nBytecode:");
 
    for (const Command &command: executor.code) {
