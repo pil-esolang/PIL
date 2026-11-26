@@ -51,7 +51,6 @@ struct Function {
    bool native = false;
    bool variadic = false;
    bool isLabel = false;
-   bool isStructure = false;
    bool isStructureArray = false;
    size_t position = 0;
    size_t lexeme = 0;

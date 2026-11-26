@@ -8,7 +8,7 @@
 #include <string>
 
 static constexpr size_t DEFAULT_LOCAL_RESERVE = 64;
-static constexpr size_t FILE_VERSION = 9;
+static constexpr size_t FILE_VERSION = 10;
 
 // PIL parser
 struct PILFile {
@@ -59,15 +59,9 @@ struct PILArray {
 typedef std::unordered_map<Value, Value, ValueHash, ValueEqual> PILMap;
 
 struct StructChainLink {
-   bool parentIsChain;
+   ValueType parentType;
    uint32_t parent;
    uint32_t field;
-};
-
-struct StructData {
-   uint32_t structId;
-   uint32_t lexeme;
-   uint32_t physicalId;
 };
 
 struct Executor {
@@ -83,7 +77,7 @@ struct Executor {
    std::unordered_map<size_t, PILMap> maps;
    std::unordered_map<size_t, std::fstream> files;
 
-   std::vector<StructData> structData;
+   std::vector<uint32_t> structFields;
    std::vector<StructChainLink> structChains;
    std::vector<Function> functions;
    std::vector<Value> arguments;

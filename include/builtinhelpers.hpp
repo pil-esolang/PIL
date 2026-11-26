@@ -32,14 +32,8 @@ inline bool isValueNonHashable(Value value) {
 inline Value &resolveVariableByRef(Executor &executor, Value &value);
 
 static inline Value *findStructField(Executor &executor, const StructChainLink &link) {
-   Value *parent;
-   if (link.parentIsChain) {
-      Value chain {.type = VALUE_STRUCT_ACCESS, .chain = link.parent};
-      parent = &resolveVariableByRef(executor, chain);
-   }
-   else {
-      parent = &resolveVariableByRef(executor, executor.locals[executor.stackTrace.top().localStart + link.parent]);
-   }
+   Value parentValue {.type = link.parentType, .chain = link.parent};
+   Value *parent = &resolveVariableByRef(executor, parentValue);
 
    const Command &command = executor.code[executor.pointer];
    if (parent->type != VALUE_ARRAY) {
@@ -60,10 +54,9 @@ static inline Value *findStructField(Executor &executor, const StructChainLink &
    }
 
    const Function &structure = executor.functions[structArray.structureId];
-   for (size_t i = structure.nativeFn; i < structure.nativeFn + structure.paramCount; ++i) {
-      const StructData &data = executor.structData[i];
-      if (link.field == data.lexeme) {
-         return &structArray.array[data.physicalId];
+   for (size_t i = 0; i < structure.paramCount; ++i) {
+      if (link.field == executor.structFields[structure.nativeFn + i]) {
+         return &structArray.array[i];
       }
    }
    error(executor.diagnostics, command.file, command.line, "No such member '%s' for structure '%s'", getLexeme(executor.cache, link.field).c_str(), getLexeme(executor.cache, structure.lexeme).c_str());

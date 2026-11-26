@@ -599,20 +599,33 @@ void builtinMake(const Command &command, Executor &executor) {
    }
 
    Function &structure = executor.functions[structValue.structure];
-   if (structure.localCount != command.argCount - 2) {
-      error(executor.diagnostics, command.file, command.line, "make: Structure '%s' expected %zu fields, got %zu instead", getLexeme(executor.cache, structure.lexeme).c_str(), structure.localCount, command.argCount);
+   if (structure.paramCount != command.argCount - 2) {
+      error(executor.diagnostics, command.file, command.line, "make: Structure '%s' expected %zu fields, got %zu instead", getLexeme(executor.cache, structure.lexeme).c_str(), structure.paramCount, command.argCount);
       return;
    }
 
    std::vector<Value> values;
-   values.reserve(structure.localCount);
+   values.reserve(structure.paramCount);
    for (size_t i = 2; i < command.argCount; ++i) {
       values.push_back(resolveVariable(executor, arg(executor, command, i)));
    }
 
    size_t array = allocateArray(executor, values);
-   executor.arrays[array].structureId = structure.position;
+   executor.arrays[array].structureId = structValue.structure;
    storeInRegister(executor, command, arg(executor, command, 1), Value{.type = VALUE_ARRAY, .array = array}, "make");
+}
+
+void builtinMakeNoInit(const Command &command, Executor &executor) {
+   Value structValue = resolveVariable(executor, arg(executor, command, 0));
+   if (structValue.type != VALUE_STRUCT) {
+      error(executor.diagnostics, command.file, command.line, "make-no-init: Expected Structure for the 1st argument, got %s instead", getValueName(structValue.type));
+      return;
+   }
+
+   Function &structure = executor.functions[structValue.structure];
+   size_t array = allocateArray(executor, {structure.paramCount, NULL_VALUE});
+   executor.arrays[array].structureId = structValue.structure;
+   storeInRegister(executor, command, arg(executor, command, 1), Value{.type = VALUE_ARRAY, .array = array}, "make-no-init");
 }
 
 void builtinFree(const Command &command, Executor &executor) {

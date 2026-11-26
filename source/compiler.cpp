@@ -22,9 +22,9 @@ void writeToFile(Executor &executor, const std::string &out) {
       file.write(reinterpret_cast<const char*>(lexeme.data()), size);
    }
 
-   size_t structDataCount = executor.structData.size();
-   file.write(reinterpret_cast<const char*>(&structDataCount), sizeof(structDataCount));
-   file.write(reinterpret_cast<const char*>(executor.structData.data()), sizeof(StructData) * structDataCount);
+   size_t structFieldCount = executor.structFields.size();
+   file.write(reinterpret_cast<const char*>(&structFieldCount), sizeof(structFieldCount));
+   file.write(reinterpret_cast<const char*>(executor.structFields.data()), sizeof(uint32_t) * structFieldCount);
 
    size_t structChainCount = executor.structChains.size();
    file.write(reinterpret_cast<const char*>(&structChainCount), sizeof(structChainCount));
@@ -71,10 +71,10 @@ void readCachedBytecode(Executor &executor, const std::string &in) {
       file.read(reinterpret_cast<char*>(executor.cache.lexemes[i].data()), size);
    }
 
-   size_t structDataCount;
-   file.read(reinterpret_cast<char*>(&structDataCount), sizeof(structDataCount));
-   executor.structData.resize(structDataCount);
-   file.read(reinterpret_cast<char*>(executor.structData.data()), sizeof(StructData) * structDataCount);
+   size_t structFieldCount;
+   file.read(reinterpret_cast<char*>(&structFieldCount), sizeof(structFieldCount));
+   executor.structFields.resize(structFieldCount);
+   file.read(reinterpret_cast<char*>(executor.structFields.data()), sizeof(uint32_t) * structFieldCount);
 
    size_t structChainCount;
    file.read(reinterpret_cast<char*>(&structChainCount), sizeof(structChainCount));

@@ -3,107 +3,12 @@
 #include <cassert>
 #include <map>
 
-// we only define built-in functions that actually get used. thanks, cache. there are reserved built-ins that
-// always get pushed
-void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unordered_map<size_t, Value> &constants) {
-   size_t functionId = executor.functions.size();
-   Function function;
-   function.native = true;
-   function.variadic = def.flags & VARIADIC;
-   function.nativeFn = i;
-
-   Value value {VALUE_FUNCTION};
-   value.function = functionId;
-
-   if (def.flags & RESERVED) {
-      assert(!(def.flags & (FILE_LOCK | ENV_LOCK | EXEC_LOCK)) && "A reserved function cannot be locked.");
-      size_t cached = cacheLexeme(executor.cache, def.name);
-      function.lexeme = cached;
-      function.paramCount = def.params;
-      executor.functions.push_back(function);
-      constants[cached] = value;
-      return;
-   }
-
-   if (auto it = executor.cache.lexemeCache.find(def.name); it != executor.cache.lexemeCache.end()) {
-      if (!executor.allowFileio && (def.flags & FILE_LOCK)) {
-         if (executor.fileioErrored) return;
-         executor.fileioErrored = true;
-         error(executor.diagnostics, 0, 0, "Program contains file I/O built-ins. If you are the author or trust this file then rerun it with the '--allow-fileio' flag. Allowing file access can put your computer at risk. You can review all file I/O calls at the succeeding errors");
-         return;
-      }
-
-      if (!executor.allowEnv && (def.flags & ENV_LOCK)) {
-         if (executor.envErrored) return;
-         executor.envErrored = true;
-         error(executor.diagnostics, 0, 0, "Program contains environment variable built-ins. If you are the author or trust this file then rerun it with the '--allow-env' flag. Allowing environment variable access can put your privacy and secrets at risk. Review all calls at the succeeding errors");
-         return;
-      }
-
-      if (!executor.allowExec && (def.flags & EXEC_LOCK)) {
-         if (executor.execErrored) return;
-         executor.execErrored = true;
-         error(executor.diagnostics, 0, 0, "Program contains 'os-exec'. If you are the author or trust this file then rerun it with the '--allow-exec' flag. Allowing 'os-exec' puts your computer AT A MASSIVE RISK! Review all calls at the succeeding errors");
-         return;
-      }
-
-      function.lexeme = it->second;
-      function.paramCount = def.params;
-      executor.functions.push_back(function);
-      constants[it->second] = value;
-   }
+// helpers
+static bool isSameLink(const StructChainLink &a, const StructChainLink &b) {
+   return a.parentType == b.parentType && a.parent == b.parent && a.field == b.field;
 }
 
-Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants) {
-   Value value {VALUE_COUNT};
-   switch (token.type) {
-   case TOKEN_IDENTIFIER:
-      if (auto it = functionParamMap.find(token.lexeme); it != functionParamMap.end()) {
-         value.type = VALUE_LOCAL;
-         value.local = it->second;
-      }
-      else if (auto it = constants.find(token.lexeme); it != constants.end()) {
-         return it->second;
-      }
-      else {
-         error(executor.diagnostics, token.file, token.line, "Variable '%s' does not exist", getLexeme(executor.cache, token.lexeme).c_str());
-      }
-      break;
-   case TOKEN_INTEGER:
-      value.type = VALUE_INTEGER;
-      try {
-         value.integer = std::stoll(getLexeme(executor.cache, token.lexeme));
-      }
-      catch (...) {
-         value.integer = 0;
-         error(executor.diagnostics, token.file, token.line, "Invalid integer: %s", getLexeme(executor.cache, token.lexeme).c_str());
-      }
-      break;
-   case TOKEN_FLOATING:
-      value.type = VALUE_FLOATING;
-      try {
-         value.floating = std::stod(getLexeme(executor.cache, token.lexeme));
-      }
-      catch (...) {
-         value.floating = 0;
-         error(executor.diagnostics, token.file, token.line, "Invalid floating point number: %s", getLexeme(executor.cache, token.lexeme).c_str());
-      }
-      break;
-   case TOKEN_STRING:
-      value.type = VALUE_CSTRING;
-      value.string = token.lexeme;
-      break;
-   case TOKEN_CHARACTER:
-      value.type = VALUE_CHARACTER;
-      value.character = getLexeme(executor.cache, token.lexeme).front();
-      break;
-   default:
-      error(executor.diagnostics, token.file, token.line, "Unexpected %s while parsing", getTokenName(token.type));
-   }
-   return value;
-}
-
-Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants, const std::map<std::pair<size_t, size_t>, Value> &enumerationMap) {
+static Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants, const std::map<std::pair<size_t, size_t>, Value> &enumerationMap) {
    if (tokens[i].type == TOKEN_L_BRACKET) {
       return evaluateMath(executor, tokens, i, constants);
    }
@@ -117,28 +22,114 @@ Value internalParse(Executor &executor, std::vector<Token> &tokens, size_t &i, c
 
    // regular values and structure access
    Value value = parseToken(executor, tokens[i], functionParamMap, constants);
-   while ((value.type == VALUE_LOCAL || value.type == VALUE_STRUCT_ACCESS) && tokens[i + 1].type == TOKEN_DOT) {
+   while ((value.type == VALUE_LOCAL || value.type == VALUE_GLOBAL || value.type == VALUE_STRUCT_ACCESS) && tokens[i + 1].type == TOKEN_DOT) {
       i += 2;
       if (tokens[i].type != TOKEN_IDENTIFIER) {
          error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier after structure field access, got %s instead", getTokenName(tokens[i].type));
          return value;
       }
       StructChainLink link;
-      if (value.type == VALUE_LOCAL) {
-         link.parentIsChain = false;
-         link.parent = value.local;
-      }
-      else {
-         link.parentIsChain = true;
-         link.parent = value.chain;
-      }
+      link.parentType = value.type;
+      link.parent = value.chain;
       link.field = tokens[i].lexeme;
 
-      size_t index = executor.structChains.size();
-      executor.structChains.push_back(link);
+      size_t index = 0;
+      while (index < executor.structChains.size() && !isSameLink(executor.structChains[index], link)) index += 1;
+      if (index == executor.structChains.size()) {
+         executor.structChains.push_back(link);
+      }
       value = Value{.type = VALUE_STRUCT_ACCESS, .chain = index};
    }
    return value;
+}
+
+// we only define built-in functions that actually get used. thanks, cache. there are reserved built-ins that
+// always get pushed
+void pushBuiltin(Executor &executor, const BuiltinDef &def, size_t i, std::unordered_map<size_t, Value> &constants) {
+   size_t functionId = executor.functions.size();
+   Function function;
+   function.native = true;
+   function.variadic = def.flags & VARIADIC;
+   function.nativeFn = i;
+
+   Value value {VALUE_FUNCTION};
+   value.function = functionId;
+
+   if (def.flags & RESERVED) {
+      size_t cached = cacheLexeme(executor.cache, def.name);
+      function.lexeme = cached;
+      function.paramCount = def.params;
+      executor.functions.push_back(function);
+      constants[cached] = value;
+      return;
+   }
+
+   auto it = executor.cache.lexemeCache.find(def.name);
+   if (it == executor.cache.lexemeCache.end()) return;
+
+   if (!executor.allowFileio && (def.flags & FILE_LOCK)) {
+      if (executor.fileioErrored) return;
+      executor.fileioErrored = true;
+      error(executor.diagnostics, 0, 0, "Program contains file I/O built-ins. If you are the author or trust this file then rerun it with the '--allow-fileio' flag. Allowing file access can put your computer at risk. You can review all file I/O calls at the succeeding errors");
+      return;
+   }
+
+   if (!executor.allowEnv && (def.flags & ENV_LOCK)) {
+      if (executor.envErrored) return;
+      executor.envErrored = true;
+      error(executor.diagnostics, 0, 0, "Program contains environment variable built-ins. If you are the author or trust this file then rerun it with the '--allow-env' flag. Allowing environment variable access can put your privacy and secrets at risk. Review all calls at the succeeding errors");
+      return;
+   }
+
+   if (!executor.allowExec && (def.flags & EXEC_LOCK)) {
+      if (executor.execErrored) return;
+      executor.execErrored = true;
+      error(executor.diagnostics, 0, 0, "Program contains 'os-exec'. If you are the author or trust this file then rerun it with the '--allow-exec' flag. Allowing 'os-exec' puts your computer AT A MASSIVE RISK! Review all calls at the succeeding errors");
+      return;
+   }
+
+   function.lexeme = it->second;
+   function.paramCount = def.params;
+   executor.functions.push_back(function);
+   constants[it->second] = value;
+}
+
+Value parseToken(Executor &executor, Token token, const std::unordered_map<size_t, size_t> &functionParamMap, const std::unordered_map<size_t, Value> &constants) {
+   switch (token.type) {
+   case TOKEN_IDENTIFIER:
+      if (auto it = functionParamMap.find(token.lexeme); it != functionParamMap.end()) {
+         return {.type = VALUE_LOCAL, .local = it->second};
+      }
+      else if (auto it = constants.find(token.lexeme); it != constants.end()) {
+         return it->second;
+      }
+      else {
+         error(executor.diagnostics, token.file, token.line, "Variable '%s' does not exist", getLexeme(executor.cache, token.lexeme).c_str());
+      }
+      break;
+   case TOKEN_INTEGER:
+      try {
+         return {.type = VALUE_INTEGER, .integer = std::stoll(getLexeme(executor.cache, token.lexeme))};
+      }
+      catch (...) {
+         error(executor.diagnostics, token.file, token.line, "Invalid integer: %s", getLexeme(executor.cache, token.lexeme).c_str());
+         return {.type = VALUE_INTEGER, .integer = 0};
+      }
+      break;
+   case TOKEN_FLOATING:
+      try {
+         return {.type = VALUE_FLOATING, .floating = std::stod(getLexeme(executor.cache, token.lexeme))};
+      }
+      catch (...) {
+         error(executor.diagnostics, token.file, token.line, "Invalid floating point number: %s", getLexeme(executor.cache, token.lexeme).c_str());
+         return {.type = VALUE_FLOATING, .floating = 0.0f};
+      }
+      break;
+   case TOKEN_STRING: return {.type = VALUE_CSTRING, .string = token.lexeme};
+   case TOKEN_CHARACTER: return {.type = VALUE_CHARACTER, .character = getLexeme(executor.cache, token.lexeme).front()};
+   default: error(executor.diagnostics, token.file, token.line, "Unexpected %s while parsing", getTokenName(token.type));
+   }
+   return NULL_VALUE;
 }
 
 // take the tokens and turn them into executable function blocks and commands. we have 3 levels here: file -> functions ->
@@ -201,12 +192,8 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
 
          size_t functionId = executor.functions.size();
          Function function;
-         function.isStructure = true;
          function.isStructureArray = isArray;
          function.lexeme = position;
-         function.position = functionId;
-         function.localCount = 0;
-         function.paramCount = 0;
 
          Value value {VALUE_STRUCT};
          value.structure = functionId;
@@ -287,6 +274,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             }
 
             size_t enumerationLexeme = tokens[i].lexeme;
+            size_t entryLine = tokens[i].line, entryFile = tokens[i].file;
             i += 1;
 
             if (tokens[i].type == TOKEN_ASSIGN) {
@@ -296,14 +284,14 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                   error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected a Number after Assign, got %s instead", getTokenName(tokens[i].type));
                }
                else {
-                  iota = (value.type == VALUE_INTEGER ? value.integer : value.floating);
+                  iota = (value.type == VALUE_INTEGER ? value.integer : (pilint_t)value.floating);
                }
                i += 1;
             }
 
             if (isArray) {
                if (constants.find(enumerationLexeme) != constants.end()) {
-                  error(executor.diagnostics, tokens[i].file, tokens[i].line, "Array enumeration entry redefined symbol '%s'", getLexeme(executor.cache, enumerationLexeme).c_str());
+                  error(executor.diagnostics, entryFile, entryLine, "Array enumeration entry redefined symbol '%s'", getLexeme(executor.cache, enumerationLexeme).c_str());
                }
                constants[enumerationLexeme] = Value{.type = VALUE_INTEGER, .integer = iota};
             }
@@ -338,7 +326,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
          
          size_t line = tokens[i].line, file = tokens[i].file;
          Function &structure = executor.functions[constants[tokens[i + 1].lexeme].structure];
-         structure.nativeFn = executor.structData.size();
+         structure.nativeFn = executor.structFields.size();
 
          i += 2;
          if (tokens[i].type != TOKEN_L_PAREN) {
@@ -351,9 +339,8 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
                error(executor.diagnostics, tokens[i].file, tokens[i].line, "Expected Identifier, got %s instead", getTokenName(tokens[i].type));
                break;
             }
-            executor.structData.emplace_back(structure.position, tokens[i].lexeme, structure.localCount);
+            executor.structFields.push_back(tokens[i].lexeme);
             structure.paramCount += 1;
-            structure.localCount += 1;
 
             i += 1;
             if (tokens[i].type == TOKEN_EOF || tokens[i].type == TOKEN_R_PAREN) {
@@ -370,7 +357,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             error(executor.diagnostics, file, line, "Unterminated structure");
          }
 
-         if (structure.localCount == 0) {
+         if (structure.paramCount == 0) {
             error(executor.diagnostics, file, line, "Structure '%s' does not contain any fields", getLexeme(executor.cache, structure.lexeme).c_str());
          }
       }
@@ -564,7 +551,7 @@ void parsePIL(Executor &executor, std::vector<Token> &tokens) {
             error(executor.diagnostics, command.file, command.line, "Function '%s' expected %s%zu parameters, but received %zu arguments", getLexeme(executor.cache, command.lexeme).c_str(), (variadic ? ">" : ""), params, args);
          }
 
-         if (isCall) {
+         if (isCall && command.callee != std::string::npos) {
             size_t idx = executor.arguments[command.argStart + command.callee].function;
             Function &function = executor.functions[idx];
             args = command.argCount - command.callee - 1;

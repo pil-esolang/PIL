@@ -293,6 +293,7 @@ void builtinFuncArgMatch(const Command &command, Executor &executor);
 
 // structures
 void builtinMake(const Command &command, Executor &executor);
+void builtinMakeNoInit(const Command &command, Executor &executor);
 void builtinFree(const Command &command, Executor &executor);
 void builtinDeepFree(const Command &command, Executor &executor);
 void builtinCopy(const Command &command, Executor &executor);
@@ -601,6 +602,7 @@ static constexpr BuiltinDef BUILTIN_DEFINITIONS[] = {
 
    // structures
    {"make", builtinMake, 3, VARIADIC},
+   {"make-no-init", builtinMakeNoInit, 2},
    {"free", builtinFree, 1, VARIADIC},
    {"deep-free", builtinDeepFree, 1, VARIADIC},
    {"copy", builtinCopy, 2},
